@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Calendar, RotateCw, Bell, ChevronDown } from 'lucide-react'
+import { Calendar, Bell, ChevronDown } from 'lucide-react'
 import { UserMenu } from './UserMenu'
 import { toast } from 'sonner'
 
@@ -8,9 +8,6 @@ export const Header: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const handleRefresh = () => {
-    toast.success('Dashboard data refreshed successfully!')
-  }
 
   const handleSelectRange = (range: string) => {
     setDateRange(range)
@@ -69,14 +66,6 @@ export const Header: React.FC = () => {
           )}
         </div>
 
-        {/* Refresh Action */}
-        <button
-          onClick={handleRefresh}
-          className="p-2 bg-indigo-950/60 hover:bg-indigo-900/60 border border-white/10 rounded-lg text-slate-200 cursor-pointer transition-all duration-200 active:scale-95"
-          title="Refresh Data"
-        >
-          <RotateCw className="w-3.5 h-3.5" />
-        </button>
 
         {/* Notification Bell */}
         <div className="relative p-2 bg-indigo-950/60 hover:bg-indigo-900/60 border border-white/10 rounded-lg text-slate-200 cursor-pointer transition-all duration-200">

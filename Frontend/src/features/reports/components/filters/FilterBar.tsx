@@ -26,10 +26,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   onReset
 }) => {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-t-xl p-5 border border-slate-100 dark:border-slate-800 border-b-0 flex flex-col md:flex-row md:items-center md:justify-between gap-4 select-none">
+    <div className="bg-white rounded-t-xl p-5 border border-slate-100 border-b-0 flex flex-col md:flex-row md:items-center md:justify-between gap-4 select-none">
       {/* Title block */}
       <div>
-        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Report Library</h3>
+        <h3 className="text-sm font-bold text-slate-800">Report Library</h3>
         <p className="text-[10px] text-slate-400 font-semibold">{totalCount} of 24 reports</p>
       </div>
 
@@ -45,7 +45,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search reports..."
-            className="block w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 text-xs border border-slate-200 dark:border-slate-700 rounded-lg placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+            className="block w-full pl-8 pr-3 py-1.5 bg-slate-50 text-slate-700 text-xs border border-slate-200 rounded-lg placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
           />
         </div>
 
@@ -53,7 +53,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <select
           value={category}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className="bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
+          className="bg-slate-50 text-slate-700 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
         >
           <option value="All">All categories</option>
           {REPORT_CATEGORIES_CONFIG.map((cat) => (
@@ -67,7 +67,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <select
           value={status}
           onChange={(e) => onStatusChange(e.target.value)}
-          className="bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
+          className="bg-slate-50 text-slate-700 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
         >
           <option value="All">All status</option>
           <option value="Scheduled">Scheduled</option>
@@ -78,7 +78,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         {/* Reset Filters Icon */}
         <button
           onClick={onReset}
-          className="p-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 dark:border-slate-750 cursor-pointer transition-colors"
+          className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 cursor-pointer transition-colors"
           title="Reset Filters"
         >
           <RotateCcw className="w-3.5 h-3.5" />

@@ -18,13 +18,13 @@ interface CollectionTrendChartProps {
 
 export const CollectionTrendChart: React.FC<CollectionTrendChartProps> = ({ data }) => {
   return (
-    <div className="w-full h-80 bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300">
+    <div className="w-full h-80 bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Collection Trend</h3>
+          <h3 className="text-sm font-bold text-slate-800">Collection Trend</h3>
           <p className="text-[10px] text-slate-400 font-medium">Monthly collection vs target (₹ Cr)</p>
         </div>
-        <div className="text-[10px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-700/50">
+        <div className="text-[10px] font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
           Target Analysis
         </div>
       </div>
@@ -52,12 +52,12 @@ export const CollectionTrendChart: React.FC<CollectionTrendChartProps> = ({ data
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0c0836',
-                border: 'none',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
                 borderRadius: '8px',
-                color: '#fff',
+                color: '#1e293b',
                 fontSize: '11px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
               }}
               formatter={(value) => [`₹${value} Cr`]}
             />

@@ -15,14 +15,14 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   value,
   trend,
   icon: Icon,
-  iconBgColor = 'bg-slate-50 dark:bg-slate-800',
-  iconColor = 'text-slate-500 dark:text-slate-400'
+  iconBgColor = 'bg-slate-50',
+  iconColor = 'text-slate-500'
 }) => {
   const isPositive = trend >= 0
   const absoluteTrend = Math.abs(trend)
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+    <div className="bg-white border border-slate-100 rounded-xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
       <div className="space-y-3.5">
         {/* Title */}
         <h4 className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
@@ -31,7 +31,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
 
         {/* Value and Trend */}
         <div className="space-y-1.5">
-          <h2 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight leading-none">
+          <h2 className="text-xl font-extrabold text-slate-800 tracking-tight leading-none">
             {value}
           </h2>
           
@@ -40,8 +40,8 @@ export const KpiCard: React.FC<KpiCardProps> = ({
             <span
               className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9.5px] font-bold ${
                 isPositive
-                  ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
-                  : 'bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400'
+                  ? 'bg-emerald-50 text-emerald-600'
+                  : 'bg-rose-50 text-rose-600'
               }`}
             >
               {isPositive ? (
@@ -56,7 +56,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
       </div>
 
       {/* Icon Right Side Box */}
-      <div className={`p-3 rounded-lg shrink-0 border border-slate-100/50 dark:border-slate-800/50 ${iconBgColor}`}>
+      <div className={`p-3 rounded-lg shrink-0 border border-slate-100/50 ${iconBgColor}`}>
         <Icon className={`w-5 h-5 ${iconColor}`} />
       </div>
     </div>

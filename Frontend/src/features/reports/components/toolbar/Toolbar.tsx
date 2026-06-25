@@ -24,7 +24,7 @@ export const Toolbar: React.FC = () => {
       {/* Print */}
       <button
         onClick={handlePrint}
-        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-250 dark:border-slate-800 rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
+        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
       >
         <Printer className="w-3.5 h-3.5 text-slate-400" />
         <span>Print</span>
@@ -33,7 +33,7 @@ export const Toolbar: React.FC = () => {
       {/* Share */}
       <button
         onClick={handleShare}
-        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-250 dark:border-slate-800 rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
+        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
       >
         <Share2 className="w-3.5 h-3.5 text-slate-400" />
         <span>Share</span>

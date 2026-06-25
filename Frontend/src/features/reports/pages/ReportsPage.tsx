@@ -91,10 +91,11 @@ export const ReportsPage: React.FC = () => {
           {/* Refresh Action Trigger */}
           <button
             onClick={handlePageRefresh}
-            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-700 cursor-pointer transition-all duration-200 active:scale-95 shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 cursor-pointer transition-all duration-200 active:scale-95 shadow-sm text-xs font-bold"
             title="Refresh Report Data"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${isReportsLoading || isMetricsLoading ? 'animate-spin text-indigo-600' : ''}`} />
+            <RotateCw className={`w-3.5 h-3.5 ${isReportsLoading || isMetricsLoading ? 'animate-spin text-indigo-650' : 'text-slate-400'}`} />
+            <span>Refresh</span>
           </button>
         </div>
         <Toolbar />
