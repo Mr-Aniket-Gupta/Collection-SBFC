@@ -1,3 +1,5 @@
+// ─── SidebarItem Component ────────────────────────────────────────────────────
+
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 
@@ -19,7 +21,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({ to, label, icon: Icon 
         }`
       }
     >
-      <Icon className="w-4.5 h-4.5 shrink-0 transition-transform duration-200" />
+      <Icon className="w-4 h-4 shrink-0 transition-transform duration-200" />
       <span className="truncate">{label}</span>
     </NavLink>
   )

@@ -1,6 +1,9 @@
+// ─── App Router ───────────────────────────────────────────────────────────────
+
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import DashboardLayout from '@/layout/DashboardLayout'
 import { ReportsPage } from '@/features/reports'
+import { AnalyticsPage } from '@/features/Analytics'
 
 export const router = createBrowserRouter([
   {
@@ -9,15 +12,19 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/reports" replace />,
+        element: <Navigate to="/analytics" replace />,
       },
       {
         path: 'reports',
         element: <ReportsPage />,
       },
       {
+        path: 'analytics',
+        element: <AnalyticsPage />,
+      },
+      {
         path: '*',
-        element: <Navigate to="/reports" replace />,
+        element: <Navigate to="/analytics" replace />,
       },
     ],
   },

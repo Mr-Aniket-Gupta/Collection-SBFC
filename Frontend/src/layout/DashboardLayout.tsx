@@ -1,3 +1,5 @@
+// ─── Dashboard Layout ─────────────────────────────────────────────────────────
+
 import React from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
@@ -5,18 +7,18 @@ import { Header } from './Header'
 
 export const DashboardLayout: React.FC = () => {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 font-sans">
-      {/* Sidebar navigation */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFC] text-slate-800 font-sans">
+      {/* Fixed Sidebar */}
       <Sidebar />
 
-      {/* Main content viewport */}
-      <div className="flex flex-col flex-1 h-screen overflow-hidden">
-        {/* Dynamic header */}
+      {/* Main Content Column */}
+      <div className="flex flex-col flex-1 h-screen overflow-hidden min-w-0">
+        {/* Top Navbar */}
         <Header />
 
-        {/* Scrollable workspace content */}
-        <main className="flex-grow overflow-y-auto bg-slate-50 p-6 scrollbar-thin">
-          <div className="max-w-[1600px] mx-auto space-y-6">
+        {/* Scrollable Content Area */}
+        <main className="flex-grow overflow-y-auto bg-[#F8FAFC] p-6 scrollbar-thin" role="main">
+          <div className="max-w-full">
             <Outlet />
           </div>
         </main>
