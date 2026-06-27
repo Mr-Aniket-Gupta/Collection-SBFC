@@ -6,9 +6,7 @@ import { PerformanceRadar } from '../charts/PerformanceRadar'
 import { StrategyEffectiveness } from '../charts/StrategyEffectiveness'
 import { HourlyCallDistribution } from '../charts/HourlyCallDistribution'
 import { ProductDistributionChart } from '../charts/ProductDistributionChart'
-import { BounceReasonAnalysis } from '../charts/BounceReasonAnalysis'
 import { useAnalytics } from '../hooks/useAnalytics'
-import { kpiCards } from '../data/analytics.data'
 
 export const AnalyticsPage: React.FC = () => {
   const {
@@ -16,7 +14,9 @@ export const AnalyticsPage: React.FC = () => {
     setSelectedDateFilter,
     dateFilterOptions,
     isRefreshing,
+    dashboard,
     handleRefresh,
+    error
   } = useAnalytics()
 
   return (
@@ -34,26 +34,39 @@ export const AnalyticsPage: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        {kpiCards.map((card) => (
+        {(dashboard?.kpiCards ?? []).map((card) => (
           <KPICard key={card.id} card={card} />
         ))}
       </div>
+      {error && (
+        <div className="surface-card rounded-xl p-4 border border-[rgba(206,155,1,0.18)] bg-[rgba(206,155,1,0.1)] text-sm text-[var(--color-navy)]">
+          {String(error instanceof Error ? error.message : 'Unable to load analytics data')}
+        </div>
+      )}
 
       {/* Section 1: Performance Radar + Strategy Effectiveness */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PerformanceRadar />
-        <StrategyEffectiveness />
+        <PerformanceRadar data={dashboard?.performanceRadar ?? []} />
+        <StrategyEffectiveness data={dashboard?.strategyPerformance ?? []} />
       </div>
 
       {/* Section 2: Hourly Call Distribution */}
       <div>
-        <HourlyCallDistribution />
+        <HourlyCallDistribution data={dashboard?.communicationPerformance ?? []} />
       </div>
 
-      {/* Section 3: Product Distribution + Bounce Reason Analysis */}
+      {/* Section 3: Channel Performance + Bucket Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ProductDistributionChart />
-        <BounceReasonAnalysis />
+        <ProductDistributionChart
+          data={dashboard?.channelPerformance ?? []}
+          title="Channel Performance"
+          subtitle="Collection volume by channel type"
+        />
+        <ProductDistributionChart
+          data={dashboard?.bucketDistribution ?? []}
+          title="Bucket Distribution"
+          subtitle="Portfolio breakdown by DPD bucket"
+        />
       </div>
     </div>
   )

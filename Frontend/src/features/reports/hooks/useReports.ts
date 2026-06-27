@@ -1,74 +1,63 @@
-import { useState, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { reportsService } from '../services/reportsService'
-import { FilterState, ReportItem } from '../types'
+import type { DcspTableRow } from '../types'
 
-const initialFilters: FilterState = {
-  category: 'All',
-  status: 'All',
-  search: '',
-  page: 1,
-  limit: 15,
-  sortBy: 'createdDate',
-  sortOrder: 'desc'
+export type ReportTableKey = 'cases' | 'payments' | 'communications' | 'strategies' | 'agents' | 'allocations' | 'ptps' | 'audit-logs'
+
+export const REPORT_TABLES: ReportTableKey[] = ['cases', 'payments', 'communications', 'strategies', 'agents', 'allocations', 'ptps', 'audit-logs']
+const defaultTable: ReportTableKey = 'cases'
+
+const normalizeTableKey = (value?: string | null): ReportTableKey => {
+  if (value && REPORT_TABLES.includes(value as ReportTableKey)) {
+    return value as ReportTableKey
+  }
+
+  return defaultTable
 }
 
-export const useReports = () => {
-  const [filters, setFilters] = useState<FilterState>(initialFilters)
+export const useReports = (initialTable?: string | null) => {
+  const [activeTable, setActiveTable] = useState<ReportTableKey>(normalizeTableKey(initialTable))
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
 
-  // React Query fetch
+  useEffect(() => {
+    setActiveTable(normalizeTableKey(initialTable))
+  }, [initialTable])
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['reportsList', filters],
-    queryFn: () => reportsService.fetchReports(filters),
+    queryKey: ['dcspTable', activeTable, page, limit],
+    queryFn: () => reportsService.fetchTable(activeTable, page, limit),
     placeholderData: (prev) => prev
   })
 
-  const setCategory = useCallback((category: string) => {
-    setFilters((prev) => ({ ...prev, category, page: 1 }))
-  }, [])
+  const tableColumns = useMemo(() => {
+    const first = data?.items?.[0] as DcspTableRow | undefined
+    return first ? Object.keys(first) : []
+  }, [data])
 
-  const setStatus = useCallback((status: string) => {
-    setFilters((prev) => ({ ...prev, status, page: 1 }))
-  }, [])
-
-  const setSearch = useCallback((search: string) => {
-    setFilters((prev) => ({ ...prev, search, page: 1 }))
-  }, [])
-
-  const setPage = useCallback((page: number) => {
-    setFilters((prev) => ({ ...prev, page }))
-  }, [])
-
-  const setLimit = useCallback((limit: number) => {
-    setFilters((prev) => ({ ...prev, limit, page: 1 }))
-  }, [])
-
-  const setSorting = useCallback((sortBy: keyof ReportItem) => {
-    setFilters((prev) => {
-      const isSame = prev.sortBy === sortBy
-      const sortOrder = isSame && prev.sortOrder === 'desc' ? 'asc' : 'desc'
-      return { ...prev, sortBy, sortOrder }
-    })
-  }, [])
-
-  const resetFilters = useCallback(() => {
-    setFilters(initialFilters)
+  const reset = useCallback(() => {
+    setActiveTable(defaultTable)
+    setPage(1)
+    setLimit(10)
   }, [])
 
   return {
-    filters,
-    reports: data?.reports || [],
-    total: data?.total || 0,
+    reportTables: REPORT_TABLES,
+    activeTable,
+    setActiveTable,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    rows: data?.items ?? [],
+    total: data?.total ?? 0,
+    tableColumns,
     isLoading,
     error,
     refetch,
-    setCategory,
-    setStatus,
-    setSearch,
-    setPage,
-    setLimit,
-    setSorting,
-    resetFilters
+    reset
   }
 }
+
 export type UseReportsReturn = ReturnType<typeof useReports>

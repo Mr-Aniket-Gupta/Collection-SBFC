@@ -1,11 +1,12 @@
 // Analytics Custom Hook
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { analyticsService } from '../services/analyticsService'
 import type { DateFilterOption } from '../types/analytics.types'
 
 export function useAnalytics() {
   const [selectedDateFilter, setSelectedDateFilter] = useState<DateFilterOption>('This Month')
-  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const dateFilterOptions: DateFilterOption[] = [
     'This Month',
@@ -15,17 +16,23 @@ export function useAnalytics() {
     'This Year',
   ]
 
+  const { data, isFetching, refetch, error } = useQuery({
+    queryKey: ['analyticsDashboard', selectedDateFilter],
+    queryFn: () => analyticsService.fetchDashboard(selectedDateFilter),
+    placeholderData: (prev) => prev,
+  })
+
   const handleRefresh = () => {
-    setIsRefreshing(true)
-    // Simulate API refresh
-    setTimeout(() => setIsRefreshing(false), 1200)
+    refetch()
   }
 
   return {
     selectedDateFilter,
     setSelectedDateFilter,
     dateFilterOptions,
-    isRefreshing,
+    isRefreshing: isFetching,
+    dashboard: data,
+    error,
     handleRefresh,
   }
 }

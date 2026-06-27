@@ -2,16 +2,20 @@
 
 import React from 'react'
 import { ChartCard, ProgressBar } from '@/Components'
-import { strategyData } from '../data/analytics.data'
+import type { StrategyRow } from '../types/analytics.types'
 
-export const StrategyEffectiveness: React.FC = () => {
+interface StrategyEffectivenessProps {
+  data: StrategyRow[]
+}
+
+export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ data }) => {
   return (
     <ChartCard
       title="Strategy Effectiveness"
       subtitle="Current vs. target achievement by collection strategy"
     >
       <div className="flex flex-col gap-6 mt-2">
-        {strategyData.map((strategy) => (
+        {data.map((strategy) => (
           <div key={strategy.name} className="flex flex-col gap-1.5">
             <ProgressBar
               label={strategy.name}
@@ -52,7 +56,7 @@ export const StrategyEffectiveness: React.FC = () => {
           <span className="text-[12px] text-[var(--color-ink-muted)] font-medium">Target</span>
         </div>
         <span className="text-[12px] font-semibold text-[var(--color-gold)] bg-[rgba(206,155,1,0.12)] px-2.5 py-1 rounded-lg">
-          All Targets Exceeded
+          {data.every((strategy) => strategy.percentage >= strategy.target) ? 'All Targets Exceeded' : 'Targets In Progress'}
         </span>
       </div>
     </ChartCard>

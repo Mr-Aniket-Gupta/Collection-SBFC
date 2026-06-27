@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { ChartCard } from '@/Components'
-import { productDistribution } from '../data/analytics.data'
+import type { ProductDistribution } from '../types/analytics.types'
 
 interface CustomTooltipProps {
   active?: boolean
@@ -31,13 +31,23 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
   return null
 }
 
-export const ProductDistributionChart: React.FC = () => {
-  const total = productDistribution.reduce((sum, item) => sum + item.value, 0)
+interface ProductDistributionChartProps {
+  data: ProductDistribution[]
+  title?: string
+  subtitle?: string
+}
+
+export const ProductDistributionChart: React.FC<ProductDistributionChartProps> = ({
+  data,
+  title = 'Product-wise Distribution',
+  subtitle = 'Collection portfolio breakdown by product type',
+}) => {
+  const total = data.reduce((sum, item) => sum + item.value, 0)
 
   return (
     <ChartCard
-      title="Product-wise Distribution"
-      subtitle="Collection portfolio breakdown by product type"
+      title={title}
+      subtitle={subtitle}
     >
       <div className="flex flex-col items-center">
         {/* Donut Chart */}
@@ -45,7 +55,7 @@ export const ProductDistributionChart: React.FC = () => {
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
-                data={productDistribution}
+                data={data}
                 cx="50%"
                 cy="50%"
                 innerRadius={70}
@@ -58,7 +68,7 @@ export const ProductDistributionChart: React.FC = () => {
                 startAngle={90}
                 endAngle={-270}
               >
-                {productDistribution.map((entry) => (
+                {data.map((entry) => (
                   <Cell
                     key={entry.name}
                     fill={entry.color}
@@ -79,7 +89,7 @@ export const ProductDistributionChart: React.FC = () => {
 
         {/* Legend Grid */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 w-full mt-3">
-          {productDistribution.map((item) => (
+          {data.map((item) => (
             <div key={item.name} className="flex items-center gap-2.5">
               <div
                 className="w-3 h-3 rounded-full shrink-0"

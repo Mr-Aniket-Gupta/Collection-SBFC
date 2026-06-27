@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from 'recharts'
 import { ChartCard } from '@/Components'
-import { radarData } from '../data/analytics.data'
+import type { RadarDataPoint } from '../types/analytics.types'
 
 interface CustomTooltipProps {
   active?: boolean
@@ -30,14 +30,18 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
   return null
 }
 
-export const PerformanceRadar: React.FC = () => {
+interface PerformanceRadarProps {
+  data: RadarDataPoint[]
+}
+
+export const PerformanceRadar: React.FC<PerformanceRadarProps> = ({ data }) => {
   return (
     <ChartCard
       title="Performance Radar"
       subtitle="Collection team performance across key metrics"
     >
       <ResponsiveContainer width="100%" height={300}>
-        <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+        <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
           <PolarGrid
             stroke="#D9EAF5"
             strokeDasharray="4 2"
@@ -75,7 +79,7 @@ export const PerformanceRadar: React.FC = () => {
 
       {/* Metric Legend Pills */}
       <div className="flex flex-wrap gap-2 mt-4 justify-center">
-        {radarData.map((item) => (
+        {data.map((item) => (
           <div
             key={item.metric}
             className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-ice)] rounded-full"

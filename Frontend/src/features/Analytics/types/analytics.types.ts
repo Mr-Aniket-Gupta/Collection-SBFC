@@ -37,11 +37,20 @@ export interface KPICard {
   title: string
   value: string
   subtitle: string
-  trend?: string
-  trendDirection?: 'up' | 'down' | 'neutral'
-  iconType: 'target' | 'zap' | 'clock' | 'trending'
+  trend?: string | null
+  trendDirection?: 'up' | 'down' | 'neutral' | null
+  iconType: 'target' | 'zap' | 'clock' | 'trending' | 'wallet' | 'receipt' | 'message-circle' | 'check-circle'
   iconColor: string
   bgColor: string
 }
 
 export type DateFilterOption = 'This Month' | 'Last 7 Days' | 'Last 30 Days' | 'Last Quarter' | 'This Year'
+
+export interface AnalyticsDashboardPayload {
+  kpiCards: KPICard[]
+  performanceRadar: RadarDataPoint[]
+  strategyPerformance: StrategyRow[]
+  communicationPerformance: HourlyCallData[]
+  channelPerformance: ProductDistribution[]
+  bucketDistribution: ProductDistribution[]
+}

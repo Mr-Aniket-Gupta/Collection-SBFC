@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { ChartCard } from '@/Components'
-import { hourlyCallData } from '../data/analytics.data'
+import type { HourlyCallData } from '../types/analytics.types'
 
 interface CustomTooltipProps {
   active?: boolean
@@ -55,7 +55,11 @@ const CustomBar = (props: any) => {
   )
 }
 
-export const HourlyCallDistribution: React.FC = () => {
+interface HourlyCallDistributionProps {
+  data: HourlyCallData[]
+}
+
+export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({ data }) => {
   return (
     <ChartCard
       title="Hourly Call Distribution"
@@ -63,7 +67,7 @@ export const HourlyCallDistribution: React.FC = () => {
     >
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart
-          data={hourlyCallData}
+          data={data}
           margin={{ top: 10, right: 10, left: -10, bottom: 5 }}
           barGap={4}
         >

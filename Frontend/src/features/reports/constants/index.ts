@@ -12,7 +12,6 @@ import React from 'react'
 export interface CategoryConfig {
   id: string
   label: string
-  reportsCount: number
   icon: React.ComponentType<{ className?: string }>
   bgColor: string
   iconColor: string
@@ -21,63 +20,64 @@ export interface CategoryConfig {
 
 export const REPORT_CATEGORIES_CONFIG: CategoryConfig[] = [
   {
-    id: 'Recovery MIS',
-    label: 'Recovery MIS',
-    reportsCount: 12,
+    id: 'cases',
+    label: 'Cases',
     icon: FileSpreadsheet,
     bgColor: 'bg-[var(--color-ice)]',
     iconColor: 'text-[var(--color-navy)]',
     borderColor: 'border-[rgba(5,0,88,0.12)]'
   },
   {
-    id: 'Bucket-wise MIS',
-    label: 'Bucket-wise MIS',
-    reportsCount: 8,
+    id: 'payments',
+    label: 'Payments',
     icon: Layers,
     bgColor: 'bg-[rgba(206,155,1,0.13)]',
     iconColor: 'text-[var(--color-gold)]',
     borderColor: 'border-[rgba(206,155,1,0.24)]'
   },
   {
-    id: 'Digital Recovery',
-    label: 'Digital Recovery',
-    reportsCount: 6,
+    id: 'communications',
+    label: 'Communications',
     icon: Smartphone,
     bgColor: 'bg-[var(--color-ice)]',
     iconColor: 'text-[var(--color-blue)]',
     borderColor: 'border-[rgba(0,1,130,0.14)]'
   },
   {
-    id: 'Payment MIS',
-    label: 'Payment MIS',
-    reportsCount: 9,
+    id: 'strategies',
+    label: 'Strategies',
     icon: Coins,
     bgColor: 'bg-[rgba(206,155,1,0.13)]',
     iconColor: 'text-[var(--color-gold)]',
     borderColor: 'border-[rgba(206,155,1,0.24)]'
   },
   {
-    id: 'Strategy Reports',
-    label: 'Strategy Reports',
-    reportsCount: 5,
+    id: 'agents',
+    label: 'Agents',
     icon: Network,
     bgColor: 'bg-[var(--color-ice)]',
     iconColor: 'text-[var(--color-navy)]',
     borderColor: 'border-[rgba(5,0,88,0.12)]'
   },
   {
-    id: 'Communication Reports',
-    label: 'Communication Reports',
-    reportsCount: 7,
+    id: 'allocations',
+    label: 'Allocations',
     icon: MessageSquare,
     bgColor: 'bg-[rgba(206,155,1,0.13)]',
     iconColor: 'text-[var(--color-gold)]',
     borderColor: 'border-[rgba(206,155,1,0.24)]'
   },
   {
-    id: 'Bounce Analysis',
-    label: 'Bounce Analysis',
-    reportsCount: 4,
+    id: 'ptps',
+    label: 'PTPs',
+    icon: AlertTriangle,
+    bgColor: 'bg-[var(--color-ice)]',
+    iconColor: 'text-[var(--color-blue)]',
+    borderColor: 'border-[rgba(0,1,130,0.14)]'
+  },
+  {
+    id: 'audit-logs',
+    label: 'Audit Logs',
     icon: AlertTriangle,
     bgColor: 'bg-[var(--color-ice)]',
     iconColor: 'text-[var(--color-blue)]',

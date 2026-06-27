@@ -1,7 +1,7 @@
 // KPICard Component
 
 import React from 'react'
-import { Target, Zap, Clock, TrendingUp } from 'lucide-react'
+import { Target, Zap, Clock, TrendingUp, Wallet, Receipt, MessageCircle, CheckCircle2 } from 'lucide-react'
 import type { KPICard as KPICardType } from '@/features/Analytics/types/analytics.types'
 
 interface KPICardProps {
@@ -13,10 +13,14 @@ const iconMap: Record<KPICardType['iconType'], React.ComponentType<{ className?:
   zap: Zap,
   clock: Clock,
   trending: TrendingUp,
+  wallet: Wallet,
+  receipt: Receipt,
+  'message-circle': MessageCircle,
+  'check-circle': CheckCircle2,
 }
 
 export const KPICard: React.FC<KPICardProps> = ({ card }) => {
-  const Icon = iconMap[card.iconType]
+  const Icon = iconMap[card.iconType] ?? Target
 
   return (
     <div
