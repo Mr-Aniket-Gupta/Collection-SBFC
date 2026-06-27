@@ -24,25 +24,25 @@ export const Toolbar: React.FC = () => {
       {/* Print */}
       <button
         onClick={handlePrint}
-        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
+        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-[var(--color-ice)] text-[var(--color-navy)] text-xs font-bold border border-[rgba(5,0,88,0.12)] rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
       >
-        <Printer className="w-3.5 h-3.5 text-slate-400" />
+        <Printer className="w-3.5 h-3.5 text-[var(--color-ink-muted)]" />
         <span>Print</span>
       </button>
 
       {/* Share */}
       <button
         onClick={handleShare}
-        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
+        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-[var(--color-ice)] text-[var(--color-navy)] text-xs font-bold border border-[rgba(5,0,88,0.12)] rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
       >
-        <Share2 className="w-3.5 h-3.5 text-slate-400" />
+        <Share2 className="w-3.5 h-3.5 text-[var(--color-ink-muted)]" />
         <span>Share</span>
       </button>
 
       {/* Export */}
       <button
         onClick={handleExport}
-        className="flex items-center gap-1.5 px-4 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-slate-905 text-xs font-extrabold rounded-lg cursor-pointer transition-all duration-200 shadow-sm active:scale-95 text-slate-950"
+        className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--color-gold)] hover:brightness-95 text-[var(--color-navy)] text-xs font-extrabold rounded-lg cursor-pointer transition-all duration-200 shadow-sm active:scale-95"
       >
         <Download className="w-3.5 h-3.5" />
         <span>Export</span>
@@ -50,4 +50,5 @@ export const Toolbar: React.FC = () => {
     </div>
   )
 }
+
 export default Toolbar

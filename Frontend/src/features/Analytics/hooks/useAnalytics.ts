@@ -1,4 +1,4 @@
-// ─── Analytics Custom Hook ────────────────────────────────────────────────────
+// Analytics Custom Hook
 
 import { useState } from 'react'
 import type { DateFilterOption } from '../types/analytics.types'

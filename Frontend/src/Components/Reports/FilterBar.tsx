@@ -1,6 +1,6 @@
 import React from 'react'
 import { Search, Download, RotateCcw } from 'lucide-react'
-import { REPORT_CATEGORIES_CONFIG } from '../../constants'
+import { REPORT_CATEGORIES_CONFIG } from '@/features/reports/constants'
 
 interface FilterBarProps {
   search: string
@@ -26,11 +26,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   onReset
 }) => {
   return (
-    <div className="bg-white rounded-t-xl p-5 border border-slate-100 border-b-0 flex flex-col md:flex-row md:items-center md:justify-between gap-4 select-none">
+    <div className="bg-white rounded-t-xl p-5 border border-[rgba(5,0,88,0.1)] border-b-0 flex flex-col md:flex-row md:items-center md:justify-between gap-4 select-none">
       {/* Title block */}
       <div>
-        <h3 className="text-sm font-bold text-slate-800">Report Library</h3>
-        <p className="text-[10px] text-slate-400 font-semibold">{totalCount} of 24 reports</p>
+        <h3 className="text-sm font-bold text-[var(--color-navy)]">Report Library</h3>
+        <p className="text-[10px] text-[var(--color-ink-muted)] font-semibold">{totalCount} of 24 reports</p>
       </div>
 
       {/* Filter items */}
@@ -38,14 +38,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         {/* Search Input */}
         <div className="relative w-full sm:w-48">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-3.5 w-3.5 text-slate-400" />
+            <Search className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" />
           </div>
           <input
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search reports..."
-            className="block w-full pl-8 pr-3 py-1.5 bg-slate-50 text-slate-700 text-xs border border-slate-200 rounded-lg placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+            className="block w-full pl-8 pr-3 py-1.5 bg-[var(--color-ice)] text-[var(--color-navy)] text-xs border border-[rgba(5,0,88,0.12)] rounded-lg placeholder-[var(--color-ink-muted)] focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-colors"
           />
         </div>
 
@@ -53,7 +53,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <select
           value={category}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className="bg-slate-50 text-slate-700 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
+          className="bg-[var(--color-ice)] text-[var(--color-navy)] text-xs border border-[rgba(5,0,88,0.12)] rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] cursor-pointer transition-colors"
         >
           <option value="All">All categories</option>
           {REPORT_CATEGORIES_CONFIG.map((cat) => (
@@ -67,7 +67,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <select
           value={status}
           onChange={(e) => onStatusChange(e.target.value)}
-          className="bg-slate-50 text-slate-700 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer transition-colors"
+          className="bg-[var(--color-ice)] text-[var(--color-navy)] text-xs border border-[rgba(5,0,88,0.12)] rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] cursor-pointer transition-colors"
         >
           <option value="All">All status</option>
           <option value="Scheduled">Scheduled</option>
@@ -78,7 +78,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         {/* Reset Filters Icon */}
         <button
           onClick={onReset}
-          className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded-lg border border-slate-200 cursor-pointer transition-colors"
+          className="p-1.5 bg-[var(--color-ice)] hover:bg-white text-[var(--color-ink-muted)] hover:text-[var(--color-navy)] rounded-lg border border-[rgba(5,0,88,0.12)] cursor-pointer transition-colors"
           title="Reset Filters"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         {/* Export Action Button */}
         <button
           onClick={onExport}
-          className="flex items-center gap-1.5 bg-yellow-500 hover:bg-yellow-600 text-slate-905 text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 active:scale-95 shadow-sm text-slate-950"
+          className="flex items-center gap-1.5 bg-[var(--color-gold)] hover:brightness-95 text-[var(--color-navy)] text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200 active:scale-95 shadow-sm"
         >
           <Download className="w-3.5 h-3.5" />
           <span>Export CSV</span>
@@ -96,4 +96,5 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     </div>
   )
 }
+
 export default FilterBar

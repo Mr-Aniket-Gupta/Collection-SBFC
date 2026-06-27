@@ -25,10 +25,10 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`flex flex-col items-start p-4 rounded-xl border bg-white cursor-pointer select-none transition-all duration-300 relative overflow-hidden ${
+      className={`flex flex-col items-start p-4 rounded-lg border bg-white cursor-pointer select-none transition-all duration-300 relative overflow-hidden ${
         isSelected
-          ? 'border-indigo-600 ring-2 ring-indigo-500/10 shadow-md scale-[1.02]'
-          : `${borderColor} hover:border-slate-300 hover:shadow-md hover:scale-[1.01]`
+          ? 'border-[var(--color-gold)] ring-2 ring-[rgba(206,155,1,0.14)] shadow-md scale-[1.02]'
+          : `${borderColor} hover:border-[var(--color-gold)] hover:shadow-md hover:scale-[1.01]`
       }`}
     >
       {/* Icon with circular tint backdrop */}
@@ -38,10 +38,10 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
 
       {/* Label and Count */}
       <div className="space-y-0.5">
-        <h4 className="text-[12.5px] font-bold text-slate-800 leading-tight">
+        <h4 className="text-[12.5px] font-bold text-[var(--color-navy)] leading-tight">
           {label}
         </h4>
-        <p className="text-[10px] text-slate-400 font-semibold">
+        <p className="text-[10px] text-[var(--color-ink-muted)] font-semibold">
           {reportsCount} reports
         </p>
       </div>
@@ -49,11 +49,12 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({
       {/* Top right indicator if selected */}
       {isSelected && (
         <span className="absolute top-2 right-2 flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-gold)] opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-gold)]"></span>
         </span>
       )}
     </div>
   )
 }
+
 export default CategoryCard

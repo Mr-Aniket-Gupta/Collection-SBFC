@@ -1,8 +1,7 @@
-// ─── Analytics Page ───────────────────────────────────────────────────────────
+// Analytics Page
 
 import React from 'react'
-import { PageHeader } from '../components/PageHeader'
-import { KPICard } from '../components/KPICard'
+import { PageHeader, KPICard } from '@/Components/Analytics'
 import { PerformanceRadar } from '../charts/PerformanceRadar'
 import { StrategyEffectiveness } from '../charts/StrategyEffectiveness'
 import { HourlyCallDistribution } from '../charts/HourlyCallDistribution'
@@ -21,8 +20,8 @@ export const AnalyticsPage: React.FC = () => {
   } = useAnalytics()
 
   return (
-    <div className="animate-[fadeIn_0.35s_ease-out_forwards]">
-      {/* ── Page Header ────────────────────────────────────────────────── */}
+    <div className="animate-[fadeIn_0.35s_ease-out_forwards] space-y-6">
+      {/* Page Header */}
       <PageHeader
         title="Analytics Dashboard"
         subtitle="Advanced analytics and performance insights"
@@ -33,28 +32,28 @@ export const AnalyticsPage: React.FC = () => {
         isRefreshing={isRefreshing}
       />
 
-      {/* ── Section 1 · Performance Radar + Strategy Effectiveness ─────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        {kpiCards.map((card) => (
+          <KPICard key={card.id} card={card} />
+        ))}
+      </div>
+
+      {/* Section 1: Performance Radar + Strategy Effectiveness */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <PerformanceRadar />
         <StrategyEffectiveness />
       </div>
 
-      {/* ── Section 2 · Hourly Call Distribution (Full Width) ───────────── */}
-      <div className="mb-6">
+      {/* Section 2: Hourly Call Distribution */}
+      <div>
         <HourlyCallDistribution />
       </div>
 
-      {/* ── Section 3 · Product Distribution + Bounce Reason Analysis ───── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* Section 3: Product Distribution + Bounce Reason Analysis */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ProductDistributionChart />
         <BounceReasonAnalysis />
-      </div>
-
-      {/* ── Section 4 · KPI Cards ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        {kpiCards.map((card) => (
-          <KPICard key={card.id} card={card} />
-        ))}
       </div>
     </div>
   )

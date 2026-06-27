@@ -1,12 +1,15 @@
 import React, { useState } from 'react'
 import { RotateCw } from 'lucide-react'
 import { toast } from 'sonner'
-import { CategorySelector } from '@/features/reports/components/category'
-import { KpiGrid } from '@/features/reports/components/kpi'
-import { TabSelector } from '@/features/reports/components/tabs'
-import { Toolbar } from '@/features/reports/components/toolbar'
-import { FilterBar } from '@/features/reports/components/filters'
-import { ReportTable, RowModal } from '@/features/reports/components/table'
+import {
+  CategorySelector,
+  KpiGrid,
+  TabSelector,
+  Toolbar,
+  FilterBar,
+  ReportTable,
+  RowModal,
+} from '@/Components/Reports'
 import {
   ChannelConversionChart,
   BucketWiseTrendChart,
@@ -74,9 +77,31 @@ export const ReportsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in text-slate-800">
+    <div className="space-y-6 animate-fade-in text-[var(--color-navy)]">
+      <section className="surface-card rounded-xl p-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-gold)]">MIS Workspace</p>
+          <h1 className="text-[24px] font-bold text-[var(--color-navy)] mt-1">Reports Control Center</h1>
+          <p className="text-[13px] text-[var(--color-ink-muted)] mt-1">
+            Monitor report readiness, collection performance, and funnel health from one view.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-3 min-w-full xl:min-w-[420px]">
+          {[
+            { label: 'Reports', value: total },
+            { label: 'Category', value: filters.category },
+            { label: 'Status', value: filters.status },
+          ].map((item) => (
+            <div key={item.label} className="surface-ice rounded-lg border border-[rgba(5,0,88,0.08)] px-3 py-2">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--color-ink-muted)]">{item.label}</p>
+              <p className="text-sm font-bold text-[var(--color-navy)] truncate">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Category selector panel */}
-      <section className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
+      <section className="surface-card rounded-xl p-5">
         <CategorySelector
           selectedCategory={filters.category}
           onSelectCategory={handleSelectCategory}
@@ -84,17 +109,17 @@ export const ReportsPage: React.FC = () => {
       </section>
 
       {/* Subheader tabs, refresh actions, and toolbar bar */}
-      <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none">
+      <section className="surface-card rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none">
         <div className="flex items-center gap-3">
           <TabSelector activeTab={activeTab} onChangeTab={setActiveTab} />
           
           {/* Refresh Action Trigger */}
           <button
             onClick={handlePageRefresh}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 cursor-pointer transition-all duration-200 active:scale-95 shadow-sm text-xs font-bold"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[var(--color-ice)] border border-[rgba(5,0,88,0.12)] rounded-lg text-[var(--color-navy)] hover:text-[var(--color-gold)] cursor-pointer transition-all duration-200 active:scale-95 shadow-sm text-xs font-bold"
             title="Refresh Report Data"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${isReportsLoading || isMetricsLoading ? 'animate-spin text-indigo-650' : 'text-slate-400'}`} />
+            <RotateCw className={`w-3.5 h-3.5 ${isReportsLoading || isMetricsLoading ? 'animate-spin text-[var(--color-gold)]' : 'text-[var(--color-ink-muted)]'}`} />
             <span>Refresh</span>
           </button>
         </div>

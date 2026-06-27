@@ -1,4 +1,4 @@
-// ─── Dashboard Layout ─────────────────────────────────────────────────────────
+// Dashboard Layout
 
 import React from 'react'
 import { Outlet } from 'react-router-dom'
@@ -7,7 +7,7 @@ import { Header } from './Header'
 
 export const DashboardLayout: React.FC = () => {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFC] text-slate-800 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-[var(--color-ice)] text-[var(--color-navy)] font-sans">
       {/* Fixed Sidebar */}
       <Sidebar />
 
@@ -17,7 +17,7 @@ export const DashboardLayout: React.FC = () => {
         <Header />
 
         {/* Scrollable Content Area */}
-        <main className="flex-grow overflow-y-auto bg-[#F8FAFC] p-6 scrollbar-thin" role="main">
+        <main className="flex-grow overflow-y-auto bg-[linear-gradient(180deg,#FFFFFF_0%,#D9EAF5_100%)] p-6 scrollbar-thin" role="main">
           <div className="max-w-full">
             <Outlet />
           </div>

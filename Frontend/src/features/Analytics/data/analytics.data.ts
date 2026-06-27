@@ -1,4 +1,4 @@
-// ─── Analytics Mock Data ──────────────────────────────────────────────────────
+// Analytics Mock Data
 
 import type {
   RadarDataPoint,
@@ -19,10 +19,10 @@ export const radarData: RadarDataPoint[] = [
 ]
 
 export const strategyData: StrategyRow[] = [
-  { name: 'Soft Collection', percentage: 72, target: 70, color: '#22C55E' },
-  { name: 'Medium Pressure', percentage: 58, target: 55, color: '#22C55E' },
-  { name: 'Aggressive', percentage: 45, target: 40, color: '#22C55E' },
-  { name: 'Legal Action', percentage: 32, target: 30, color: '#22C55E' },
+  { name: 'Soft Collection', percentage: 72, target: 70, color: '#CE9B01' },
+  { name: 'Medium Pressure', percentage: 58, target: 55, color: '#000182' },
+  { name: 'Aggressive', percentage: 45, target: 40, color: '#050058' },
+  { name: 'Legal Action', percentage: 32, target: 30, color: '#CE9B01' },
 ]
 
 export const hourlyCallData: HourlyCallData[] = [
@@ -39,19 +39,19 @@ export const hourlyCallData: HourlyCallData[] = [
 ]
 
 export const productDistribution: ProductDistribution[] = [
-  { name: 'Personal Loan', value: 34, color: '#38BDF8' },
-  { name: 'Business Loan', value: 22, color: '#22C55E' },
-  { name: 'Home Loan', value: 18, color: '#FACC15' },
-  { name: 'Auto Loan', value: 15, color: '#A78BFA' },
-  { name: 'Credit Card', value: 11, color: '#EF4444' },
+  { name: 'Personal Loan', value: 34, color: '#000182' },
+  { name: 'Business Loan', value: 22, color: '#CE9B01' },
+  { name: 'Home Loan', value: 18, color: '#050058' },
+  { name: 'Auto Loan', value: 15, color: 'rgba(0, 1, 130, 0.58)' },
+  { name: 'Credit Card', value: 11, color: '#D9EAF5' },
 ]
 
 export const bounceReasons: BounceReason[] = [
-  { reason: 'Insufficient Funds', count: 12500, percentage: 45, color: '#38BDF8' },
-  { reason: 'Account Closed', count: 5800, percentage: 21, color: '#22C55E' },
-  { reason: 'Payment Stopped', count: 4200, percentage: 15, color: '#FACC15' },
-  { reason: 'Technical Error', count: 3100, percentage: 11, color: '#A78BFA' },
-  { reason: 'Others', count: 2200, percentage: 8, color: '#EF4444' },
+  { reason: 'Insufficient Funds', count: 12500, percentage: 45, color: '#000182' },
+  { reason: 'Account Closed', count: 5800, percentage: 21, color: '#CE9B01' },
+  { reason: 'Payment Stopped', count: 4200, percentage: 15, color: '#050058' },
+  { reason: 'Technical Error', count: 3100, percentage: 11, color: 'rgba(0, 1, 130, 0.58)' },
+  { reason: 'Others', count: 2200, percentage: 8, color: '#D9EAF5' },
 ]
 
 export const kpiCards: KPICard[] = [
@@ -63,8 +63,8 @@ export const kpiCards: KPICard[] = [
     trend: '+1.4%',
     trendDirection: 'up',
     iconType: 'target',
-    iconColor: '#22C55E',
-    bgColor: 'bg-green-50',
+    iconColor: '#CE9B01',
+    bgColor: 'bg-[rgba(206,155,1,0.13)]',
   },
   {
     id: 'automation-rate',
@@ -74,8 +74,8 @@ export const kpiCards: KPICard[] = [
     trend: '+5.1%',
     trendDirection: 'up',
     iconType: 'zap',
-    iconColor: '#38BDF8',
-    bgColor: 'bg-sky-50',
+    iconColor: '#000182',
+    bgColor: 'bg-[var(--color-ice)]',
   },
   {
     id: 'avg-resolution-time',
@@ -85,8 +85,8 @@ export const kpiCards: KPICard[] = [
     trend: '-2 days',
     trendDirection: 'up',
     iconType: 'clock',
-    iconColor: '#FACC15',
-    bgColor: 'bg-yellow-50',
+    iconColor: '#CE9B01',
+    bgColor: 'bg-[rgba(206,155,1,0.13)]',
   },
   {
     id: 'first-contact-resolution',
@@ -96,7 +96,7 @@ export const kpiCards: KPICard[] = [
     trend: '+3.2%',
     trendDirection: 'up',
     iconType: 'trending',
-    iconColor: '#A78BFA',
-    bgColor: 'bg-purple-50',
+    iconColor: '#050058',
+    bgColor: 'bg-[var(--color-ice)]',
   },
 ]

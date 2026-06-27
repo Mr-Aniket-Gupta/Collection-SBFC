@@ -1,4 +1,4 @@
-// ─── Product-wise Distribution Donut Chart ───────────────────────────────────
+// Product-wise Distribution Donut Chart
 
 import React from 'react'
 import {
@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { ChartCard } from '../components/ChartCard'
+import { ChartCard } from '@/Components'
 import { productDistribution } from '../data/analytics.data'
 
 interface CustomTooltipProps {
@@ -19,12 +19,12 @@ interface CustomTooltipProps {
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
   if (active && payload && payload.length > 0) {
     return (
-      <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-xl">
+      <div className="bg-white border border-[rgba(5,0,88,0.12)] rounded-xl px-4 py-3 shadow-xl">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].payload.color }} />
-          <p className="text-[12px] font-semibold text-[#00044A]">{payload[0].name}</p>
+          <p className="text-[12px] font-semibold text-[var(--color-navy)]">{payload[0].name}</p>
         </div>
-        <p className="text-[18px] font-bold text-[#00044A]">{payload[0].value}%</p>
+        <p className="text-[18px] font-bold text-[var(--color-navy)]">{payload[0].value}%</p>
       </div>
     )
   }
@@ -72,8 +72,8 @@ export const ProductDistributionChart: React.FC = () => {
 
           {/* Center Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p className="text-[28px] font-bold text-[#00044A]">{total}%</p>
-            <p className="text-[11px] text-slate-400 font-medium">Total</p>
+            <p className="text-[28px] font-bold text-[var(--color-navy)]">{total}%</p>
+            <p className="text-[11px] text-[var(--color-ink-muted)] font-medium">Total</p>
           </div>
         </div>
 
@@ -86,8 +86,8 @@ export const ProductDistributionChart: React.FC = () => {
                 style={{ backgroundColor: item.color }}
               />
               <div className="flex items-center justify-between flex-1 min-w-0">
-                <span className="text-[12px] text-slate-600 font-medium truncate">{item.name}</span>
-                <span className="text-[12px] font-bold text-[#00044A] ml-1">{item.value}%</span>
+                <span className="text-[12px] text-[var(--color-ink-muted)] font-medium truncate">{item.name}</span>
+                <span className="text-[12px] font-bold text-[var(--color-navy)] ml-1">{item.value}%</span>
               </div>
             </div>
           ))}

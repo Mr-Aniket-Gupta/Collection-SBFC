@@ -1,8 +1,7 @@
-// ─── Bounce Reason Analysis ───────────────────────────────────────────────────
+// Bounce Reason Analysis
 
 import React from 'react'
-import { ChartCard } from '../components/ChartCard'
-import { ProgressBar } from '../components/ProgressBar'
+import { ChartCard, ProgressBar } from '@/Components'
 import { bounceReasons } from '../data/analytics.data'
 
 export const BounceReasonAnalysis: React.FC = () => {
@@ -26,7 +25,7 @@ export const BounceReasonAnalysis: React.FC = () => {
                 <span className="text-[13px] font-semibold text-slate-700">{item.reason}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[13px] font-bold text-[#00044A]">
+                <span className="text-[13px] font-bold text-[var(--color-navy)]">
                   {item.count.toLocaleString()}
                 </span>
                 <span
@@ -55,8 +54,8 @@ export const BounceReasonAnalysis: React.FC = () => {
 
       {/* Total row */}
       <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-[13px] font-semibold text-slate-500">Total Bounces</span>
-        <span className="text-[16px] font-bold text-[#00044A]">
+        <span className="text-[13px] font-semibold text-[var(--color-ink-muted)]">Total Bounces</span>
+        <span className="text-[16px] font-bold text-[var(--color-navy)]">
           {bounceReasons.reduce((sum, r) => sum + r.count, 0).toLocaleString()}
         </span>
       </div>

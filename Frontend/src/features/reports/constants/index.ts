@@ -25,93 +25,90 @@ export const REPORT_CATEGORIES_CONFIG: CategoryConfig[] = [
     label: 'Recovery MIS',
     reportsCount: 12,
     icon: FileSpreadsheet,
-    bgColor: 'bg-indigo-50/70',
-    iconColor: 'text-indigo-650',
-    borderColor: 'border-indigo-100'
+    bgColor: 'bg-[var(--color-ice)]',
+    iconColor: 'text-[var(--color-navy)]',
+    borderColor: 'border-[rgba(5,0,88,0.12)]'
   },
   {
     id: 'Bucket-wise MIS',
     label: 'Bucket-wise MIS',
     reportsCount: 8,
     icon: Layers,
-    bgColor: 'bg-amber-50/70',
-    iconColor: 'text-amber-600',
-    borderColor: 'border-amber-100'
+    bgColor: 'bg-[rgba(206,155,1,0.13)]',
+    iconColor: 'text-[var(--color-gold)]',
+    borderColor: 'border-[rgba(206,155,1,0.24)]'
   },
   {
     id: 'Digital Recovery',
     label: 'Digital Recovery',
     reportsCount: 6,
     icon: Smartphone,
-    bgColor: 'bg-sky-50/70',
-    iconColor: 'text-sky-600',
-    borderColor: 'border-sky-100'
+    bgColor: 'bg-[var(--color-ice)]',
+    iconColor: 'text-[var(--color-blue)]',
+    borderColor: 'border-[rgba(0,1,130,0.14)]'
   },
   {
     id: 'Payment MIS',
     label: 'Payment MIS',
     reportsCount: 9,
     icon: Coins,
-    bgColor: 'bg-rose-50/70',
-    iconColor: 'text-rose-600',
-    borderColor: 'border-rose-100'
+    bgColor: 'bg-[rgba(206,155,1,0.13)]',
+    iconColor: 'text-[var(--color-gold)]',
+    borderColor: 'border-[rgba(206,155,1,0.24)]'
   },
   {
     id: 'Strategy Reports',
     label: 'Strategy Reports',
     reportsCount: 5,
     icon: Network,
-    bgColor: 'bg-purple-50/70',
-    iconColor: 'text-purple-650',
-    borderColor: 'border-purple-100'
+    bgColor: 'bg-[var(--color-ice)]',
+    iconColor: 'text-[var(--color-navy)]',
+    borderColor: 'border-[rgba(5,0,88,0.12)]'
   },
   {
     id: 'Communication Reports',
     label: 'Communication Reports',
     reportsCount: 7,
     icon: MessageSquare,
-    bgColor: 'bg-orange-50/70',
-    iconColor: 'text-orange-600',
-    borderColor: 'border-orange-100'
+    bgColor: 'bg-[rgba(206,155,1,0.13)]',
+    iconColor: 'text-[var(--color-gold)]',
+    borderColor: 'border-[rgba(206,155,1,0.24)]'
   },
   {
     id: 'Bounce Analysis',
     label: 'Bounce Analysis',
     reportsCount: 4,
     icon: AlertTriangle,
-    bgColor: 'bg-yellow-50/70',
-    iconColor: 'text-yellow-600',
-    borderColor: 'border-yellow-100'
+    bgColor: 'bg-[var(--color-ice)]',
+    iconColor: 'text-[var(--color-blue)]',
+    borderColor: 'border-[rgba(0,1,130,0.14)]'
   }
 ]
 
 // Brand Color Palette for Recharts
 export const CHART_COLORS = {
-  indigo: '#0c0836',
-  indigoLight: '#4f46e5',
-  amber: '#d97706',
-  yellow: '#f59e0b',
-  yellowLight: '#fbbf24',
-  sky: '#0284c7',
-  rose: '#e11d48',
-  emerald: '#10b981',
-  blue: '#3b82f6',
-  violet: '#8b5cf6',
-  teal: '#14b8a6',
-  slate: '#64748b'
+  navy: '#050058',
+  blue: '#000182',
+  ice: '#D9EAF5',
+  white: '#FFFFFF',
+  gold: '#CE9B01',
+  navySoft: 'rgba(5, 0, 88, 0.72)',
+  blueSoft: 'rgba(0, 1, 130, 0.68)',
+  goldSoft: 'rgba(206, 155, 1, 0.72)',
+  muted: '#5f6f88'
 }
 
 export const BUCKET_CHART_COLORS = [
-  '#3b82f6', // 0-30 DPD (Blue)
-  '#6366f1', // 31-60 DPD (Indigo)
-  '#f59e0b', // 61-90 DPD (Yellow)
-  '#f97316', // 91-120 DPD (Orange)
-  '#ef4444'  // 120+ DPD (Red)
+  '#000182',
+  '#050058',
+  '#CE9B01',
+  'rgba(0, 1, 130, 0.52)',
+  'rgba(206, 155, 1, 0.58)'
 ]
 
 export const RECOVERY_PIE_COLORS = [
-  '#3b82f6', // Digital
-  '#f59e0b', // Agency
-  '#f97316', // Field
-  '#8b5cf6'  // Telecalling
+  '#000182',
+  '#CE9B01',
+  '#050058',
+  '#D9EAF5'
 ]

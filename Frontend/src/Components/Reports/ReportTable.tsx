@@ -1,7 +1,7 @@
 import React from 'react'
 import { Eye, Download, MoreHorizontal, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
-import { ReportItem, FilterState } from '../../types'
-import { exportReportRowToExcel } from '../../utils/excelExport'
+import { ReportItem, FilterState } from '@/features/reports/types'
+import { exportReportRowToExcel } from '@/features/reports/utils/excelExport'
 
 interface ReportTableProps {
   reports: ReportItem[]
@@ -36,18 +36,18 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     let style = ''
     switch (status) {
       case 'Ready':
-        style = 'bg-emerald-50 text-emerald-600 border-emerald-100'
+        style = 'bg-[rgba(206,155,1,0.14)] text-[var(--color-gold)] border-[rgba(206,155,1,0.24)]'
         break
       case 'Failed':
-        style = 'bg-rose-50 text-rose-600 border-rose-100'
+        style = 'bg-[var(--color-ice)] text-[var(--color-blue)] border-[rgba(0,1,130,0.14)]'
         break
       default:
-        style = 'bg-blue-50 text-blue-600 border-blue-100'
+        style = 'bg-[var(--color-ice)] text-[var(--color-blue)] border-[rgba(0,1,130,0.14)]'
     }
 
     return (
       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold border ${style}`}>
-        <span className={`w-1 h-1 rounded-full ${status === 'Ready' ? 'bg-emerald-500' : status === 'Failed' ? 'bg-rose-500' : 'bg-blue-500'}`}></span>
+        <span className={`w-1 h-1 rounded-full ${status === 'Ready' ? 'bg-[var(--color-gold)]' : status === 'Failed' ? 'bg-[var(--color-blue)]' : 'bg-[var(--color-navy)]'}`}></span>
         {status}
       </span>
     )
@@ -56,23 +56,23 @@ export const ReportTable: React.FC<ReportTableProps> = ({
   const renderSortIcon = (columnName: keyof ReportItem) => {
     if (filters.sortBy === columnName) {
       return (
-        <ArrowUpDown className={`w-3 h-3 transition-colors ${filters.sortOrder === 'asc' ? 'text-indigo-650' : 'text-indigo-800'}`} />
+        <ArrowUpDown className={`w-3 h-3 transition-colors ${filters.sortOrder === 'asc' ? 'text-[var(--color-gold)]' : 'text-[var(--color-blue)]'}`} />
       )
     }
     return <ArrowUpDown className="w-3 h-3 text-slate-300 group-hover:text-slate-400" />
   }
 
   return (
-    <div className="bg-white border border-slate-100 rounded-b-xl shadow-sm overflow-hidden select-none">
+    <div className="bg-white border border-[rgba(5,0,88,0.1)] rounded-b-xl shadow-sm overflow-hidden select-none">
       {/* Table Container */}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/75 border-y border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+            <tr className="bg-[var(--color-ice)] border-y border-[rgba(5,0,88,0.08)] text-[10px] text-[var(--color-ink-muted)] font-bold uppercase tracking-wider">
               {/* Report Name Header */}
               <th
                 onClick={() => onSortChange('name')}
-                className="py-3 px-5 cursor-pointer group select-none hover:bg-slate-100/50 transition-colors"
+                className="py-3 px-5 cursor-pointer group select-none hover:bg-white/60 transition-colors"
               >
                 <div className="flex items-center gap-1">
                   <span>Report Name</span>
@@ -83,7 +83,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
               {/* Category Header */}
               <th
                 onClick={() => onSortChange('category')}
-                className="py-3 px-5 cursor-pointer group select-none hover:bg-slate-100/50 transition-colors"
+                className="py-3 px-5 cursor-pointer group select-none hover:bg-white/60 transition-colors"
               >
                 <div className="flex items-center gap-1">
                   <span>Category</span>
@@ -94,7 +94,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
               {/* Created By Header */}
               <th
                 onClick={() => onSortChange('createdBy')}
-                className="py-3 px-5 cursor-pointer group select-none hover:bg-slate-100/50 transition-colors"
+                className="py-3 px-5 cursor-pointer group select-none hover:bg-white/60 transition-colors"
               >
                 <div className="flex items-center gap-1">
                   <span>Created By</span>
@@ -105,7 +105,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
               {/* Created Date Header */}
               <th
                 onClick={() => onSortChange('createdDate')}
-                className="py-3 px-5 cursor-pointer group select-none hover:bg-slate-100/50 transition-colors"
+                className="py-3 px-5 cursor-pointer group select-none hover:bg-white/60 transition-colors"
               >
                 <div className="flex items-center gap-1">
                   <span>Created Date</span>
@@ -116,7 +116,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
               {/* Status Header */}
               <th
                 onClick={() => onSortChange('status')}
-                className="py-3 px-5 cursor-pointer group select-none hover:bg-slate-100/50 transition-colors"
+                className="py-3 px-5 cursor-pointer group select-none hover:bg-white/60 transition-colors"
               >
                 <div className="flex items-center gap-1">
                   <span>Status</span>
@@ -129,7 +129,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 text-[12px] text-slate-700">
+          <tbody className="divide-y divide-[rgba(5,0,88,0.08)] text-[12px] text-[var(--color-navy)]">
             {isLoading ? (
               // Loading State Shimmers
               [...Array(filters.limit)].map((_, i) => (
@@ -158,11 +158,11 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                 <tr
                   key={report.id}
                   onClick={() => onViewReport(report)}
-                  className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                  className="hover:bg-[rgba(217,234,245,0.42)] transition-colors cursor-pointer group"
                 >
                   {/* Name and ID */}
                   <td className="py-4 px-5">
-                    <div className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                    <div className="font-bold text-[var(--color-navy)] group-hover:text-[var(--color-gold)] transition-colors">
                       {report.name}
                     </div>
                     <div className="text-[10px] text-slate-400 font-semibold">{report.id}</div>
@@ -195,7 +195,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                           e.stopPropagation()
                           onViewReport(report)
                         }}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors"
+                        className="p-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] hover:bg-[rgba(206,155,1,0.12)] rounded-lg cursor-pointer transition-colors"
                         title="View Report SQL Details"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -205,7 +205,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                       {report.status !== 'Failed' && (
                         <button
                           onClick={(e) => handleDownloadRow(e, report)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors"
+                          className="p-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] hover:bg-[rgba(206,155,1,0.12)] rounded-lg cursor-pointer transition-colors"
                           title="Download Report Data"
                         >
                           <Download className="w-3.5 h-3.5" />
@@ -215,7 +215,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                       {/* More Ellipsis */}
                       <button
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors"
+                        className="p-1.5 text-[var(--color-ink-muted)] hover:text-[var(--color-gold)] hover:bg-[rgba(206,155,1,0.12)] rounded-lg cursor-pointer transition-colors"
                       >
                         <MoreHorizontal className="w-3.5 h-3.5" />
                       </button>
@@ -229,14 +229,14 @@ export const ReportTable: React.FC<ReportTableProps> = ({
       </div>
 
       {/* Pagination Footer */}
-      <div className="border-t border-slate-100 px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 select-none">
+      <div className="border-t border-[rgba(5,0,88,0.08)] px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 select-none">
         {/* Page size limit changer */}
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+        <div className="flex items-center gap-2 text-xs text-[var(--color-ink-muted)] font-medium">
           <span>Show</span>
           <select
             value={filters.limit}
             onChange={(e) => onLimitChange(Number(e.target.value))}
-            className="bg-slate-50 text-slate-700 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
+            className="bg-[var(--color-ice)] text-[var(--color-navy)] border border-[rgba(5,0,88,0.12)] rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
           >
             <option value={5}>5 rows</option>
             <option value={10}>10 rows</option>
@@ -253,7 +253,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
             <button
               onClick={() => onPageChange(Math.max(1, filters.page - 1))}
               disabled={filters.page === 1}
-              className="p-1.5 border border-slate-200 text-slate-500 rounded-lg bg-slate-50 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
+              className="p-1.5 border border-[rgba(5,0,88,0.12)] text-[var(--color-ink-muted)] rounded-lg bg-[var(--color-ice)] hover:bg-white disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -268,8 +268,8 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                   onClick={() => onPageChange(pageNum)}
                   className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      ? 'bg-[var(--color-navy)] hover:bg-[var(--color-blue)] text-white border-[var(--color-navy)]'
+                      : 'bg-white border-[rgba(5,0,88,0.12)] text-[var(--color-ink-muted)] hover:bg-[var(--color-ice)]'
                   }`}
                 >
                   {pageNum}
@@ -281,7 +281,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
             <button
               onClick={() => onPageChange(Math.min(totalPages, filters.page + 1))}
               disabled={filters.page === totalPages}
-              className="p-1.5 border border-slate-200 text-slate-500 rounded-lg bg-slate-50 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
+              className="p-1.5 border border-[rgba(5,0,88,0.12)] text-[var(--color-ink-muted)] rounded-lg bg-[var(--color-ice)] hover:bg-white disabled:opacity-40 disabled:pointer-events-none cursor-pointer transition-colors"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -291,4 +291,5 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     </div>
   )
 }
+
 export default ReportTable

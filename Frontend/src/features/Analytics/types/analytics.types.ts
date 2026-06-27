@@ -1,4 +1,4 @@
-// ─── Analytics Feature Types ──────────────────────────────────────────────────
+// Analytics Feature Types
 
 export interface RadarDataPoint {
   metric: string

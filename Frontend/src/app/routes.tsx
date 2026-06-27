@@ -1,4 +1,4 @@
-// ─── App Router ───────────────────────────────────────────────────────────────
+// App Router
 
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import DashboardLayout from '@/layout/DashboardLayout'

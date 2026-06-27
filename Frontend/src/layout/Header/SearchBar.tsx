@@ -10,7 +10,7 @@ export const SearchBar: React.FC = () => {
       <input
         type="text"
         placeholder="Search reports, cases, users..."
-        className="block w-full pl-9 pr-4 py-1.5 bg-indigo-950/40 text-slate-200 text-xs border border-white/10 rounded-lg placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200"
+        className="block w-full pl-9 pr-4 py-1.5 bg-white/10 text-slate-200 text-xs border border-white/10 rounded-lg placeholder-slate-400 focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-all duration-200"
       />
     </div>
   )

@@ -1,4 +1,4 @@
-// ─── Hourly Call Distribution Chart ──────────────────────────────────────────
+// Hourly Call Distribution Chart
 
 import React from 'react'
 import {
@@ -12,7 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { ChartCard } from '../components/ChartCard'
+import { ChartCard } from '@/Components'
 import { hourlyCallData } from '../data/analytics.data'
 
 interface CustomTooltipProps {
@@ -24,15 +24,15 @@ interface CustomTooltipProps {
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (active && payload && payload.length > 0) {
     return (
-      <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-xl">
-        <p className="text-[12px] font-bold text-[#00044A] mb-2">{label}</p>
+      <div className="bg-white border border-[rgba(5,0,88,0.12)] rounded-xl px-4 py-3 shadow-xl">
+        <p className="text-[12px] font-bold text-[var(--color-navy)] mb-2">{label}</p>
         {payload.map((entry) => (
           <div key={entry.name} className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: entry.color }} />
-              <span className="text-[12px] text-slate-500">{entry.name}</span>
+              <span className="text-[12px] text-[var(--color-ink-muted)]">{entry.name}</span>
             </div>
-            <span className="text-[12px] font-bold text-[#00044A]">
+            <span className="text-[12px] font-bold text-[var(--color-navy)]">
               {entry.value.toLocaleString()}
             </span>
           </div>
@@ -69,14 +69,14 @@ export const HourlyCallDistribution: React.FC = () => {
         >
           <CartesianGrid
             strokeDasharray="3 6"
-            stroke="#F1F5F9"
+            stroke="#D9EAF5"
             vertical={false}
           />
           <XAxis
             dataKey="hour"
             tick={{
               fontSize: 12,
-              fill: '#94A3B8',
+              fill: '#5f6f88',
               fontWeight: 500,
               fontFamily: 'Plus Jakarta Sans, sans-serif',
             }}
@@ -86,7 +86,7 @@ export const HourlyCallDistribution: React.FC = () => {
           <YAxis
             tick={{
               fontSize: 11,
-              fill: '#94A3B8',
+              fill: '#5f6f88',
               fontFamily: 'Plus Jakarta Sans, sans-serif',
             }}
             axisLine={false}
@@ -94,7 +94,7 @@ export const HourlyCallDistribution: React.FC = () => {
           />
           <Tooltip
             content={<CustomTooltip />}
-            cursor={{ fill: '#F8FAFC', radius: 8 }}
+            cursor={{ fill: '#D9EAF5', radius: 8 }}
           />
           <Legend
             verticalAlign="top"
@@ -111,7 +111,7 @@ export const HourlyCallDistribution: React.FC = () => {
           <Bar
             dataKey="calls"
             name="Calls Made"
-            fill="#38BDF8"
+            fill="#000182"
             shape={<CustomBar />}
             maxBarSize={32}
             animationBegin={0}
@@ -121,10 +121,10 @@ export const HourlyCallDistribution: React.FC = () => {
           <Line
             dataKey="responses"
             name="Responses"
-            stroke="#22C55E"
+            stroke="#CE9B01"
             strokeWidth={2.5}
-            dot={{ fill: '#22C55E', r: 4, strokeWidth: 2, stroke: '#fff' }}
-            activeDot={{ r: 6, stroke: '#22C55E', strokeWidth: 2 }}
+            dot={{ fill: '#CE9B01', r: 4, strokeWidth: 2, stroke: '#fff' }}
+            activeDot={{ r: 6, stroke: '#CE9B01', strokeWidth: 2 }}
             type="monotone"
             animationBegin={400}
             animationDuration={900}

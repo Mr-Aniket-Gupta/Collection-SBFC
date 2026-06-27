@@ -1,4 +1,4 @@
-// ─── ProgressBar Component ────────────────────────────────────────────────────
+// ProgressBar Component
 
 import React, { useEffect, useRef, useState } from 'react'
 
@@ -18,8 +18,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   label,
   percentage,
   target,
-  color = '#22C55E',
-  trackColor = '#E5E7EB',
+  color = '#CE9B01',
+  trackColor = '#D9EAF5',
   showPercentageBadge = true,
   showTargetLabel = true,
   animated = true,
@@ -44,13 +44,13 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       {(label || showPercentageBadge) && (
         <div className="flex items-center justify-between">
           {label && (
-            <span className="text-[13px] font-medium text-slate-700 truncate">{label}</span>
+            <span className="text-[13px] font-medium text-[var(--color-navy)] truncate">{label}</span>
           )}
           {showPercentageBadge && (
             <div className="flex items-center gap-2 shrink-0 ml-2">
-              <span className="text-[13px] font-bold text-[#00044A]">{percentage}%</span>
+              <span className="text-[13px] font-bold text-[var(--color-navy)]">{percentage}%</span>
               {target !== undefined && showTargetLabel && (
-                <span className="text-[11px] text-slate-400 font-medium">
+                <span className="text-[11px] text-[var(--color-ink-muted)] font-medium">
                   Target {target}%
                 </span>
               )}
@@ -76,3 +76,5 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     </div>
   )
 }
+
+export default ProgressBar

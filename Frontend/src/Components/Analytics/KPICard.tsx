@@ -1,8 +1,8 @@
-// ─── KPICard Component ────────────────────────────────────────────────────────
+// KPICard Component
 
 import React from 'react'
 import { Target, Zap, Clock, TrendingUp } from 'lucide-react'
-import type { KPICard as KPICardType } from '../types/analytics.types'
+import type { KPICard as KPICardType } from '@/features/Analytics/types/analytics.types'
 
 interface KPICardProps {
   card: KPICardType
@@ -21,8 +21,8 @@ export const KPICard: React.FC<KPICardProps> = ({ card }) => {
   return (
     <div
       className="
-        bg-white rounded-[14px] p-6 shadow-sm border border-gray-100
-        hover:shadow-md hover:-translate-y-[2px]
+        surface-card rounded-xl p-5 border-l-4 border-l-[var(--color-gold)]
+        hover:-translate-y-[2px]
         transition-all duration-200 ease-out
         flex flex-col gap-4
       "
@@ -39,24 +39,26 @@ export const KPICard: React.FC<KPICardProps> = ({ card }) => {
 
       {/* Content */}
       <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-medium text-slate-500">{card.title}</p>
-        <p className="text-[30px] font-bold text-[#00044A] leading-tight">{card.value}</p>
+        <p className="text-[12px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wide">{card.title}</p>
+        <p className="text-[28px] font-bold text-[var(--color-navy)] leading-tight">{card.value}</p>
         <div className="flex items-center gap-2 mt-1">
           {card.trend && (
             <span
               className={`
                 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold
-                ${card.trendDirection === 'up' ? 'bg-green-100 text-green-700' : ''}
-                ${card.trendDirection === 'down' ? 'bg-red-100 text-red-700' : ''}
-                ${card.trendDirection === 'neutral' ? 'bg-slate-100 text-slate-600' : ''}
+                ${card.trendDirection === 'up' ? 'bg-[rgba(206,155,1,0.14)] text-[var(--color-gold)]' : ''}
+                ${card.trendDirection === 'down' ? 'bg-[var(--color-ice)] text-[var(--color-blue)]' : ''}
+                ${card.trendDirection === 'neutral' ? 'bg-[var(--color-ice)] text-[var(--color-ink-muted)]' : ''}
               `}
             >
               {card.trend}
             </span>
           )}
-          <span className="text-[12px] text-slate-400">{card.subtitle}</span>
+          <span className="text-[12px] text-[var(--color-ink-muted)]">{card.subtitle}</span>
         </div>
       </div>
     </div>
   )
 }
+
+export default KPICard

@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend
 } from 'recharts'
+import { ChartCard } from '@/Components'
 import { ChannelConversionData } from '../types'
 import { CHART_COLORS } from '../constants'
 
@@ -18,17 +19,16 @@ interface ChannelConversionChartProps {
 
 export const ChannelConversionChart: React.FC<ChannelConversionChartProps> = ({ data }) => {
   return (
-    <div className="w-full h-80 bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-bold text-slate-800">Channel Conversion Rate</h3>
-          <p className="text-[10px] text-slate-400 font-medium">Sent → Responded → Converted per channel</p>
-        </div>
-        <div className="text-[10px] font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+    <ChartCard
+      title="Channel Conversion Rate"
+      subtitle="Sent > Responded > Converted per channel"
+      className="h-80"
+      headerAction={
+        <div className="text-[10px] font-semibold text-[var(--color-gold)] bg-[rgba(206,155,1,0.12)] px-2 py-1 rounded-md border border-[rgba(206,155,1,0.2)]">
           Conversion Log
         </div>
-      </div>
-
+      }
+    >
       <div className="w-full h-[230px] text-[10px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -38,10 +38,10 @@ export const ChannelConversionChart: React.FC<ChannelConversionChartProps> = ({ 
             barGap={2}
             barSize={6}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#D9EAF5" horizontal={false} />
             <XAxis
               type="number"
-              stroke="#94a3b8"
+              stroke="#5f6f88"
               tickLine={false}
               axisLine={false}
               tickMargin={6}
@@ -49,7 +49,7 @@ export const ChannelConversionChart: React.FC<ChannelConversionChartProps> = ({ 
             <YAxis
               type="category"
               dataKey="channel"
-              stroke="#64748b"
+              stroke="#5f6f88"
               tickLine={false}
               axisLine={false}
               width={75}
@@ -58,42 +58,27 @@ export const ChannelConversionChart: React.FC<ChannelConversionChartProps> = ({ 
             <Tooltip
               contentStyle={{
                 backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
+                border: '1px solid rgba(5, 0, 88, 0.12)',
                 borderRadius: '8px',
-                color: '#1e293b',
+                color: '#050058',
                 fontSize: '11px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+                boxShadow: '0 14px 30px rgba(5, 0, 88, 0.12)'
               }}
-              cursor={{ fill: '#f8fafc' }}
+              cursor={{ fill: '#D9EAF5' }}
             />
             <Legend
               verticalAlign="bottom"
               height={32}
               iconSize={8}
               iconType="circle"
-              wrapperStyle={{ paddingTop: '10px', fontSize: '10px', color: '#64748b' }}
+              wrapperStyle={{ paddingTop: '10px', fontSize: '10px', color: '#5f6f88' }}
             />
-            <Bar
-              dataKey="sent"
-              name="Sent"
-              fill={CHART_COLORS.indigo}
-              radius={[0, 4, 4, 0]}
-            />
-            <Bar
-              dataKey="responded"
-              name="Responded"
-              fill={CHART_COLORS.amber}
-              radius={[0, 4, 4, 0]}
-            />
-            <Bar
-              dataKey="converted"
-              name="Converted"
-              fill={CHART_COLORS.yellowLight}
-              radius={[0, 4, 4, 0]}
-            />
+            <Bar dataKey="sent" name="Sent" fill={CHART_COLORS.navy} radius={[0, 4, 4, 0]} />
+            <Bar dataKey="responded" name="Responded" fill={CHART_COLORS.blue} radius={[0, 4, 4, 0]} />
+            <Bar dataKey="converted" name="Converted" fill={CHART_COLORS.gold} radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </ChartCard>
   )
 }

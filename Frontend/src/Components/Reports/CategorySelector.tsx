@@ -1,6 +1,6 @@
 import React from 'react'
 import { CategoryCard } from './CategoryCard'
-import { REPORT_CATEGORIES_CONFIG } from '../../constants'
+import { REPORT_CATEGORIES_CONFIG } from '@/features/reports/constants'
 
 interface CategorySelectorProps {
   selectedCategory: string
@@ -23,8 +23,8 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   return (
     <div className="space-y-3 select-none">
       <div>
-        <h3 className="text-sm font-bold text-slate-800">Report Categories</h3>
-        <p className="text-[11px] text-slate-400 font-medium">Click a card to filter dashboards & table</p>
+        <h3 className="text-sm font-bold text-[var(--color-navy)]">Report Categories</h3>
+        <p className="text-[11px] text-[var(--color-ink-muted)] font-medium">Click a card to filter dashboards & table</p>
       </div>
 
       {/* Grid of category cards */}
@@ -47,4 +47,5 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     </div>
   )
 }
+
 export default CategorySelector

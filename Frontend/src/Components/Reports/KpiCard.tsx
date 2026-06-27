@@ -22,16 +22,16 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   const absoluteTrend = Math.abs(trend)
 
   return (
-    <div className="bg-white border border-slate-100 rounded-xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+    <div className="surface-card rounded-xl p-5 flex items-center justify-between hover:-translate-y-[2px] transition-all duration-300">
       <div className="space-y-3.5">
         {/* Title */}
-        <h4 className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+        <h4 className="text-[10px] font-bold text-[var(--color-ink-muted)] tracking-wider uppercase">
           {title}
         </h4>
 
         {/* Value and Trend */}
         <div className="space-y-1.5">
-          <h2 className="text-xl font-extrabold text-slate-800 tracking-tight leading-none">
+          <h2 className="text-xl font-extrabold text-[var(--color-navy)] tracking-tight leading-none">
             {value}
           </h2>
           
@@ -40,8 +40,8 @@ export const KpiCard: React.FC<KpiCardProps> = ({
             <span
               className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9.5px] font-bold ${
                 isPositive
-                  ? 'bg-emerald-50 text-emerald-600'
-                  : 'bg-rose-50 text-rose-600'
+                  ? 'bg-[rgba(206,155,1,0.14)] text-[var(--color-gold)]'
+                  : 'bg-[var(--color-ice)] text-[var(--color-blue)]'
               }`}
             >
               {isPositive ? (
@@ -56,10 +56,11 @@ export const KpiCard: React.FC<KpiCardProps> = ({
       </div>
 
       {/* Icon Right Side Box */}
-      <div className={`p-3 rounded-lg shrink-0 border border-slate-100/50 ${iconBgColor}`}>
+      <div className={`p-3 rounded-lg shrink-0 border border-[rgba(5,0,88,0.08)] ${iconBgColor}`}>
         <Icon className={`w-5 h-5 ${iconColor}`} />
       </div>
     </div>
   )
 }
+
 export default KpiCard

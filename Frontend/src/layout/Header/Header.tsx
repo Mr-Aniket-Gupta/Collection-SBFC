@@ -1,4 +1,4 @@
-// ─── Top Navbar ───────────────────────────────────────────────────────────────
+// Top Navbar
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Calendar, Bell, ChevronDown } from 'lucide-react'
@@ -80,16 +80,16 @@ export const Header: React.FC = () => {
 
   return (
     <header
-      className="bg-[#0c0836] text-white border-b border-white/5 py-4 px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 select-none shrink-0 relative"
+      className="bg-[var(--color-navy)] text-white border-b border-white/10 py-4 px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 select-none shrink-0 relative"
       role="banner"
     >
-      {/* ── Page Title & Subtitle ──────────────────────────────────── */}
+      {/* Page Title and Subtitle */}
       <div>
         <h2 className="text-[17px] font-bold text-slate-100 leading-tight">{pageInfo.title}</h2>
         <p className="text-[11px] text-slate-400 font-medium mt-0.5">{pageInfo.subtitle}</p>
       </div>
 
-      {/* ── Right-side Actions ────────────────────────────────────── */}
+      {/* Right-side Actions */}
       <div className="flex flex-wrap items-center gap-3">
 
         {/* Date Filter Dropdown */}
@@ -97,7 +97,7 @@ export const Header: React.FC = () => {
           <div
             id="header-date-filter"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-950/60 hover:bg-indigo-900/60 border border-white/10 rounded-lg text-xs font-semibold text-slate-200 cursor-pointer transition-all duration-200"
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg text-xs font-semibold text-slate-200 cursor-pointer transition-all duration-200"
             role="button"
             aria-haspopup="listbox"
             aria-expanded={isDropdownOpen}
@@ -114,7 +114,7 @@ export const Header: React.FC = () => {
           {isDropdownOpen && (
             <div
               role="listbox"
-              className="absolute right-0 mt-1.5 w-40 bg-[#0c0836] border border-white/10 rounded-lg shadow-xl py-1 z-50 overflow-hidden text-xs"
+              className="absolute right-0 mt-1.5 w-40 bg-[var(--color-blue)] border border-white/10 rounded-lg shadow-xl py-1 z-50 overflow-hidden text-xs"
             >
               {['This Month', 'Last 7 Days', 'Last 30 Days', 'Last Quarter', 'Last 6 Months'].map(
                 (range) => (
@@ -125,7 +125,7 @@ export const Header: React.FC = () => {
                     onClick={() => handleSelectRange(range)}
                     className={`w-full text-left px-3.5 py-2.5 hover:bg-white/5 transition-colors cursor-pointer block ${
                       dateRange === range
-                        ? 'text-yellow-400 font-bold bg-white/5'
+                        ? 'text-[var(--color-gold)] font-bold bg-white/5'
                         : 'text-slate-300'
                     }`}
                   >
@@ -143,24 +143,24 @@ export const Header: React.FC = () => {
             id="header-notifications-btn"
             onClick={() => setNotifOpen((prev) => !prev)}
             aria-label="View notifications"
-            className="relative p-2 bg-indigo-950/60 hover:bg-indigo-900/60 border border-white/10 rounded-lg text-slate-200 cursor-pointer transition-all duration-200"
+            className="relative p-2 bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg text-slate-200 cursor-pointer transition-all duration-200"
           >
             <Bell className="w-3.5 h-3.5" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[var(--color-gold)] rounded-full" />
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 top-10 w-72 bg-[#0c0836] border border-white/10 rounded-xl shadow-2xl py-2 z-50">
+            <div className="absolute right-0 top-10 w-72 bg-[var(--color-blue)] border border-white/10 rounded-xl shadow-2xl py-2 z-50">
               <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between">
                 <span className="text-[13px] font-bold text-slate-100">Notifications</span>
-                <span className="text-[10px] font-semibold text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-semibold text-[var(--color-gold)] bg-[rgba(206,155,1,0.14)] px-2 py-0.5 rounded-full">
                   3 New
                 </span>
               </div>
               {[
-                { title: 'Target Exceeded', desc: 'Soft Collection hit 101.4%', time: '2m ago', dot: '#22C55E' },
-                { title: 'SLA Alert', desc: 'Legal Action approaching SLA', time: '18m ago', dot: '#FACC15' },
-                { title: 'Report Ready', desc: 'Monthly MIS report generated', time: '1h ago', dot: '#38BDF8' },
+                { title: 'Target Exceeded', desc: 'Soft Collection hit 101.4%', time: '2m ago', dot: '#CE9B01' },
+                { title: 'SLA Alert', desc: 'Legal Action approaching SLA', time: '18m ago', dot: '#D9EAF5' },
+                { title: 'Report Ready', desc: 'Monthly MIS report generated', time: '1h ago', dot: '#FFFFFF' },
               ].map((n) => (
                 <button
                   key={n.title}

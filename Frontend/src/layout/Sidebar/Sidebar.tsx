@@ -1,4 +1,4 @@
-// ─── Sidebar Component ────────────────────────────────────────────────────────
+// Sidebar Component
 
 import React, { useState } from 'react'
 import {
@@ -36,30 +36,30 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside
-      className="w-64 bg-[#0c0836] text-white flex flex-col h-screen border-r border-white/5 shrink-0 select-none"
+      className="w-64 bg-[var(--color-navy)] text-white flex flex-col h-screen border-r border-white/10 shrink-0 select-none"
       aria-label="Main navigation"
     >
-      {/* ── Logo Section ─────────────────────────────────────────── */}
+      {/* Logo Section */}
       <div className="p-5 border-b border-white/5 flex items-center gap-3">
-        <div className="bg-indigo-600/30 p-2 rounded-lg border border-indigo-500/20 text-indigo-400">
-          <ShieldCheck className="w-5 h-5 text-yellow-400" />
+        <div className="bg-white/10 p-2 rounded-lg border border-white/10">
+          <ShieldCheck className="w-5 h-5 text-[var(--color-gold)]" />
         </div>
         <div>
           <h1 className="text-base font-bold tracking-tight text-slate-100">CollectIQ</h1>
-          <p className="text-[10px] text-indigo-400 font-semibold tracking-wide">
+          <p className="text-[10px] text-[var(--color-gold)] font-semibold tracking-wide">
             Digital Collections
           </p>
         </div>
       </div>
 
-      {/* ── Navigation List ───────────────────────────────────────── */}
+      {/* Navigation List */}
       <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1 scrollbar-thin">
         {menuItems.map((item) => (
           <SidebarItem key={item.to} to={item.to} label={item.label} icon={item.icon} />
         ))}
       </nav>
 
-      {/* ── User Footer ───────────────────────────────────────────── */}
+      {/* User Footer */}
       <div className="border-t border-white/5 relative">
         <button
           id="sidebar-user-menu-btn"
@@ -69,7 +69,7 @@ export const Sidebar: React.FC = () => {
           aria-expanded={userMenuOpen}
         >
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-xs shrink-0 text-[#0c0836]">
+            <div className="w-8 h-8 rounded-full bg-[var(--color-gold)] flex items-center justify-center font-bold text-xs shrink-0 text-[var(--color-navy)]">
               RK
             </div>
             <div className="overflow-hidden">
@@ -86,7 +86,7 @@ export const Sidebar: React.FC = () => {
 
         {/* Dropdown */}
         {userMenuOpen && (
-          <div className="absolute bottom-full left-3 right-3 mb-1 bg-[#12103d] border border-white/10 rounded-xl py-1.5 shadow-2xl z-50 overflow-hidden">
+          <div className="absolute bottom-full left-3 right-3 mb-1 bg-[var(--color-blue)] border border-white/10 rounded-xl py-1.5 shadow-2xl z-50 overflow-hidden">
             <button
               className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-medium text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
               onClick={() => setUserMenuOpen(false)}

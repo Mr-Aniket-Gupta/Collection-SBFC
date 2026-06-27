@@ -7,6 +7,7 @@ import {
   Tooltip,
   Legend
 } from 'recharts'
+import { ChartCard } from '@/Components'
 import { RecoveryDistributionData } from '../types'
 import { RECOVERY_PIE_COLORS } from '../constants'
 
@@ -16,42 +17,33 @@ interface RecoveryDistributionChartProps {
 
 export const RecoveryDistributionChart: React.FC<RecoveryDistributionChartProps> = ({ data }) => {
   return (
-    <div className="w-full h-80 bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-bold text-slate-800">Recovery Distribution</h3>
-          <p className="text-[10px] text-slate-400 font-medium">Share of recovery by channel</p>
-        </div>
-        <div className="text-[10px] font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+    <ChartCard
+      title="Recovery Distribution"
+      subtitle="Share of recovery by channel"
+      className="h-80"
+      headerAction={
+        <div className="text-[10px] font-semibold text-[var(--color-gold)] bg-[rgba(206,155,1,0.12)] px-2 py-1 rounded-md border border-[rgba(206,155,1,0.2)]">
           Recovery Split
         </div>
-      </div>
-
+      }
+    >
       <div className="w-full h-[230px] text-[10px] flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Tooltip
               contentStyle={{
                 backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
+                border: '1px solid rgba(5, 0, 88, 0.12)',
                 borderRadius: '8px',
-                color: '#1e293b',
+                color: '#050058',
                 fontSize: '11px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+                boxShadow: '0 14px 30px rgba(5, 0, 88, 0.12)'
               }}
               formatter={(value) => [`${value}%`]}
             />
-            <Pie
-              data={data}
-              cx="50%"
-              cy="45%"
-              innerRadius={55}
-              outerRadius={75}
-              paddingAngle={4}
-              dataKey="value"
-            >
+            <Pie data={data} cx="50%" cy="45%" innerRadius={55} outerRadius={75} paddingAngle={4} dataKey="value">
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={RECOVERY_PIE_COLORS[index % RECOVERY_PIE_COLORS.length]} />
+                <Cell key={entry.name} fill={RECOVERY_PIE_COLORS[index % RECOVERY_PIE_COLORS.length]} />
               ))}
             </Pie>
             <Legend
@@ -59,12 +51,13 @@ export const RecoveryDistributionChart: React.FC<RecoveryDistributionChartProps>
               height={32}
               iconSize={8}
               iconType="circle"
-              wrapperStyle={{ fontSize: '10px', color: '#64748b' }}
+              wrapperStyle={{ fontSize: '10px', color: '#5f6f88' }}
             />
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </ChartCard>
   )
 }
+
 export default RecoveryDistributionChart

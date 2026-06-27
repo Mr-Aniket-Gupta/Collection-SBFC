@@ -1,4 +1,4 @@
-// ─── SidebarItem Component ────────────────────────────────────────────────────
+// SidebarItem Component
 
 import React from 'react'
 import { NavLink } from 'react-router-dom'
@@ -16,8 +16,8 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({ to, label, icon: Icon 
       className={({ isActive }) =>
         `flex items-center gap-3.5 px-4 py-3 rounded-lg text-[13.5px] font-medium transition-all duration-200 ${
           isActive
-            ? 'bg-indigo-600/30 text-indigo-200 shadow-sm border-l-2 border-indigo-400 pl-3.5'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+            ? 'bg-white/10 text-white shadow-sm border-l-2 border-[var(--color-gold)] pl-3.5'
+            : 'text-slate-300 hover:text-white hover:bg-white/5'
         }`
       }
     >

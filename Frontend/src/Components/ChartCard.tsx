@@ -1,4 +1,5 @@
-// ─── ChartCard Component ──────────────────────────────────────────────────────
+// ChartCard Component (Common)
+// Shared between Reports and Analytics features
 
 import React from 'react'
 
@@ -20,17 +21,17 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   return (
     <div
       className={`
-        bg-white rounded-[14px] p-6 shadow-sm border border-gray-100
-        hover:shadow-md hover:-translate-y-[2px]
+        surface-card rounded-xl p-5
+        hover:-translate-y-[2px] hover:border-[rgba(206,155,1,0.4)]
         transition-all duration-200 ease-out
         ${className}
       `}
     >
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h3 className="text-[18px] font-semibold text-[#00044A] leading-tight">{title}</h3>
+          <h3 className="text-[16px] font-bold text-[var(--color-navy)] leading-tight">{title}</h3>
           {subtitle && (
-            <p className="text-[12px] text-slate-400 mt-0.5 font-medium">{subtitle}</p>
+            <p className="text-[12px] text-[var(--color-ink-muted)] mt-1 font-medium">{subtitle}</p>
           )}
         </div>
         {headerAction && <div className="flex items-center gap-2">{headerAction}</div>}
