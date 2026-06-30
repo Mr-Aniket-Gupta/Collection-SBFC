@@ -64,6 +64,7 @@ export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({ 
     <ChartCard
       title="Hourly Call Distribution"
       subtitle="Calls made vs. responses received throughout the day"
+      data={data}
     >
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart

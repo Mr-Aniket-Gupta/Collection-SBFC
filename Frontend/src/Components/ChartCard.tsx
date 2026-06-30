@@ -1,7 +1,9 @@
 // ChartCard Component (Common)
 // Shared between Reports and Analytics features
 
-import React from 'react'
+import React, { useState } from 'react'
+import { Maximize2 } from 'lucide-react'
+import { ChartDataModal } from './ChartDataModal'
 
 interface ChartCardProps {
   title: string
@@ -9,6 +11,7 @@ interface ChartCardProps {
   children: React.ReactNode
   className?: string
   headerAction?: React.ReactNode
+  data?: any[]
 }
 
 export const ChartCard: React.FC<ChartCardProps> = ({
@@ -17,7 +20,10 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   children,
   className = '',
   headerAction,
+  data,
 }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
   return (
     <div
       className={`
@@ -34,9 +40,28 @@ export const ChartCard: React.FC<ChartCardProps> = ({
             <p className="text-[12px] text-[var(--color-ink-muted)] mt-1 font-medium">{subtitle}</p>
           )}
         </div>
-        {headerAction && <div className="flex items-center gap-2">{headerAction}</div>}
+        <div className="flex items-center gap-2">
+          {data && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="p-1.5 rounded-lg text-[var(--color-ink-muted)] hover:text-[var(--color-navy)] hover:bg-[rgba(5,0,88,0.06)] transition-colors"
+              title="View Data"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          )}
+          {headerAction}
+        </div>
       </div>
       {children}
+      {data && (
+        <ChartDataModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={`${title} Data`}
+          data={data}
+        />
+      )}
     </div>
   )
 }

@@ -48,6 +48,7 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
     <ChartCard
       title={title}
       subtitle={subtitle}
+      data={data}
     >
       <div className="flex flex-col items-center">
         {/* Donut Chart */}

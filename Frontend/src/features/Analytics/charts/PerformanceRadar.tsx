@@ -39,6 +39,7 @@ export const PerformanceRadar: React.FC<PerformanceRadarProps> = ({ data }) => {
     <ChartCard
       title="Performance Radar"
       subtitle="Collection team performance across key metrics"
+      data={data}
     >
       <ResponsiveContainer width="100%" height={300}>
         <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>

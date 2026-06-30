@@ -1,11 +1,6 @@
-D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.csproj.AssemblyReference.cache
-D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.GeneratedMSBuildEditorConfig.editorconfig
-D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.csproj.CoreCompileInputs.cache
-D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.MvcApplicationPartsAssemblyInfo.cs
-D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.MvcApplicationPartsAssemblyInfo.cache
-D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.sourcelink.json
 D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\appsettings.Development.json
 D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\appsettings.json
+D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\Backend.exe
 D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\Backend.deps.json
 D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\Backend.runtimeconfig.json
 D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\Backend.dll
@@ -46,6 +41,14 @@ D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\System.IO.Pipelines.dll
 D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\System.Text.Encodings.Web.dll
 D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\System.Text.Json.dll
 D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
+D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.csproj.AssemblyReference.cache
+D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.GeneratedMSBuildEditorConfig.editorconfig
+D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.AssemblyInfoInputs.cache
+D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.AssemblyInfo.cs
+D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.csproj.CoreCompileInputs.cache
+D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.MvcApplicationPartsAssemblyInfo.cs
+D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.MvcApplicationPartsAssemblyInfo.cache
+D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.sourcelink.json
 D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\staticwebassets.build.json
 D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\staticwebassets.development.json
 D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\staticwebassets\msbuild.Backend.Microsoft.AspNetCore.StaticWebAssets.props
@@ -60,37 +63,3 @@ D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\refint\Backend.dll
 D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.pdb
 D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.genruntimeconfig.cache
 D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\ref\Backend.dll
-D:\Aniket Data\SBFC\Backend-build-check\appsettings.Development.json
-D:\Aniket Data\SBFC\Backend-build-check\appsettings.json
-D:\Aniket Data\SBFC\Backend-build-check\Backend.exe
-D:\Aniket Data\SBFC\Backend-build-check\Backend.deps.json
-D:\Aniket Data\SBFC\Backend-build-check\Backend.runtimeconfig.json
-D:\Aniket Data\SBFC\Backend-build-check\Backend.dll
-D:\Aniket Data\SBFC\Backend-build-check\Backend.pdb
-D:\Aniket Data\SBFC\Backend\bin\Debug\net8.0\Backend.exe
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out\appsettings.Development.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out\appsettings.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out\Backend.deps.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out\Backend.runtimeconfig.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out\Backend.dll
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out\Backend.pdb
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out2\appsettings.Development.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out2\appsettings.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out2\Backend.deps.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out2\Backend.runtimeconfig.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out2\Backend.dll
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out2\Backend.pdb
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out3\appsettings.Development.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out3\appsettings.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out3\Backend.deps.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out3\Backend.runtimeconfig.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out3\Backend.dll
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out3\Backend.pdb
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out4\appsettings.Development.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out4\appsettings.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out4\Backend.deps.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out4\Backend.runtimeconfig.json
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out4\Backend.dll
-C:\Users\Ankit\AppData\Local\Temp\sbfc-backend-out4\Backend.pdb
-D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.AssemblyInfoInputs.cache
-D:\Aniket Data\SBFC\Backend\obj\Debug\net8.0\Backend.AssemblyInfo.cs

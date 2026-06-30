@@ -13,6 +13,7 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
     <ChartCard
       title="Strategy Effectiveness"
       subtitle="Current vs. target achievement by collection strategy"
+      data={data}
     >
       <div className="flex flex-col gap-6 mt-2">
         {data.map((strategy) => (

@@ -30,10 +30,10 @@ public sealed class AnalyticsRepository
     {
         const string sql = """
             SELECT
-                COALESCE((SELECT SUM(amount) FROM dcsp.payments WHERE payment_status = 'success'), 0) AS total_collected,
-                COALESCE((SELECT SUM(outstanding_total) FROM dcsp.cases), 0) AS total_outstanding,
-                COALESCE((SELECT COUNT(*)::numeric FROM dcsp.communications), 0) AS total_communications,
-                COALESCE((SELECT COUNT(*)::numeric FROM dcsp.ptps WHERE honoured = true), 0) AS honoured_ptps
+                COALESCE((SELECT SUM(amount) FROM payments WHERE payment_status = 'success'), 0) AS total_collected,
+                COALESCE((SELECT SUM(outstanding_total) FROM cases), 0) AS total_outstanding,
+                COALESCE((SELECT COUNT(*)::numeric FROM communications), 0) AS total_communications,
+                COALESCE((SELECT COUNT(*)::numeric FROM ptps WHERE honoured = true), 0) AS honoured_ptps
             """;
 
         await using var connection = _dbConnectionFactory.CreateConnection();
@@ -58,9 +58,9 @@ public sealed class AnalyticsRepository
                 CASE WHEN COUNT(*) = 0 THEN 0 ELSE ROUND((COUNT(*) FILTER (WHERE c.status IN ('resolved', 'settled', 'closed'))::numeric / COUNT(*)) * 100, 1) END AS resolution_rate,
                 CASE WHEN COUNT(*) = 0 THEN 0 ELSE ROUND((COUNT(*) FILTER (WHERE comm.response_status IS NOT NULL)::numeric / COUNT(*)) * 100, 1) END AS response_rate,
                 CASE WHEN COUNT(*) = 0 THEN 0 ELSE ROUND((COUNT(*) FILTER (WHERE p.honoured = true)::numeric / COUNT(*)) * 100, 1) END AS ptp_rate
-            FROM dcsp.cases c
-            LEFT JOIN dcsp.communications comm ON comm.case_id = c.case_id
-            LEFT JOIN dcsp.ptps p ON p.case_id = c.case_id
+            FROM cases c
+            LEFT JOIN communications comm ON comm.case_id = c.case_id
+            LEFT JOIN ptps p ON p.case_id = c.case_id
             WHERE (@start_date IS NULL OR c.created_at::date >= @start_date)
               AND (@end_date IS NULL OR c.created_at::date <= @end_date);
             """;
@@ -83,8 +83,8 @@ public sealed class AnalyticsRepository
     public async Task<IReadOnlyList<StrategyRowDto>> GetStrategyPerformanceAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT COALESCE(strategy_name, 'Unknown') AS name, COALESCE(priority, 0)::numeric AS percentage, COALESCE(dpd_to, 0)::numeric AS target
-            FROM dcsp.strategies
+            SELECT COALESCE(strategy_name, 'Unknown') AS name, COALESCE(priority, 0)::numeric AS percentage, COALESCE(dpd_range_to, 0)::numeric AS target
+            FROM strategies
             ORDER BY priority ASC NULLS LAST, strategy_name ASC
             LIMIT @limit;
             """;
@@ -107,7 +107,7 @@ public sealed class AnalyticsRepository
     {
         const string sql = """
             SELECT TO_CHAR(date_trunc('hour', created_at), 'HH24:00') AS hour, COUNT(*)::int AS calls, COUNT(*) FILTER (WHERE response_status IS NOT NULL)::int AS responses
-            FROM dcsp.communications
+            FROM communications
             WHERE (@start_date IS NULL OR created_at::date >= @start_date)
               AND (@end_date IS NULL OR created_at::date <= @end_date)
             GROUP BY date_trunc('hour', created_at)
@@ -133,7 +133,7 @@ public sealed class AnalyticsRepository
     {
         const string sql = """
             SELECT COALESCE(channel, 'Unknown') AS name, COUNT(*)::numeric AS value
-            FROM dcsp.communications
+            FROM communications
             WHERE (@start_date IS NULL OR created_at::date >= @start_date)
               AND (@end_date IS NULL OR created_at::date <= @end_date)
             GROUP BY channel
@@ -148,7 +148,7 @@ public sealed class AnalyticsRepository
     {
         const string sql = """
             SELECT COALESCE(bucket, 'Unknown') AS name, COUNT(*)::numeric AS value
-            FROM dcsp.cases
+            FROM cases
             WHERE (@start_date IS NULL OR created_at::date >= @start_date)
               AND (@end_date IS NULL OR created_at::date <= @end_date)
             GROUP BY bucket

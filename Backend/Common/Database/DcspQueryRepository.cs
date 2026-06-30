@@ -19,7 +19,7 @@ public sealed class DcspQueryRepository
         ["communications"] = ["communication_id", "case_id", "channel", "template_name", "status", "sent_at", "delivered_at", "read_at", "response_status", "retry_count", "created_at"],
         ["payments"] = ["payment_id", "case_id", "loan_number", "amount", "payment_date", "payment_mode", "pg_transaction_id", "payment_status", "reconciled", "payment_source", "created_at"],
         ["ptps"] = ["ptp_id", "case_id", "agent_id", "ptp_date", "ptp_amount", "honoured", "actual_payment_date", "created_at"],
-        ["strategies"] = ["strategy_id", "strategy_code", "version", "strategy_name", "journey_type", "bucket", "dpd_from", "dpd_to", "priority", "status", "effective_date", "expiry_date", "created_at"]
+        ["strategies"] = ["strategy_id", "strategy_code", "strategy_version", "strategy_name", "journey_type", "bucket", "dpd_range_from", "dpd_range_to", "priority", "status", "effective_date", "expiry_date", "created_at"]
     };
 
     public DcspQueryRepository(IDbConnectionFactory dbConnectionFactory)
@@ -39,8 +39,8 @@ public sealed class DcspQueryRepository
         var offset = (page - 1) * limit;
         var selectList = string.Join(", ", columns.Select(c => $"{c}"));
 
-        var countSql = $"SELECT COUNT(*)::int FROM dcsp.{tableName};";
-        var listSql = $"SELECT {selectList} FROM dcsp.{tableName} ORDER BY {columns[0]} DESC LIMIT @limit OFFSET @offset;";
+        var countSql = $"SELECT COUNT(*)::int FROM {tableName};";
+        var listSql = $"SELECT {selectList} FROM {tableName} ORDER BY {columns[0]} DESC LIMIT @limit OFFSET @offset;";
 
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
