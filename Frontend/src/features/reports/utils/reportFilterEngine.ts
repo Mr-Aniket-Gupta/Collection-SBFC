@@ -334,18 +334,30 @@ export function extractZoneOptions(bundle: ReportTableBundle): string[] {
   return Array.from(values).sort((a, b) => a.localeCompare(b))
 }
 
-/** Filters bundle rows using branch/zone from the cases table; other tables match via case_id. */
+/** Collects distinct state values from the cases table. */
+export function extractStateOptions(bundle: ReportTableBundle): string[] {
+  const values = new Set<string>()
+  bundle.cases.forEach((row) => {
+    const state = safeToString(row.state).trim()
+    if (state) values.add(state)
+  })
+  return Array.from(values).sort((a, b) => a.localeCompare(b))
+}
+
+/** Filters bundle rows using branch/zone/state from the cases table; other tables match via case_id. */
 export function filterBundleByBranchZone(
   bundle: ReportTableBundle,
   branchFilter: string,
   zoneFilter: string,
+  stateFilter: string,
 ): ReportTableBundle {
-  if (!branchFilter && !zoneFilter) return bundle
+  if (!branchFilter && !zoneFilter && !stateFilter) return bundle
 
   const matchingCaseIds = new Set<string>()
   const filteredCases = bundle.cases.filter((row) => {
     if (branchFilter && norm(row.branch) !== norm(branchFilter)) return false
     if (zoneFilter && norm(row.zone) !== norm(zoneFilter)) return false
+    if (stateFilter && norm(row.state) !== norm(stateFilter)) return false
     const caseId = id(row.case_id)
     if (caseId) matchingCaseIds.add(caseId)
     return true

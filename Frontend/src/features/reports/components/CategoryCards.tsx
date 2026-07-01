@@ -24,13 +24,16 @@ interface CategoryCardsProps {
   customToDate: string
   branchFilter: string
   zoneFilter: string
+  stateFilter: string
   branchOptions: string[]
   zoneOptions: string[]
+  stateOptions: string[]
   onDateRangeChange: (option: DateRangeOption) => void
   onCustomFromDateChange: (date: string) => void
   onCustomToDateChange: (date: string) => void
   onBranchFilterChange: (value: string) => void
   onZoneFilterChange: (value: string) => void
+  onStateFilterChange: (value: string) => void
   onSelectCategory: (card: CategoryCardConfig) => void
   onRefresh: () => void
   isRefreshing?: boolean
@@ -45,13 +48,16 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
   customToDate,
   branchFilter,
   zoneFilter,
+  stateFilter,
   branchOptions,
   zoneOptions,
+  stateOptions,
   onDateRangeChange,
   onCustomFromDateChange,
   onCustomToDateChange,
   onBranchFilterChange,
   onZoneFilterChange,
+  onStateFilterChange,
   onSelectCategory,
   onRefresh,
   isRefreshing = false,
@@ -85,6 +91,13 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
           options={zoneOptions}
           allLabel="All Zones"
           onChange={onZoneFilterChange}
+        />
+        <ReportSelectFilter
+          label="State"
+          value={stateFilter}
+          options={stateOptions}
+          allLabel="All States"
+          onChange={onStateFilterChange}
         />
         <button
           type="button"

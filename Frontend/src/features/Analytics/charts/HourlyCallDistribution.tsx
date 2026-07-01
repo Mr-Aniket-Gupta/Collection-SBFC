@@ -1,4 +1,4 @@
-// Hourly Call Distribution Chart
+// Renders a bar chart showing the distribution of calls over different hours.
 
 import React from 'react'
 import {

@@ -1,4 +1,4 @@
-// PerformanceRadar Chart Section
+// Renders a radar chart for comparing multiple performance metrics.
 
 import React from 'react'
 import {
@@ -41,7 +41,7 @@ export const PerformanceRadar: React.FC<PerformanceRadarProps> = ({ data }) => {
       subtitle="Collection team performance across key metrics"
       data={data}
     >
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={350}>
         <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
           <PolarGrid
             stroke="#D9EAF5"

@@ -1,3 +1,5 @@
+import { toBlob } from 'html-to-image'
+
 /** Captures a DOM element as PNG and triggers browser print with preserved styling. */
 export function printElement(element: HTMLElement, title = 'Reports Overview') {
   const previousTitle = document.title
@@ -26,36 +28,42 @@ export function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-/** Captures element as PNG blob using html2canvas. */
+/** Captures element as PNG blob using html-to-image. */
 export async function captureElementAsPng(element: HTMLElement): Promise<Blob> {
-  const { default: html2canvas } = await import('html2canvas')
-  const canvas = await html2canvas(element, {
+  const blob = await toBlob(element, {
     backgroundColor: '#ffffff',
-    scale: 2,
-    useCORS: true,
-    logging: false,
+    pixelRatio: 2,
   })
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Image capture failed'))), 'image/png')
-  })
+  if (!blob) throw new Error('Image capture failed')
+  return blob
 }
 
-/** Shares or downloads captured element image. */
-export async function shareElementAsImage(element: HTMLElement, filename: string) {
+import type { ShareOption } from '../components/ShareOptionsModal'
+
+/** Shares captured element image through selected option. */
+export async function shareElementAsImage(element: HTMLElement, filename: string, shareText?: string, option: ShareOption = 'native') {
+  const title = 'Reports Overview'
+  const url = window.location.href
+
   const blob = await captureElementAsPng(element)
+
   const file = new File([blob], filename, { type: 'image/png' })
+  const fallbackShareData = { title, text: shareText ?? title, url }
 
   if (navigator.share) {
     try {
-      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Reports Overview' })
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title })
         return
       }
-    } catch {
-      // fall through to download when share is blocked or denied
+      await navigator.share(fallbackShareData)
+      return
+    } catch (err: any) {
+      if (err.name === 'AbortError') return
+      // If it fails for another reason, fall through to download
     }
   }
 
+  // Fallback if native fails
   downloadBlob(blob, filename)
 }

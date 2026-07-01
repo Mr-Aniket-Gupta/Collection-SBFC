@@ -25,7 +25,6 @@ export interface ChannelConversionData {
   channel: string
   sent: number
   responded: number
-  converted: number
 }
 
 export interface BucketWiseTrendData {
@@ -46,11 +45,21 @@ export interface CollectionTrendData {
 export interface RecoveryDistributionData {
   name: string
   value: number
+  amount?: number
 }
 
 export interface TrendSeriesData {
   label: string
   value: number
+}
+
+export interface PaymentVolumeTrendData {
+  month: string
+  volume: number
+  amount: number
+  success: number
+  failed: number
+  pending: number
 }
 
 export interface FunnelStageData {

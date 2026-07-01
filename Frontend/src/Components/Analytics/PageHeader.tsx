@@ -1,15 +1,29 @@
-// PageHeader Component
+// PageHeader Component - Renders page title and filter controls for analytics
 
-import React, { useState, useRef, useEffect } from 'react'
-import { ChevronDown, RefreshCw, Calendar } from 'lucide-react'
-import type { DateFilterOption } from '@/features/Analytics/types/analytics.types'
+import React from 'react'
+import { RotateCw } from 'lucide-react'
+import type { DateRangeOption } from '@/features/reports/types'
+import { DateRangeFilter } from '@/features/reports/components/DateRangeFilter'
+import { ReportSelectFilter } from '@/features/reports/components/ReportSelectFilter'
 
 interface PageHeaderProps {
   title: string
   subtitle: string
-  selectedDateFilter: DateFilterOption
-  dateFilterOptions: DateFilterOption[]
-  onDateFilterChange: (filter: DateFilterOption) => void
+  selectedDateFilter: DateRangeOption
+  customFromDate?: string
+  customToDate?: string
+  branchFilter?: string
+  zoneFilter?: string
+  stateFilter?: string
+  branchOptions?: string[]
+  zoneOptions?: string[]
+  stateOptions?: string[]
+  onDateFilterChange: (filter: DateRangeOption) => void
+  onCustomFromDateChange?: (date: string) => void
+  onCustomToDateChange?: (date: string) => void
+  onBranchFilterChange?: (value: string) => void
+  onZoneFilterChange?: (value: string) => void
+  onStateFilterChange?: (value: string) => void
   onRefresh: () => void
   isRefreshing?: boolean
 }
@@ -18,26 +32,25 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
   selectedDateFilter,
-  dateFilterOptions,
+  customFromDate = '',
+  customToDate = '',
+  branchFilter = '',
+  zoneFilter = '',
+  stateFilter = '',
+  branchOptions = [],
+  zoneOptions = [],
+  stateOptions = [],
   onDateFilterChange,
+  onCustomFromDateChange,
+  onCustomToDateChange,
+  onBranchFilterChange,
+  onZoneFilterChange,
+  onStateFilterChange,
   onRefresh,
   isRefreshing = false,
 }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   return (
-    <div className="surface-card rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="surface-card rounded-xl px-5 py-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
       {/* Title Block */}
       <div>
         <h1 className="text-[24px] font-bold text-[var(--color-navy)] leading-tight">{title}</h1>
@@ -45,81 +58,55 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3 shrink-0">
-        {/* Date Filter Dropdown */}
-        <div className="relative" ref={dropdownRef}>
-          <button
-            id="analytics-date-filter"
-            onClick={() => setIsDropdownOpen((prev) => !prev)}
-            className="
-              flex items-center gap-2 px-4 py-2.5 bg-white border border-[rgba(5,0,88,0.12)]
-              rounded-lg text-[13px] font-semibold text-[var(--color-navy)]
-              hover:border-[var(--color-gold)] hover:bg-[var(--color-ice)]
-              transition-all duration-200 shadow-sm
-            "
-            aria-haspopup="listbox"
-            aria-expanded={isDropdownOpen}
-          >
-            <Calendar className="w-3.5 h-3.5 text-[var(--color-gold)]" />
-            <span>{selectedDateFilter}</span>
-            <ChevronDown
-              className={`w-3.5 h-3.5 text-[var(--color-ink-muted)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <DateRangeFilter
+          value={selectedDateFilter}
+          customFromDate={customFromDate}
+          customToDate={customToDate}
+          onChange={onDateFilterChange}
+          onCustomFromDateChange={onCustomFromDateChange ?? (() => {})}
+          onCustomToDateChange={onCustomToDateChange ?? (() => {})}
+        />
+        
+        {onBranchFilterChange && (
+          <ReportSelectFilter
+            label="Branch"
+            value={branchFilter}
+            options={branchOptions}
+            allLabel="All Branches"
+            onChange={onBranchFilterChange}
+          />
+        )}
+        
+        {onZoneFilterChange && (
+          <ReportSelectFilter
+            label="Zone"
+            value={zoneFilter}
+            options={zoneOptions}
+            allLabel="All Zones"
+            onChange={onZoneFilterChange}
+          />
+        )}
 
-          {isDropdownOpen && (
-            <div
-              role="listbox"
-              className="
-                absolute right-0 mt-2 w-44 bg-white border border-[rgba(5,0,88,0.12)]
-                rounded-xl shadow-xl py-1.5 z-50 overflow-hidden
-                animate-[fadeIn_0.15s_ease-out_forwards]
-              "
-            >
-              {dateFilterOptions.map((option) => (
-                <button
-                  key={option}
-                  role="option"
-                  aria-selected={selectedDateFilter === option}
-                  onClick={() => {
-                    onDateFilterChange(option)
-                    setIsDropdownOpen(false)
-                  }}
-                  className={`
-                    w-full text-left px-4 py-2.5 text-[13px] font-medium
-                    transition-colors duration-150 cursor-pointer
-                    ${
-                      selectedDateFilter === option
-                        ? 'bg-[var(--color-navy)] text-white'
-                        : 'text-[var(--color-navy)] hover:bg-[var(--color-ice)]'
-                    }
-                  `}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {onStateFilterChange && (
+          <ReportSelectFilter
+            label="State"
+            value={stateFilter}
+            options={stateOptions}
+            allLabel="All States"
+            onChange={onStateFilterChange}
+          />
+        )}
 
         {/* Refresh Button */}
         <button
-          id="analytics-refresh-btn"
+          type="button"
           onClick={onRefresh}
           disabled={isRefreshing}
-          className="
-            flex items-center gap-2 px-4 py-2.5 bg-[var(--color-gold)] text-[var(--color-navy)]
-            rounded-lg text-[13px] font-bold
-            hover:brightness-95 active:scale-95
-            disabled:opacity-60 disabled:cursor-not-allowed
-            transition-all duration-200 shadow-sm
-          "
-          aria-label="Refresh analytics data"
+          className="flex items-center gap-2 rounded-lg border border-[rgba(5,0,88,0.08)] bg-white px-3 py-2 text-[13px] font-bold text-[var(--color-navy)] shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
-          <RefreshCw
-            className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
-          />
-          <span>Refresh</span>
+          <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh
         </button>
       </div>
     </div>

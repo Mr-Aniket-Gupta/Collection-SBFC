@@ -1,4 +1,4 @@
-// Analytics Feature Types
+// TypeScript definitions for analytics data structures and API payloads.
 
 export interface RadarDataPoint {
   metric: string

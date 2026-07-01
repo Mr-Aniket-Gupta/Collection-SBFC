@@ -28,11 +28,11 @@ const TOOLTIP_STYLE = {
 
 const BUCKET_KEYS = ['0-30', '31-60', '61-90', '90+'] as const
 
-/** Bucket-wise Trend chart — DPD buckets 0-30, 31-60, 61-90, 90+ over time. */
+/** Bucket-wise Trend chart — strategy buckets 0-30, 31-60, 61-90, 90+ over time. */
 export const BucketWiseTrendChart: React.FC<BucketWiseTrendChartProps> = ({ data }) => (
   <ChartCard
     title="Bucket-wise Trend"
-    subtitle="DPD buckets: 0-30, 31-60, 61-90, 90+"
+    subtitle="Strategy buckets: 0-30, 31-60, 61-90, 90+"
     className="h-[340px]"
     data={data}
   >

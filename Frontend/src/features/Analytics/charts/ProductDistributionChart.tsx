@@ -1,4 +1,4 @@
-// Product-wise Distribution Donut Chart
+// Renders a pie chart displaying the distribution of products or channels.
 
 import React from 'react'
 import {

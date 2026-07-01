@@ -30,23 +30,24 @@ public sealed class AnalyticsRepository
     {
         const string sql = """
             SELECT
-                COALESCE((SELECT SUM(amount) FROM payments WHERE payment_status = 'success'), 0) AS total_collected,
-                COALESCE((SELECT SUM(outstanding_total) FROM cases), 0) AS total_outstanding,
-                COALESCE((SELECT COUNT(*)::numeric FROM communications), 0) AS total_communications,
-                COALESCE((SELECT COUNT(*)::numeric FROM ptps WHERE honoured = true), 0) AS honoured_ptps
+                COALESCE((SELECT SUM(outstanding_principal) FROM cases WHERE (@state IS NULL OR state = @state)), 0) AS total_outstanding_principal,
+                COALESCE((SELECT SUM(outstanding_total) FROM cases WHERE (@state IS NULL OR state = @state)), 0) AS total_outstanding,
+                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN cases c ON c.case_id = comm.case_id WHERE comm.delivered_at IS NOT NULL AND (@state IS NULL OR c.state = @state)), 0) AS total_delivered,
+                COALESCE((SELECT COUNT(*)::numeric FROM ptps p INNER JOIN cases c ON c.case_id = p.case_id WHERE p.honoured = true AND (@state IS NULL OR c.state = @state)), 0) AS honoured_ptps
             """;
 
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
+        command.AddNullableText("@state", request.State);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
 
         return
         [
-            new("total-collection", "Total Collection", reader.GetDecimal(0).ToString("N2"), "From payments", null, "neutral", "wallet", "#000182", "bg-[var(--color-ice)]"),
+            new("total-outstanding-principal", "Total Outstanding Principal", reader.GetDecimal(0).ToString("N2"), "From cases", null, "neutral", "wallet", "#000182", "bg-[var(--color-ice)]"),
             new("total-outstanding", "Total Outstanding", reader.GetDecimal(1).ToString("N2"), "From cases", null, "neutral", "receipt", "#CE9B01", "bg-[rgba(206,155,1,0.13)]"),
-            new("communications", "Communications", reader.GetDecimal(2).ToString("N0"), "From communications", null, "neutral", "message-circle", "#050058", "bg-[var(--color-ice)]"),
+            new("total-delivered", "Total Delivered", reader.GetDecimal(2).ToString("N0"), "From communications", null, "neutral", "message-circle", "#050058", "bg-[var(--color-ice)]"),
             new("ptps-honoured", "PTPs Honoured", reader.GetDecimal(3).ToString("N0"), "From ptps", null, "neutral", "check-circle", "#CE9B01", "bg-[rgba(206,155,1,0.13)]")
         ];
     }
@@ -62,13 +63,15 @@ public sealed class AnalyticsRepository
             LEFT JOIN communications comm ON comm.case_id = c.case_id
             LEFT JOIN ptps p ON p.case_id = c.case_id
             WHERE (@start_date IS NULL OR c.created_at::date >= @start_date)
-              AND (@end_date IS NULL OR c.created_at::date <= @end_date);
+                            AND (@end_date IS NULL OR c.created_at::date <= @end_date)
+                            AND (@state IS NULL OR c.state = @state);
             """;
 
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
         command.AddDateRange(request.StartDate, request.EndDate);
+                command.AddNullableText("@state", request.State);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
 
@@ -84,7 +87,8 @@ public sealed class AnalyticsRepository
     {
         const string sql = """
             SELECT COALESCE(strategy_name, 'Unknown') AS name, COALESCE(priority, 0)::numeric AS percentage, COALESCE(dpd_range_to, 0)::numeric AS target
-            FROM strategies
+            FROM strategies s
+            WHERE (@state IS NULL OR EXISTS (SELECT 1 FROM cases c WHERE c.strategy_id = s.strategy_id AND c.state = @state))
             ORDER BY priority ASC NULLS LAST, strategy_name ASC
             LIMIT @limit;
             """;
@@ -93,6 +97,7 @@ public sealed class AnalyticsRepository
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
         command.Parameters.AddWithValue("@limit", request.Limit);
+        command.AddNullableText("@state", request.State);
         var result = new List<StrategyRowDto>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var index = 0;
@@ -106,12 +111,14 @@ public sealed class AnalyticsRepository
     public async Task<IReadOnlyList<HourlyCallDataDto>> GetCommunicationPerformanceAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT TO_CHAR(date_trunc('hour', created_at), 'HH24:00') AS hour, COUNT(*)::int AS calls, COUNT(*) FILTER (WHERE response_status IS NOT NULL)::int AS responses
-            FROM communications
-            WHERE (@start_date IS NULL OR created_at::date >= @start_date)
-              AND (@end_date IS NULL OR created_at::date <= @end_date)
-            GROUP BY date_trunc('hour', created_at)
-            ORDER BY date_trunc('hour', created_at)
+                        SELECT TO_CHAR(date_trunc('hour', comm.created_at), 'HH24:00') AS hour, COUNT(*)::int AS calls, COUNT(*) FILTER (WHERE comm.response_status IS NOT NULL)::int AS responses
+                        FROM communications comm
+                        INNER JOIN cases c ON c.case_id = comm.case_id
+                        WHERE (@start_date IS NULL OR comm.created_at::date >= @start_date)
+                            AND (@end_date IS NULL OR comm.created_at::date <= @end_date)
+                            AND (@state IS NULL OR c.state = @state)
+                        GROUP BY date_trunc('hour', comm.created_at)
+                        ORDER BY date_trunc('hour', comm.created_at)
             LIMIT @limit;
             """;
 
@@ -119,6 +126,7 @@ public sealed class AnalyticsRepository
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
         command.AddDateRange(request.StartDate, request.EndDate);
+        command.AddNullableText("@state", request.State);
         command.Parameters.AddWithValue("@limit", request.Limit);
         var result = new List<HourlyCallDataDto>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -132,11 +140,13 @@ public sealed class AnalyticsRepository
     public async Task<IReadOnlyList<ProductDistributionDto>> GetChannelPerformanceAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT COALESCE(channel, 'Unknown') AS name, COUNT(*)::numeric AS value
-            FROM communications
-            WHERE (@start_date IS NULL OR created_at::date >= @start_date)
-              AND (@end_date IS NULL OR created_at::date <= @end_date)
-            GROUP BY channel
+                        SELECT COALESCE(comm.channel, 'Unknown') AS name, COUNT(*)::numeric AS value
+                        FROM communications comm
+                        INNER JOIN cases c ON c.case_id = comm.case_id
+                        WHERE (@start_date IS NULL OR comm.created_at::date >= @start_date)
+                            AND (@end_date IS NULL OR comm.created_at::date <= @end_date)
+                            AND (@state IS NULL OR c.state = @state)
+                        GROUP BY comm.channel
             ORDER BY value DESC
             LIMIT @limit;
             """;
@@ -147,11 +157,13 @@ public sealed class AnalyticsRepository
     public async Task<IReadOnlyList<ProductDistributionDto>> GetBucketDistributionAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT COALESCE(bucket, 'Unknown') AS name, COUNT(*)::numeric AS value
-            FROM cases
-            WHERE (@start_date IS NULL OR created_at::date >= @start_date)
-              AND (@end_date IS NULL OR created_at::date <= @end_date)
-            GROUP BY bucket
+            SELECT COALESCE(s.bucket, 'Unknown') AS name, COUNT(*)::numeric AS value
+            FROM cases c
+            LEFT JOIN strategies s ON c.strategy_id = s.strategy_id
+            WHERE (@start_date IS NULL OR c.created_at::date >= @start_date)
+                            AND (@end_date IS NULL OR c.created_at::date <= @end_date)
+                            AND (@state IS NULL OR c.state = @state)
+            GROUP BY s.bucket
             ORDER BY value DESC
             LIMIT @limit;
             """;
@@ -165,6 +177,7 @@ public sealed class AnalyticsRepository
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
         command.AddDateRange(request.StartDate, request.EndDate);
+        command.AddNullableText("@state", request.State);
         command.Parameters.AddWithValue("@limit", request.Limit);
         var result = new List<ProductDistributionDto>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);

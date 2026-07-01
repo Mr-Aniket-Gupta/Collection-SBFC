@@ -15,7 +15,7 @@ public sealed class DcspQueryRepository
         ["agents"] = ["agent_id", "agent_name", "role", "branch", "zone", "state", "max_capacity", "current_load", "language", "mobile", "email", "status"],
         ["allocations"] = ["allocation_id", "case_id", "allocated_to", "role", "allocated_at", "deallocated_at", "reason", "allocation_status"],
         ["audit_logs"] = ["log_id", "entity_type", "entity_id", "action", "old_value", "new_value", "user_name", "ip_address", "created_at"],
-        ["cases"] = ["case_id", "case_number", "pr_number", "loan_number", "customer_id", "journey_type", "bucket", "dpd", "strategy_id", "assigned_to", "outstanding_principal", "outstanding_interest", "outstanding_total", "status", "branch", "zone", "state", "created_at", "updated_at"],
+        ["cases"] = ["case_id", "case_number", "pr_number", "loan_number", "customer_id", "journey_type", "dpd", "strategy_id", "assigned_to", "outstanding_principal", "outstanding_interest", "outstanding_total", "status", "branch", "zone", "state", "created_at", "updated_at"],
         ["communications"] = ["communication_id", "case_id", "channel", "template_name", "status", "sent_at", "delivered_at", "read_at", "response_status", "retry_count", "created_at"],
         ["payments"] = ["payment_id", "case_id", "loan_number", "amount", "payment_date", "payment_mode", "pg_transaction_id", "payment_status", "reconciled", "payment_source", "created_at"],
         ["ptps"] = ["ptp_id", "case_id", "agent_id", "ptp_date", "ptp_amount", "honoured", "actual_payment_date", "created_at"],

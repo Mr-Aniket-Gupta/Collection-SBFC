@@ -3,6 +3,7 @@ namespace backend.Modules.Analytics.Requests;
 public sealed class AnalyticsQueryRequest
 {
     public string? DateFilter { get; init; }
+    public string? State { get; init; }
 
     public DateOnly? StartDate
     {

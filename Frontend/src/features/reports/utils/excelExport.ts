@@ -46,29 +46,79 @@ export async function downloadMultiSheetWorkbook(sheets: ExcelSheet[], filename:
   URL.revokeObjectURL(url)
 }
 
-/** Shares visible data as an Excel file (Web Share API or download fallback). */
-export async function shareExcelWorkbook(sheets: ExcelSheet[], filename: string) {
+import type { ShareOption } from '../components/ShareOptionsModal'
+
+/** Shares visible data as an Excel file through selected option. */
+export async function shareExcelWorkbook(sheets: ExcelSheet[], filename: string, shareText?: string, option: ShareOption = 'native') {
+  const title = 'Reports Export'
+  const url = window.location.href
+
   const buffer = await writeWorkbookBuffer(sheets)
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   })
+
   const file = new File([blob], filename, { type: blob.type })
+  const fallbackShareData = { title, text: shareText ?? `Sharing ${filename}`, url }
 
   if (navigator.share) {
     try {
-      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Reports Export' })
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title })
         return
       }
-    } catch {
-      // fall through to download when share is blocked or denied
+      await navigator.share(fallbackShareData)
+      return
+    } catch (err: any) {
+      if (err.name === 'AbortError') return
+      // If it fails for another reason, fall through to download
     }
   }
 
-  const url = URL.createObjectURL(blob)
+  // Fallback
+  const objUrl = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
-  anchor.href = url
+  anchor.href = objUrl
   anchor.download = filename
   anchor.click()
-  URL.revokeObjectURL(url)
+  URL.revokeObjectURL(objUrl)
+}
+
+/** Shares visible data as a CSV file through selected option (better compatibility with Web Share API). */
+export async function shareCsvFile(sheets: ExcelSheet[], filename: string, shareText?: string, option: ShareOption = 'native') {
+  const title = 'Reports Export'
+  const url = window.location.href
+
+  const XLSX = await import('xlsx')
+  const workbook = XLSX.utils.book_new()
+  const { name, rows } = sheets[0] // CSV only supports one sheet
+  const worksheet = XLSX.utils.json_to_sheet(rows.length ? rows : [{ message: 'No data' }])
+  XLSX.utils.book_append_sheet(workbook, worksheet, name.slice(0, 31))
+  
+  const buffer = XLSX.write(workbook, { bookType: 'csv', type: 'array' })
+  const blob = new Blob([buffer], { type: 'text/csv;charset=utf-8;' })
+  
+  const csvFilename = filename.replace(/\.xlsx$/, '.csv')
+  const file = new File([blob], csvFilename, { type: blob.type })
+  const fallbackShareData = { title, text: shareText ?? `Sharing ${csvFilename}`, url }
+
+  if (navigator.share) {
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title })
+        return
+      }
+      await navigator.share(fallbackShareData)
+      return
+    } catch (err: any) {
+      if (err.name === 'AbortError') return
+    }
+  }
+
+  const objUrl = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = objUrl
+  anchor.download = csvFilename
+  anchor.click()
+  URL.revokeObjectURL(objUrl)
 }

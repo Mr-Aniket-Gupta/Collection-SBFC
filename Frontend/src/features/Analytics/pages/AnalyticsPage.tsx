@@ -1,4 +1,4 @@
-// Analytics Page
+// Main page component that assembles the analytics dashboard and its charts.
 
 import React from 'react'
 import { PageHeader, KPICard } from '@/Components/Analytics'
@@ -12,7 +12,19 @@ export const AnalyticsPage: React.FC = () => {
   const {
     selectedDateFilter,
     setSelectedDateFilter,
-    dateFilterOptions,
+    customFromDate,
+    setCustomFromDate,
+    customToDate,
+    setCustomToDate,
+    branchFilter,
+    setBranchFilter,
+    zoneFilter,
+    setZoneFilter,
+    stateFilter,
+    setStateFilter,
+    branchOptions,
+    zoneOptions,
+    stateOptions,
     isRefreshing,
     dashboard,
     handleRefresh,
@@ -26,8 +38,20 @@ export const AnalyticsPage: React.FC = () => {
         title="Analytics Dashboard"
         subtitle="Advanced analytics and performance insights"
         selectedDateFilter={selectedDateFilter}
-        dateFilterOptions={dateFilterOptions}
+        customFromDate={customFromDate}
+        customToDate={customToDate}
+        branchFilter={branchFilter}
+        zoneFilter={zoneFilter}
+        stateFilter={stateFilter}
+        branchOptions={branchOptions}
+        zoneOptions={zoneOptions}
+        stateOptions={stateOptions}
         onDateFilterChange={setSelectedDateFilter}
+        onCustomFromDateChange={setCustomFromDate}
+        onCustomToDateChange={setCustomToDate}
+        onBranchFilterChange={setBranchFilter}
+        onZoneFilterChange={setZoneFilter}
+        onStateFilterChange={setStateFilter}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       />

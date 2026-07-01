@@ -1,8 +1,8 @@
 import React from 'react'
 import { createPortal } from 'react-dom'
-import { Image, Share2, X } from 'lucide-react'
+import { Share2, X } from 'lucide-react'
 
-export type ShareOption = 'image' | 'download-image'
+export type ShareOption = 'native'
 
 interface ShareOptionsModalProps {
   open: boolean
@@ -21,12 +21,9 @@ export const ShareOptionsModal: React.FC<ShareOptionsModalProps> = ({
 }) => {
   if (!open) return null
 
-  const options = mode === 'excel'
-    ? [{ id: 'image' as const, label: 'Share as Excel', desc: 'Share the detailed table data file', icon: Share2 }]
-    : [
-        { id: 'image' as const, label: 'Share as Image', desc: 'Share the current view snapshot', icon: Share2 },
-        { id: 'download-image' as const, label: 'Download Image', desc: 'Save PNG to your device', icon: Image },
-      ]
+  const options = [
+    { id: 'native' as const, label: 'Share via System', desc: 'Open native device share sheet (Attaches File)', icon: Share2 },
+  ]
 
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(5,0,88,0.42)] p-4" role="dialog" aria-modal="true">
@@ -35,7 +32,7 @@ export const ShareOptionsModal: React.FC<ShareOptionsModalProps> = ({
           <div>
             <h2 className="text-base font-bold text-[var(--color-navy)]">Share Options</h2>
             <p className="text-[12px] text-[var(--color-ink-muted)]">
-              {mode === 'excel' ? 'Share the same Excel output as Print' : 'Share the same view shown in print'}
+              {mode === 'excel' ? 'Share the detailed table export' : 'Share the current view snapshot'}
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100" aria-label="Close">

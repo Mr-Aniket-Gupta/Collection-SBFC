@@ -1,22 +1,32 @@
-// Strategy Effectiveness Section
+// Renders progress bars to show the effectiveness of various strategies.
 
-import React from 'react'
+import React, { useState } from 'react'
 import { ChartCard, ProgressBar } from '@/Components'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { StrategyRow } from '../types/analytics.types'
 
 interface StrategyEffectivenessProps {
   data: StrategyRow[]
 }
 
-export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ data }) => {
+export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ data = [] }) => {
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+  const totalPages = Math.ceil(data.length / itemsPerPage)
+
+  const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages))
+  const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1))
+
+  const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
   return (
     <ChartCard
       title="Strategy Effectiveness"
       subtitle="Current vs. target achievement by collection strategy"
       data={data}
     >
-      <div className="flex flex-col gap-6 mt-2">
-        {data.map((strategy) => (
+      <div className="flex flex-col gap-6 mt-2 min-h-[320px]">
+        {paginatedData.map((strategy) => (
           <div key={strategy.name} className="flex flex-col gap-1.5">
             <ProgressBar
               label={strategy.name}
@@ -37,7 +47,7 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
                   <span className="ml-2 text-[var(--color-gold)] font-semibold">Achieved</span>
                 ) : (
                   <span className="ml-2 text-[var(--color-blue)] font-semibold">
-                    {strategy.target - strategy.percentage}% to go
+                    {(strategy.target - strategy.percentage).toFixed(1)}% to go
                   </span>
                 )}
               </span>
@@ -45,6 +55,34 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
           </div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <span className="text-xs text-[var(--color-ink-muted)]">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, data.length)} of {data.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrev}
+              disabled={currentPage === 1}
+              className="p-1 rounded-md hover:bg-[rgba(5,0,88,0.05)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-[var(--color-navy)]" />
+            </button>
+            <span className="text-xs font-medium text-[var(--color-navy)]">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              className="p-1 rounded-md hover:bg-[rgba(5,0,88,0.05)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 text-[var(--color-navy)]" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Summary Footer */}
       <div className="mt-6 pt-5 border-t border-[rgba(5,0,88,0.08)] flex items-center justify-between">
