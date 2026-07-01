@@ -1,4 +1,4 @@
-# CollectIQ Frontend (Reports & Analytics Dashboard)
+# CollectIQ Frontend (Reports & Analytics Dashboard) 
 
 This repository contains the frontend for the **CollectIQ Reports & Analytics Dashboard**.
 
