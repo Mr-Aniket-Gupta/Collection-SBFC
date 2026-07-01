@@ -1,1 +1,80 @@
-/* Reports-only styles go here. */
+/* Reports page styles */
+
+.reports-page {
+  min-height: calc(100vh - 64px);
+}
+
+.reports-section {
+  background: var(--color-white);
+  border: 1px solid rgba(5, 0, 88, 0.1);
+  box-shadow: var(--shadow-card);
+}
+
+.reports-analytics-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.reports-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .reports-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .reports-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.reports-kpi-card {
+  background: #fff;
+  border: 1px solid rgba(5, 0, 88, 0.08);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgba(5, 0, 88, 0.04);
+}
+
+.reports-chart-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .reports-chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Styled print — preserves charts, colors and layout */
+@media print {
+  body[data-reports-print='true'] * {
+    visibility: hidden !important;
+  }
+
+  body[data-reports-print='true'] [data-print-active='true'],
+  body[data-reports-print='true'] [data-print-active='true'] * {
+    visibility: visible !important;
+  }
+
+  body[data-reports-print='true'] [data-print-active='true'] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 16px;
+    background: #fff !important;
+  }
+
+  body[data-reports-print='true'] .no-print {
+    display: none !important;
+  }
+}

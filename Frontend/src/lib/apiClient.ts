@@ -6,9 +6,10 @@
 /** URLs attempted in order; first successful response wins. */
 const API_BASE_URLS: string[] = [
   import.meta.env.VITE_API_BASE_URL,
-  'https://localhost:7093',
+  '',
   'http://localhost:5166',
-].filter((url): url is string => Boolean(url))
+  'https://localhost:7093',
+].filter((url): url is string => url !== undefined && url !== null)
 
 /** Shape every backend endpoint returns. */
 interface ApiResponse<T> {

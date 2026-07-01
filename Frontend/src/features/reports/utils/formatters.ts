@@ -4,7 +4,7 @@ export const formatCurrencyINR = (amount: number): string => {
   }
 
   if (Math.abs(amount) >= 100000) {
-    return `₹${(amount / 100000).toFixed(2)}Lakh`
+    return `₹${(amount / 100000).toFixed(2)}L`
   }
 
   return new Intl.NumberFormat('en-IN', {

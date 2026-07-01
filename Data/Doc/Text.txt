@@ -1,0 +1,11 @@
+Implement a global filter architecture instead of filtering individual tables. When a user selects any Report Category (Recovery MIS, Payment MIS, Strategy MIS, etc.), first fetch the matching Loan Account ID / Case ID / Customer ID from the primary table, then use those IDs to filter and aggregate data across all related tables (Payments, Cases, Communications, PTPs, Allocations, Strategies, Bounce, etc.) so that all KPI cards, charts, and tables remain synchronized with the selected report context.
+
+
+
+
+
+
+
+
+
+
