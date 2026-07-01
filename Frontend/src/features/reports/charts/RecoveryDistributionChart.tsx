@@ -28,9 +28,14 @@ export const RecoveryDistributionChart: React.FC<RecoveryDistributionChartProps>
     <div className="flex h-[250px] w-full items-center justify-center">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-          <Tooltip 
-            contentStyle={TOOLTIP_STYLE} 
-            formatter={(value: number, _name: string, item: any) => [`${value}% (₹${item.payload.amount?.toLocaleString('en-IN') || 0})`]} 
+          <Tooltip
+            contentStyle={TOOLTIP_STYLE}
+            formatter={(value, _name, item) => {
+              const percentage = Number(value ?? 0)
+              const amount = item.payload?.amount ?? 0
+
+              return `${percentage}% (₹${amount.toLocaleString('en-IN')})`
+            }}
           />
           <Pie
             data={data}
