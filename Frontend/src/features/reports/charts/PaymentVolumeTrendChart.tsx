@@ -53,12 +53,12 @@ export const PaymentVolumeTrendChart: React.FC<PaymentVolumeTrendChartProps> = (
       data={data}
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {[
-            { label: 'Volume', value: summary.volume.toLocaleString('en-IN') },
-            { label: 'Amount', value: formatAmount(summary.amount) },
+            { label: 'Total Volume', value: summary.volume.toLocaleString('en-IN') },
+            { label: 'Total Amount', value: formatAmount(summary.amount) },
             { label: 'Avg Ticket', value: formatAmount(averageTicket) },
-            { label: 'Months', value: data.length.toString() },
+            // { label: 'Months', value: data.length.toString() },
           ].map((item) => (
             <div key={item.label} className="rounded-xl border border-[rgba(5,0,88,0.08)] bg-white px-3 py-2">
               <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">{item.label}</div>

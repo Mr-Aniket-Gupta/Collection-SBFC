@@ -83,15 +83,16 @@ export const AnalyticsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ProductDistributionChart
           data={dashboard?.channelPerformance ?? []}
-          title="Channel Performance"
-          subtitle="Collection volume by channel type"
+          title="Recovery Efficiency"
+          subtitle="Recovery efficiency by journey type"
         />
         <ProductDistributionChart
           data={dashboard?.bucketDistribution ?? []}
-          title="Bucket Distribution"
-          subtitle="Portfolio breakdown by DPD bucket"
+          title="Portfolio Risk Distribution"
+          subtitle="DPD risk classification breakdown"
         />
       </div>
     </div>
   )
 }
+

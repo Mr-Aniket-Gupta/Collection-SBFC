@@ -38,29 +38,66 @@ export function useAnalytics() {
   const branchOptions = useMemo(() => {
     const values = new Set<string>()
     ;(caseTableRows ?? []).forEach((row: DcspTableRow) => {
-      const branch = safeToString(row.branch).trim()
-      if (branch) values.add(branch)
+      const rowState = safeToString(row.state).trim()
+      const rowZone = safeToString(row.zone).trim()
+      const rowBranch = safeToString(row.branch).trim()
+
+      if (stateFilter && rowState !== stateFilter) return
+      if (zoneFilter && rowZone !== zoneFilter) return
+
+      if (rowBranch) values.add(rowBranch)
     })
     return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [caseTableRows])
+  }, [caseTableRows, stateFilter, zoneFilter])
 
   const zoneOptions = useMemo(() => {
     const values = new Set<string>()
     ;(caseTableRows ?? []).forEach((row: DcspTableRow) => {
-      const zone = safeToString(row.zone).trim()
-      if (zone) values.add(zone)
+      const rowState = safeToString(row.state).trim()
+      const rowZone = safeToString(row.zone).trim()
+      const rowBranch = safeToString(row.branch).trim()
+
+      if (stateFilter && rowState !== stateFilter) return
+      if (branchFilter && rowBranch !== branchFilter) return
+
+      if (rowZone) values.add(rowZone)
     })
     return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [caseTableRows])
+  }, [caseTableRows, stateFilter, branchFilter])
 
   const stateOptions = useMemo(() => {
     const values = new Set<string>()
     ;(caseTableRows ?? []).forEach((row: DcspTableRow) => {
-      const state = safeToString(row.state).trim()
-      if (state) values.add(state)
+      const rowState = safeToString(row.state).trim()
+      const rowZone = safeToString(row.zone).trim()
+      const rowBranch = safeToString(row.branch).trim()
+
+      if (zoneFilter && rowZone !== zoneFilter) return
+      if (branchFilter && rowBranch !== branchFilter) return
+
+      if (rowState) values.add(rowState)
     })
     return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [caseTableRows])
+  }, [caseTableRows, zoneFilter, branchFilter])
+
+  // Automatically reset filters if the selected value is no longer in the filtered options list
+  useMemo(() => {
+    if (branchFilter && !branchOptions.includes(branchFilter)) {
+      setBranchFilter('')
+    }
+  }, [branchOptions, branchFilter])
+
+  useMemo(() => {
+    if (zoneFilter && !zoneOptions.includes(zoneFilter)) {
+      setZoneFilter('')
+    }
+  }, [zoneOptions, zoneFilter])
+
+  useMemo(() => {
+    if (stateFilter && !stateOptions.includes(stateFilter)) {
+      setStateFilter('')
+    }
+  }, [stateOptions, stateFilter])
 
   const { data, isFetching, refetch, error } = useQuery({
     queryKey: ['analyticsDashboard', selectedDateFilter, customFromDate, customToDate, branchFilter, zoneFilter, stateFilter],

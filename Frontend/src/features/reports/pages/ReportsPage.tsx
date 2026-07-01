@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -19,7 +19,10 @@ import {
   CollectionTrendChart,
   PaymentVolumeTrendChart,
   RecoveryDistributionChart,
+  PaymentRecoverySpeedWidget,
 } from '@/features/reports/charts'
+
+
 import {
   buildBranchCaseTrend,
   buildBucketWiseTrendData,
@@ -38,8 +41,8 @@ import {
   countBundleRows,
   EMPTY_BUNDLE,
   extractBranchOptions,
-  extractStateOptions,
   extractZoneOptions,
+  extractStateOptions,
   filterBundleByBranchZone,
   filterBundleByDateRange,
 } from '@/features/reports/utils/reportFilterEngine'
@@ -162,9 +165,69 @@ export const ReportsPage: React.FC = () => {
 
   const tableBundle = rawTableBundle ?? EMPTY_BUNDLE()
 
-  const branchOptions = useMemo(() => extractBranchOptions(tableBundle), [tableBundle])
-  const zoneOptions = useMemo(() => extractZoneOptions(tableBundle), [tableBundle])
-  const stateOptions = useMemo(() => extractStateOptions(tableBundle), [tableBundle])
+  const branchOptions = useMemo(() => {
+    const values = new Set<string>()
+    tableBundle.cases.forEach((row) => {
+      const rowState = safeToString(row.state).trim()
+      const rowZone = safeToString(row.zone).trim()
+      const rowBranch = safeToString(row.branch).trim()
+
+      if (stateFilter && rowState.toLowerCase() !== stateFilter.toLowerCase()) return
+      if (zoneFilter && rowZone.toLowerCase() !== zoneFilter.toLowerCase()) return
+
+      if (rowBranch) values.add(rowBranch)
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [tableBundle, stateFilter, zoneFilter])
+
+  const zoneOptions = useMemo(() => {
+    const values = new Set<string>()
+    tableBundle.cases.forEach((row) => {
+      const rowState = safeToString(row.state).trim()
+      const rowZone = safeToString(row.zone).trim()
+      const rowBranch = safeToString(row.branch).trim()
+
+      if (stateFilter && rowState.toLowerCase() !== stateFilter.toLowerCase()) return
+      if (branchFilter && rowBranch.toLowerCase() !== branchFilter.toLowerCase()) return
+
+      if (rowZone) values.add(rowZone)
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [tableBundle, stateFilter, branchFilter])
+
+  const stateOptions = useMemo(() => {
+    const values = new Set<string>()
+    tableBundle.cases.forEach((row) => {
+      const rowState = safeToString(row.state).trim()
+      const rowZone = safeToString(row.zone).trim()
+      const rowBranch = safeToString(row.branch).trim()
+
+      if (zoneFilter && rowZone.toLowerCase() !== zoneFilter.toLowerCase()) return
+      if (branchFilter && rowBranch.toLowerCase() !== branchFilter.toLowerCase()) return
+
+      if (rowState) values.add(rowState)
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [tableBundle, zoneFilter, branchFilter])
+
+  // Automatically reset filters if the selected value is no longer in the filtered options list
+  useMemo(() => {
+    if (branchFilter && !branchOptions.includes(branchFilter)) {
+      setBranchFilter('')
+    }
+  }, [branchOptions, branchFilter])
+
+  useMemo(() => {
+    if (zoneFilter && !zoneOptions.includes(zoneFilter)) {
+      setZoneFilter('')
+    }
+  }, [zoneOptions, zoneFilter])
+
+  useMemo(() => {
+    if (stateFilter && !stateOptions.includes(stateFilter)) {
+      setStateFilter('')
+    }
+  }, [stateOptions, stateFilter])
 
   const dateFilteredBundle = useMemo(
     () => filterBundleByDateRange(tableBundle, dateRange, customFromDate, customToDate),
@@ -354,13 +417,14 @@ export const ReportsPage: React.FC = () => {
   }]
 
   const buildExportSheets = () => {
-    return [
+    const sheets = [
       {
         name: 'Summary',
         rows: [
           { metric: 'Date Range', value: dateRangeLabel },
           { metric: 'Branch', value: branchFilter || 'All' },
           { metric: 'Zone', value: zoneFilter || 'All' },
+          { metric: 'State', value: stateFilter || 'All' },
           { metric: 'Category', value: selectedCategory || 'All' },
           { metric: 'Filtered Records', value: String(filteredRows.length) },
         ],
@@ -370,6 +434,29 @@ export const ReportsPage: React.FC = () => {
       { name: 'Collection Trend', rows: collectionTrendData.map((d) => ({ month: d.month, success: String(d.success), failed: String(d.failed), pending: String(d.pending) })) },
       { name: 'Recovery Split', rows: recoveryDistributionData.map((d) => ({ name: d.name, percent: String(d.value) })) },
     ].filter((sheet) => sheet.rows.length > 0)
+
+    const tableKeys: ReportTableKey[] = [
+      'cases',
+      'payments',
+      'communications',
+      'strategies',
+      'agents',
+      'allocations',
+      'ptps',
+      'audit-logs',
+    ]
+
+    tableKeys.forEach((key) => {
+      const rows = syncBundle[key] || []
+      if (rows.length > 0) {
+        sheets.push({
+          name: prettyTitle(key).slice(0, 31),
+          rows: toExportRows(rows),
+        })
+      }
+    })
+
+    return sheets
   }
 
   const handlePrint = async () => {
@@ -503,6 +590,20 @@ export const ReportsPage: React.FC = () => {
     </>
   )
 
+  const renderRecoverySpeedWidget = () => (
+    <div className="mt-6">
+      <PaymentRecoverySpeedWidget
+        bundle={{ cases: syncBundle.cases, payments: syncBundle.payments }}
+        dateRange={dateRange}
+        customFromDate={customFromDate}
+        customToDate={customToDate}
+      />
+    </div>
+  )
+
+
+
+
   return (
     <div className="reports-page -m-6 space-y-6 p-6">
       {/* Group 1 — Category cards */}
@@ -552,7 +653,9 @@ export const ReportsPage: React.FC = () => {
             </div>
             <div className="mt-6 space-y-6">
               {renderTrends()}
+              {renderRecoverySpeedWidget()}
             </div>
+
           </div>
         )}
 
