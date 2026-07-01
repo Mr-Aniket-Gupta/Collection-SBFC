@@ -302,11 +302,66 @@ export function applyCategoryGlobalFilter(
 export function filterBundleByDateRange(
   bundle: ReportTableBundle,
   dateRange: DateRangeOption,
+  customFromDate?: string,
+  customToDate?: string,
 ): ReportTableBundle {
   const filtered = EMPTY_BUNDLE()
   REPORT_TABLE_KEYS.forEach((tableKey) => {
-    filtered[tableKey] = bundle[tableKey].filter((row) => isWithinDateRange(row, dateRange))
+    filtered[tableKey] = bundle[tableKey].filter((row) =>
+      isWithinDateRange(row, dateRange, customFromDate, customToDate),
+    )
   })
+  return filtered
+}
+
+/** Collects distinct branch values from the cases table. */
+export function extractBranchOptions(bundle: ReportTableBundle): string[] {
+  const values = new Set<string>()
+  bundle.cases.forEach((row) => {
+    const branch = safeToString(row.branch).trim()
+    if (branch) values.add(branch)
+  })
+  return Array.from(values).sort((a, b) => a.localeCompare(b))
+}
+
+/** Collects distinct zone values from the cases table. */
+export function extractZoneOptions(bundle: ReportTableBundle): string[] {
+  const values = new Set<string>()
+  bundle.cases.forEach((row) => {
+    const zone = safeToString(row.zone).trim()
+    if (zone) values.add(zone)
+  })
+  return Array.from(values).sort((a, b) => a.localeCompare(b))
+}
+
+/** Filters bundle rows using branch/zone from the cases table; other tables match via case_id. */
+export function filterBundleByBranchZone(
+  bundle: ReportTableBundle,
+  branchFilter: string,
+  zoneFilter: string,
+): ReportTableBundle {
+  if (!branchFilter && !zoneFilter) return bundle
+
+  const matchingCaseIds = new Set<string>()
+  const filteredCases = bundle.cases.filter((row) => {
+    if (branchFilter && norm(row.branch) !== norm(branchFilter)) return false
+    if (zoneFilter && norm(row.zone) !== norm(zoneFilter)) return false
+    const caseId = id(row.case_id)
+    if (caseId) matchingCaseIds.add(caseId)
+    return true
+  })
+
+  const filtered = EMPTY_BUNDLE()
+  filtered.cases = filteredCases
+
+  REPORT_TABLE_KEYS.forEach((tableKey) => {
+    if (tableKey === 'cases') return
+    filtered[tableKey] = bundle[tableKey].filter((row) => {
+      const caseId = id(row.case_id)
+      return caseId !== '' && matchingCaseIds.has(caseId)
+    })
+  })
+
   return filtered
 }
 

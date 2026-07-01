@@ -3,6 +3,7 @@ import { RotateCw } from 'lucide-react'
 import type { ReportTableKey } from '../hooks/useReports'
 import type { MisCardMetric } from '../utils/misCardMetrics'
 import { DateRangeFilter } from './DateRangeFilter'
+import { ReportSelectFilter } from './ReportSelectFilter'
 import type { DateRangeOption } from '../types'
 
 export interface CategoryCardConfig {
@@ -19,7 +20,17 @@ interface CategoryCardsProps {
   selectedCategory: string
   categoryMetrics: Map<string, MisCardMetric>
   dateRange: DateRangeOption
+  customFromDate: string
+  customToDate: string
+  branchFilter: string
+  zoneFilter: string
+  branchOptions: string[]
+  zoneOptions: string[]
   onDateRangeChange: (option: DateRangeOption) => void
+  onCustomFromDateChange: (date: string) => void
+  onCustomToDateChange: (date: string) => void
+  onBranchFilterChange: (value: string) => void
+  onZoneFilterChange: (value: string) => void
   onSelectCategory: (card: CategoryCardConfig) => void
   onRefresh: () => void
   isRefreshing?: boolean
@@ -30,7 +41,17 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
   selectedCategory,
   categoryMetrics,
   dateRange,
+  customFromDate,
+  customToDate,
+  branchFilter,
+  zoneFilter,
+  branchOptions,
+  zoneOptions,
   onDateRangeChange,
+  onCustomFromDateChange,
+  onCustomToDateChange,
+  onBranchFilterChange,
+  onZoneFilterChange,
   onSelectCategory,
   onRefresh,
   isRefreshing = false,
@@ -43,7 +64,28 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <DateRangeFilter value={dateRange} onChange={onDateRangeChange} />
+        <DateRangeFilter
+          value={dateRange}
+          customFromDate={customFromDate}
+          customToDate={customToDate}
+          onChange={onDateRangeChange}
+          onCustomFromDateChange={onCustomFromDateChange}
+          onCustomToDateChange={onCustomToDateChange}
+        />
+        <ReportSelectFilter
+          label="Branch"
+          value={branchFilter}
+          options={branchOptions}
+          allLabel="All Branches"
+          onChange={onBranchFilterChange}
+        />
+        <ReportSelectFilter
+          label="Zone"
+          value={zoneFilter}
+          options={zoneOptions}
+          allLabel="All Zones"
+          onChange={onZoneFilterChange}
+        />
         <button
           type="button"
           onClick={onRefresh}

@@ -17,6 +17,7 @@ export type DateRangeOption =
   | 'Last 30 Days'
   | 'Last Quarter'
   | 'Last 6 Months'
+  | 'Custom Range'
 
 export type SortOrder = 'asc' | 'desc'
 

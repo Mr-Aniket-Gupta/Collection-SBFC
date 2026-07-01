@@ -1,11 +1,1 @@
-Implement a global filter architecture instead of filtering individual tables. When a user selects any Report Category (Recovery MIS, Payment MIS, Strategy MIS, etc.), first fetch the matching Loan Account ID / Case ID / Customer ID from the primary table, then use those IDs to filter and aggregate data across all related tables (Payments, Cases, Communications, PTPs, Allocations, Strategies, Bounce, etc.) so that all KPI cards, charts, and tables remain synchronized with the selected report context.
-
-
-
-
-
-
-
-
-
-
+Keep the 7 Report Category cards as static summary KPIs. Their values (Recovery Amount, Active Buckets, Digital Recovery %, Successful Recovery Amount, Running Strategies, SMS Delivery %, Bounce %) must never change when a card is selected. Clicking a card should only apply a global filter to the dashboard KPIs, charts, tables, and reports below. The selected card should only change its visual active state (highlight/border), while all seven card values remain based on the current date range and global filters, not the selected report category.

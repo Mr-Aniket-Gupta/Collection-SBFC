@@ -28,7 +28,7 @@ import {
   buildPaymentVolumeTrend,
   buildRecoveryDistributionData,
 } from '@/features/reports/utils/chartBuilders'
-import { DEFAULT_DATE_RANGE } from '@/features/reports/utils/dateFilter'
+import { DEFAULT_DATE_RANGE, formatDateRangeLabel, getDefaultCustomFromDate, getDefaultCustomToDate } from '@/features/reports/utils/dateFilter'
 import { captureElementAsPng, downloadBlob, printElement, shareElementAsImage } from '@/features/reports/utils/captureUtils'
 import { downloadMultiSheetWorkbook, downloadWorkbook, shareExcelWorkbook, toExportRows } from '@/features/reports/utils/excelExport'
 import { buildMisCardMetrics, groupTableRowsFromBundle } from '@/features/reports/utils/misCardMetrics'
@@ -36,6 +36,9 @@ import {
   applyCategoryGlobalFilter,
   countBundleRows,
   EMPTY_BUNDLE,
+  extractBranchOptions,
+  extractZoneOptions,
+  filterBundleByBranchZone,
   filterBundleByDateRange,
 } from '@/features/reports/utils/reportFilterEngine'
 import { buildReportsFromBundle, fetchReportTableBundle } from '@/features/reports/utils/reportDataUtils'
@@ -55,6 +58,38 @@ import {
 
 const REPORT_LIBRARY_FETCH_LIMIT = 200
 const DATE_STORAGE_KEY = 'reportsDateRange.v2'
+const CUSTOM_FROM_STORAGE_KEY = 'reportsCustomFromDate.v1'
+const CUSTOM_TO_STORAGE_KEY = 'reportsCustomToDate.v1'
+const BRANCH_FILTER_STORAGE_KEY = 'reportsBranchFilter.v1'
+const ZONE_FILTER_STORAGE_KEY = 'reportsZoneFilter.v1'
+
+const DATE_RANGE_OPTIONS: DateRangeOption[] = [
+  'This Month',
+  'Last 7 Days',
+  'Last 30 Days',
+  'Last Quarter',
+  'Last 6 Months',
+  'Custom Range',
+]
+
+const readStoredDateRange = (): DateRangeOption => {
+  const stored = sessionStorage.getItem(DATE_STORAGE_KEY)
+  return DATE_RANGE_OPTIONS.includes(stored as DateRangeOption)
+    ? (stored as DateRangeOption)
+    : DEFAULT_DATE_RANGE
+}
+
+const readStoredCustomFromDate = (): string => {
+  const stored = sessionStorage.getItem(CUSTOM_FROM_STORAGE_KEY)
+  if (stored && !Number.isNaN(new Date(stored).getTime())) return stored
+  return getDefaultCustomFromDate()
+}
+
+const readStoredCustomToDate = (): string => {
+  const stored = sessionStorage.getItem(CUSTOM_TO_STORAGE_KEY)
+  if (stored && !Number.isNaN(new Date(stored).getTime())) return stored
+  return getDefaultCustomToDate()
+}
 
 const CATEGORY_CARDS: CategoryCardConfig[] = [
   { id: 'recovery', title: 'Recovery MIS', tableKey: 'payments', icon: <Wallet className="h-5 w-5 text-[var(--color-navy)]" />, accent: 'bg-[var(--color-navy)]', iconBg: 'bg-[var(--color-ice)]' },
@@ -67,12 +102,6 @@ const CATEGORY_CARDS: CategoryCardConfig[] = [
 ]
 
 const TABS = ['Overview', 'Detailed Reports', 'Trends', 'Funnel Analysis'] as const
-
-const readStoredDateRange = (): DateRangeOption => {
-  const stored = sessionStorage.getItem(DATE_STORAGE_KEY)
-  const allowed: DateRangeOption[] = ['This Month', 'Last 7 Days', 'Last 30 Days', 'Last Quarter', 'Last 6 Months']
-  return allowed.includes(stored as DateRangeOption) ? (stored as DateRangeOption) : DEFAULT_DATE_RANGE
-}
 
 export const ReportsPage: React.FC = () => {
   const params = useParams()
@@ -89,6 +118,10 @@ export const ReportsPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>('Overview')
   const [dateRange, setDateRange] = useState<DateRangeOption>(readStoredDateRange)
+  const [customFromDate, setCustomFromDate] = useState<string>(readStoredCustomFromDate)
+  const [customToDate, setCustomToDate] = useState<string>(readStoredCustomToDate)
+  const [branchFilter, setBranchFilter] = useState(() => sessionStorage.getItem(BRANCH_FILTER_STORAGE_KEY) ?? '')
+  const [zoneFilter, setZoneFilter] = useState(() => sessionStorage.getItem(ZONE_FILTER_STORAGE_KEY) ?? '')
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -103,6 +136,22 @@ export const ReportsPage: React.FC = () => {
     sessionStorage.setItem(DATE_STORAGE_KEY, dateRange)
   }, [dateRange])
 
+  useEffect(() => {
+    sessionStorage.setItem(CUSTOM_FROM_STORAGE_KEY, customFromDate)
+  }, [customFromDate])
+
+  useEffect(() => {
+    sessionStorage.setItem(CUSTOM_TO_STORAGE_KEY, customToDate)
+  }, [customToDate])
+
+  useEffect(() => {
+    sessionStorage.setItem(BRANCH_FILTER_STORAGE_KEY, branchFilter)
+  }, [branchFilter])
+
+  useEffect(() => {
+    sessionStorage.setItem(ZONE_FILTER_STORAGE_KEY, zoneFilter)
+  }, [zoneFilter])
+
   const { data: rawTableBundle, isFetching: isLibraryLoading, isError: isLibraryError, refetch: refetchLibrary } = useQuery({
     queryKey: ['reportTableBundle', REPORT_LIBRARY_FETCH_LIMIT],
     queryFn: () => fetchReportTableBundle(REPORT_LIBRARY_FETCH_LIMIT),
@@ -110,17 +159,25 @@ export const ReportsPage: React.FC = () => {
 
   const tableBundle = rawTableBundle ?? EMPTY_BUNDLE()
 
+  const branchOptions = useMemo(() => extractBranchOptions(tableBundle), [tableBundle])
+  const zoneOptions = useMemo(() => extractZoneOptions(tableBundle), [tableBundle])
+
   const dateFilteredBundle = useMemo(
-    () => filterBundleByDateRange(tableBundle, dateRange),
-    [tableBundle, dateRange],
+    () => filterBundleByDateRange(tableBundle, dateRange, customFromDate, customToDate),
+    [tableBundle, dateRange, customFromDate, customToDate],
+  )
+
+  const locationFilteredBundle = useMemo(
+    () => filterBundleByBranchZone(dateFilteredBundle, branchFilter, zoneFilter),
+    [dateFilteredBundle, branchFilter, zoneFilter],
   )
 
   const { bundle: categoryFilteredBundle, context: globalFilterContext } = useMemo(
-    () => applyCategoryGlobalFilter(dateFilteredBundle, selectedCategory),
-    [dateFilteredBundle, selectedCategory],
+    () => applyCategoryGlobalFilter(locationFilteredBundle, selectedCategory),
+    [locationFilteredBundle, selectedCategory],
   )
 
-  const syncBundle = selectedCategory ? categoryFilteredBundle : dateFilteredBundle
+  const syncBundle = selectedCategory ? categoryFilteredBundle : locationFilteredBundle
 
   const syncReports = useMemo(
     () => buildReportsFromBundle(syncBundle),
@@ -227,7 +284,7 @@ export const ReportsPage: React.FC = () => {
   const branchCaseTrend = useMemo(() => buildBranchCaseTrend(chartReports), [chartReports])
   const communicationFunnel = useMemo(() => buildCommunicationFunnel(chartReports), [chartReports])
 
-  useEffect(() => { setLibraryPage(1) }, [search, selectedCategory, statusFilter, activeTable, libraryPageSize, dateRange])
+  useEffect(() => { setLibraryPage(1) }, [search, selectedCategory, statusFilter, activeTable, libraryPageSize, dateRange, customFromDate, customToDate, branchFilter, zoneFilter])
   useEffect(() => { if (libraryPage > libraryTotalPages) setLibraryPage(libraryTotalPages) }, [libraryPage, libraryTotalPages])
 
   const selectCategory = (cat: CategoryCardConfig) => {
@@ -248,13 +305,19 @@ export const ReportsPage: React.FC = () => {
 
   const refreshPageContent = async () => {
     sessionStorage.setItem(DATE_STORAGE_KEY, dateRange)
+    sessionStorage.setItem(CUSTOM_FROM_STORAGE_KEY, customFromDate)
+    sessionStorage.setItem(CUSTOM_TO_STORAGE_KEY, customToDate)
+    sessionStorage.setItem(BRANCH_FILTER_STORAGE_KEY, branchFilter)
+    sessionStorage.setItem(ZONE_FILTER_STORAGE_KEY, zoneFilter)
     await Promise.all([refetchLibrary(), refetch()])
     toast.success('Reports refreshed')
   }
 
+  const dateRangeLabel = formatDateRangeLabel(dateRange, customFromDate, customToDate)
+
   const getPrintTarget = (): { element: HTMLElement; title: string } | null => {
     if (activeTab === 'Overview' && overviewAnalyticsRef.current) {
-      return { element: overviewAnalyticsRef.current, title: `Reports Overview — ${dateRange}` }
+      return { element: overviewAnalyticsRef.current, title: `Reports Overview — ${dateRangeLabel}` }
     }
     if (activeTab === 'Detailed Reports' && detailedReportsRef.current) {
       return { element: detailedReportsRef.current, title: `Raw DCSP Tables — ${prettyTitle(activeTable)}` }
@@ -290,7 +353,9 @@ export const ReportsPage: React.FC = () => {
       {
         name: 'Summary',
         rows: [
-          { metric: 'Date Range', value: dateRange },
+          { metric: 'Date Range', value: dateRangeLabel },
+          { metric: 'Branch', value: branchFilter || 'All' },
+          { metric: 'Zone', value: zoneFilter || 'All' },
           { metric: 'Category', value: selectedCategory || 'All' },
           { metric: 'Filtered Records', value: String(filteredRows.length) },
         ],
@@ -343,7 +408,7 @@ export const ReportsPage: React.FC = () => {
         return
       }
 
-      const filename = `Reports-${activeTab.replace(/\s+/g, '-')}-${dateRange.replace(/\s+/g, '-')}.png`
+      const filename = `Reports-${activeTab.replace(/\s+/g, '-')}-${dateRangeLabel.replace(/\s+/g, '-')}.png`
       if (option === 'image') {
         await shareElementAsImage(target.element, filename)
         toast.success('Image shared')
@@ -365,7 +430,7 @@ export const ReportsPage: React.FC = () => {
       if (activeTab === 'Detailed Reports') {
         await downloadMultiSheetWorkbook(buildDetailedExcelSheets(), `Raw-DCSP-${prettyTitle(activeTable)}.xlsx`)
       } else {
-        await downloadMultiSheetWorkbook(buildExportSheets(), `Reports-${dateRange.replace(/\s+/g, '-')}.xlsx`)
+        await downloadMultiSheetWorkbook(buildExportSheets(), `Reports-${dateRangeLabel.replace(/\s+/g, '-')}.xlsx`)
       }
       toast.success('Excel file downloaded')
     } catch (err) {
@@ -394,7 +459,7 @@ export const ReportsPage: React.FC = () => {
       {[
         { label: 'TOTAL RECORDS', value: countBundleRows(syncBundle).toLocaleString('en-IN'), diff: `${filteredRows.length} shown`, dir: 'up' as const, icon: <Wallet className="h-5 w-5 text-[var(--color-navy)]" /> },
         { label: 'FILTERED RECORDS', value: filteredRows.length.toLocaleString('en-IN'), diff: selectedCategory || 'All categories', dir: 'up' as const, icon: <Smartphone className="h-5 w-5 text-[var(--color-navy)]" /> },
-        { label: 'STATUS TYPES', value: statusOptions.length.toLocaleString('en-IN'), diff: dateRange, dir: 'up' as const, icon: <Target className="h-5 w-5 text-[var(--color-navy)]" /> },
+        { label: 'STATUS TYPES', value: statusOptions.length.toLocaleString('en-IN'), diff: dateRangeLabel, dir: 'up' as const, icon: <Target className="h-5 w-5 text-[var(--color-navy)]" /> },
         { label: 'CURRENT PAGE', value: `${page}/${totalPages}`, diff: `${limit} per page`, dir: 'up' as const, icon: <CheckCircle className="h-5 w-5 text-[var(--color-navy)]" /> },
       ].map((kpi) => (
         <div key={kpi.label} className="reports-kpi-card flex flex-col relative">
@@ -595,7 +660,17 @@ export const ReportsPage: React.FC = () => {
           selectedCategory={selectedCategory}
           categoryMetrics={categoryMetrics}
           dateRange={dateRange}
+          customFromDate={customFromDate}
+          customToDate={customToDate}
+          branchFilter={branchFilter}
+          zoneFilter={zoneFilter}
+          branchOptions={branchOptions}
+          zoneOptions={zoneOptions}
           onDateRangeChange={setDateRange}
+          onCustomFromDateChange={setCustomFromDate}
+          onCustomToDateChange={setCustomToDate}
+          onBranchFilterChange={setBranchFilter}
+          onZoneFilterChange={setZoneFilter}
           onSelectCategory={selectCategory}
           onRefresh={refreshPageContent}
           isRefreshing={isLoading || isLibraryLoading}
