@@ -401,3 +401,90 @@ These are safe follow-up areas if you want a tighter final codebase:
 - remove or archive deprecated helpers in `features/reports/utils`
 - split large analytics repository queries into smaller query helpers if the file grows further
 - keep generated `bin/` and `obj/` folders out of version control
+
+## New Table Checklist
+
+Use this when you add a new database table and want it reflected in the app.
+
+### Step 1: Add or update the database table
+
+- Add the table in PostgreSQL.
+- Make sure the important columns are consistent and typed clearly.
+- Decide which existing tables it joins with, if any.
+
+### Step 2: Add the backend query
+
+- For analytics-style summaries, update:
+  - [`Backend/Modules/Analytics/Repositories/AnalyticsRepository.cs`](Backend/Modules/Analytics/Repositories/AnalyticsRepository.cs)
+- For report-table browsing, update:
+  - [`Backend/Modules/Reports/Services/ReportsService.cs`](Backend/Modules/Reports/Services/ReportsService.cs)
+  - [`Backend/Modules/Reports/Controllers/ReportsController.cs`](Backend/Modules/Reports/Controllers/ReportsController.cs)
+
+What to add:
+
+- SQL query for the new table
+- joins to related tables
+- filters for date, branch, state, zone, or custom dimensions
+- aggregate formulas if the table feeds charts or KPI cards
+
+### Step 3: Update DTOs and response shapes
+
+- Add new backend DTO fields in:
+  - [`Backend/Modules/Analytics/DTOs/AnalyticsDtos.cs`](Backend/Modules/Analytics/DTOs/AnalyticsDtos.cs)
+- If the table is part of generic report data, also check:
+  - [`Backend/Common/Dtos`](Backend/Common/Dtos)
+
+### Step 4: Update frontend types
+
+- Add or extend the TypeScript types in:
+  - [`Frontend/src/features/Analytics/types/analytics.types.ts`](Frontend/src/features/Analytics/types/analytics.types.ts)
+  - [`Frontend/src/features/reports/types/index.ts`](Frontend/src/features/reports/types/index.ts)
+
+### Step 5: Update the service layer
+
+- If the table has a new analytics endpoint, update:
+  - [`Frontend/src/features/Analytics/services/analyticsService.ts`](Frontend/src/features/Analytics/services/analyticsService.ts)
+- If it is a report table, update:
+  - [`Frontend/src/features/reports/services/reportsService.ts`](Frontend/src/features/reports/services/reportsService.ts)
+
+### Step 6: Add chart or table UI
+
+- Analytics charts live in:
+  - [`Frontend/src/features/Analytics/charts`](Frontend/src/features/Analytics/charts)
+- Report charts live in:
+  - [`Frontend/src/features/reports/charts`](Frontend/src/features/reports/charts)
+- Page-level rendering happens in:
+  - [`Frontend/src/features/Analytics/pages/AnalyticsPage.tsx`](Frontend/src/features/Analytics/pages/AnalyticsPage.tsx)
+  - [`Frontend/src/features/reports/pages/ReportsPage.tsx`](Frontend/src/features/reports/pages/ReportsPage.tsx)
+
+### Step 7: Update filters and table mappings
+
+If the new table should respond to global filters or categories, update:
+
+- [`Frontend/src/features/reports/utils/reportFilterEngine.ts`](Frontend/src/features/reports/utils/reportFilterEngine.ts)
+- [`Frontend/src/features/reports/utils/categoryFilters.ts`](Frontend/src/features/reports/utils/categoryFilters.ts)
+- [`Frontend/src/features/reports/components/CategoryCards.tsx`](Frontend/src/features/reports/components/CategoryCards.tsx)
+
+### Step 8: Update routes only if needed
+
+Usually routes stay the same, but if you add a new page or new report section, check:
+
+- [`Frontend/src/app/routes.tsx`](Frontend/src/app/routes.tsx)
+
+### Step 9: Update docs
+
+- Add a short note in this README about:
+  - source table
+  - formula
+  - endpoint
+  - chart or page usage
+
+### Quick sanity check
+
+Before calling it done, confirm:
+
+- the backend builds
+- the frontend builds
+- the new table appears in the right filters or charts
+- percentages never exceed `100%` unless that is intentionally a count display
+- refresh buttons still reset filters correctly
