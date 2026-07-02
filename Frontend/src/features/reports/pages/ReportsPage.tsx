@@ -102,8 +102,10 @@ const CATEGORY_CARDS: CategoryCardConfig[] = [
   { id: 'digital', title: 'Digital Recovery', tableKey: 'payments', icon: <Smartphone className="h-5 w-5 text-[#8D6B19]" />, accent: 'bg-[#8D6B19]', iconBg: 'bg-[#FDF9F0]' },
   { id: 'payment', title: 'Payment MIS', tableKey: 'payments', icon: <Wallet className="h-5 w-5 text-[#2C3E50]" />, accent: 'bg-[#2C3E50]', iconBg: 'bg-[#F4F6F7]' },
   { id: 'strategy', title: 'Strategy Reports', tableKey: 'strategies', icon: <Share2 className="h-5 w-5 text-[#5B2C6F]" />, accent: 'bg-[#5B2C6F]', iconBg: 'bg-[#F4ECF7]' },
+  { id: 'preemi', title: 'Pre EMI Cases', tableKey: 'pre-emi-cases', icon: <CheckCircle className="h-5 w-5 text-[#2874A6]" />, accent: 'bg-[#2874A6]', iconBg: 'bg-[#EBF5FB]' },
+  { id: 'dpd', title: 'DPD Cases', tableKey: 'dpd-cases', icon: <TrendingUp className="h-5 w-5 text-[#117A65]" />, accent: 'bg-[#117A65]', iconBg: 'bg-[#E8F8F5]' },
   { id: 'comm', title: 'Communication Reports', tableKey: 'communications', icon: <Search className="h-5 w-5 text-[#D35400]" />, accent: 'bg-[#D35400]', iconBg: 'bg-[#FDEDEC]' },
-  { id: 'bounce', title: 'Bounce Analysis', tableKey: 'payments', icon: <Target className="h-5 w-5 text-[var(--color-gold)]" />, accent: 'bg-[var(--color-gold)]', iconBg: 'bg-[rgba(206,155,1,0.12)]' },
+  { id: 'bounce', title: 'Bounce Analysis', tableKey: 'bounce-cases', icon: <Target className="h-5 w-5 text-[var(--color-gold)]" />, accent: 'bg-[var(--color-gold)]', iconBg: 'bg-[rgba(206,155,1,0.12)]' },
 ]
 
 const TABS = ['Overview', 'Detailed Reports'] as const
@@ -452,11 +454,17 @@ export const ReportsPage: React.FC = () => {
     ].filter((sheet) => sheet.rows.length > 0)
 
     const tableKeys: ReportTableKey[] = [
+      'strategies',
+      'strategy-approval-log',
+      'strategy-steps',
+      'strategy-execution-log',
+      'agents',
+      'pre-emi-cases',
+      'dpd-cases',
+      'bounce-cases',
       'cases',
       'payments',
       'communications',
-      'strategies',
-      'agents',
       'allocations',
       'ptps',
       'audit-logs',

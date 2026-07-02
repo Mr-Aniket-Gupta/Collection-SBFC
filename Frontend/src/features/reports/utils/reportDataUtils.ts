@@ -42,15 +42,21 @@ export function getBundleTableRows(bundle: ReportTableBundle, tableKey: ReportTa
 }
 
 export interface MisTableRows {
-  payments: ReportTableBundle['payments']
   strategies: ReportTableBundle['strategies']
+  preEmiCases: ReportTableBundle['pre-emi-cases']
+  dpdCases: ReportTableBundle['dpd-cases']
+  bounceCases: ReportTableBundle['bounce-cases']
+  payments: ReportTableBundle['payments']
   communications: ReportTableBundle['communications']
 }
 
 export function groupTableRowsFromBundle(bundle: ReportTableBundle): MisTableRows {
   return {
-    payments: bundle.payments,
     strategies: bundle.strategies,
+    preEmiCases: bundle['pre-emi-cases'],
+    dpdCases: bundle['dpd-cases'],
+    bounceCases: bundle['bounce-cases'],
+    payments: bundle.payments,
     communications: bundle.communications,
   }
 }

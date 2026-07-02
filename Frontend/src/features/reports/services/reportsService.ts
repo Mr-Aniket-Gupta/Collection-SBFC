@@ -7,11 +7,17 @@ import type { DcspPagedResult, DcspTableRow } from '../types'
 
 /** Maps URL-friendly table keys to their backend endpoint segment. */
 const ENDPOINTS = {
+  strategies: 'strategies',
+  'strategy-approval-log': 'strategy-approval-log',
+  'strategy-steps': 'strategy-steps',
+  'strategy-execution-log': 'strategy-execution-log',
+  agents: 'agents',
+  'pre-emi-cases': 'pre-emi-cases',
+  'dpd-cases': 'dpd-cases',
+  'bounce-cases': 'bounce-cases',
   cases: 'cases',
   payments: 'payments',
   communications: 'communications',
-  strategies: 'strategies',
-  agents: 'agents',
   allocations: 'allocations',
   ptps: 'ptps',
   'audit-logs': 'audit-logs',

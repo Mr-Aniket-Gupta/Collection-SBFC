@@ -43,13 +43,16 @@ const uniqueCaseIds = (rows: DcspTableRow[]): Set<string> => {
 
 const percentOf = (part: number, total: number): number => (total > 0 ? (part / total) * 100 : 0)
 
-const MIS_TABLE_KEYS = ['payments', 'strategies', 'communications'] as const
+const MIS_TABLE_KEYS = ['payments', 'strategies', 'communications', 'pre-emi-cases', 'dpd-cases', 'bounce-cases'] as const
 type MisTableKey = (typeof MIS_TABLE_KEYS)[number]
 
 interface LegacyMisTableRows {
   payments: DcspTableRow[]
   strategies: DcspTableRow[]
   communications: DcspTableRow[]
+  preEmiCases: DcspTableRow[]
+  dpdCases: DcspTableRow[]
+  bounceCases: DcspTableRow[]
 }
 
 /** Builds display metrics for the 7 top MIS category cards. */
@@ -60,6 +63,9 @@ export function buildMisCardMetrics(
   const payments = uniqueRows(rows.payments, 'payment_id')
   const strategies = uniqueRows(rows.strategies, 'strategy_id')
   const communications = uniqueRows(rows.communications, 'communication_id')
+  const preEmiCases = uniqueRows(rows.preEmiCases, 'pre_emi_case_id')
+  const dpdCases = uniqueRows(rows.dpdCases, 'dpd_case_id')
+  const bounceCases = uniqueRows(rows.bounceCases, 'bounce_case_id')
 
   const metrics = new Map<string, MisCardMetric>()
 
@@ -117,6 +123,24 @@ export function buildMisCardMetrics(
     subtitle: `${failedPayments.toLocaleString('en-IN')} failed payments`,
   })
 
+  const preEmiPending = preEmiCases.filter((row) => norm(row.status) === 'PENDING_STRATEGY').length
+  metrics.set('Pre EMI Cases', {
+    value: preEmiCases.length > 0 ? formatPercent(percentOf(preEmiPending, preEmiCases.length)) : '0.0%',
+    subtitle: `${preEmiPending.toLocaleString('en-IN')} pending strategies`,
+  })
+
+  const dpdHighRisk = dpdCases.filter((row) => Number(row.dpd ?? 0) >= 90).length
+  metrics.set('DPD Cases', {
+    value: dpdCases.length > 0 ? formatPercent(percentOf(dpdHighRisk, dpdCases.length)) : '0.0%',
+    subtitle: `${dpdHighRisk.toLocaleString('en-IN')} high risk cases`,
+  })
+
+  const bounceCount = bounceCases.length
+  metrics.set('Bounce Analysis', {
+    value: bounceCases.length > 0 ? formatPercent(percentOf(bounceCount, bounceCases.length)) : '0.0%',
+    subtitle: `${bounceCount.toLocaleString('en-IN')} bounce cases`,
+  })
+
   return metrics
 }
 
@@ -125,16 +149,22 @@ export function groupUniqueTableRows(
   reports: Array<{ category: string; source: DcspTableRow }>,
   categoryTableMap: Map<string, string>,
 ): LegacyMisTableRows {
-  const grouped: LegacyMisTableRows = { payments: [], strategies: [], communications: [] }
+  const grouped: LegacyMisTableRows = { payments: [], strategies: [], communications: [], preEmiCases: [], dpdCases: [], bounceCases: [] }
   const seenByTable: Record<MisTableKey, Set<string>> = {
     payments: new Set(),
     strategies: new Set(),
     communications: new Set(),
+    'pre-emi-cases': new Set(),
+    'dpd-cases': new Set(),
+    'bounce-cases': new Set(),
   }
   const idKeys: Record<MisTableKey, string> = {
     payments: 'payment_id',
     strategies: 'strategy_id',
     communications: 'communication_id',
+    'pre-emi-cases': 'pre_emi_case_id',
+    'dpd-cases': 'dpd_case_id',
+    'bounce-cases': 'bounce_case_id',
   }
 
   reports.forEach((report) => {
@@ -146,7 +176,10 @@ export function groupUniqueTableRows(
     if (!id || seenByTable[table].has(id)) return
 
     seenByTable[table].add(id)
-    grouped[table].push(report.source)
+    if (table === 'pre-emi-cases') grouped.preEmiCases.push(report.source)
+    else if (table === 'dpd-cases') grouped.dpdCases.push(report.source)
+    else if (table === 'bounce-cases') grouped.bounceCases.push(report.source)
+    else grouped[table].push(report.source)
   })
 
   return grouped

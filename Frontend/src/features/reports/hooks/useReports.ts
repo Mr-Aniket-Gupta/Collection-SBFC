@@ -6,10 +6,39 @@ import { useQuery } from '@tanstack/react-query'
 import { reportsService } from '../services/reportsService'
 import type { DcspTableRow } from '../types'
 
-export type ReportTableKey = 'cases' | 'payments' | 'communications' | 'strategies' | 'agents' | 'allocations' | 'ptps' | 'audit-logs'
+export type ReportTableKey =
+  | 'strategies'
+  | 'strategy-approval-log'
+  | 'strategy-steps'
+  | 'strategy-execution-log'
+  | 'agents'
+  | 'pre-emi-cases'
+  | 'dpd-cases'
+  | 'bounce-cases'
+  | 'cases'
+  | 'payments'
+  | 'communications'
+  | 'allocations'
+  | 'ptps'
+  | 'audit-logs'
 
-export const REPORT_TABLES: ReportTableKey[] = ['cases', 'payments', 'communications', 'strategies', 'agents', 'allocations', 'ptps', 'audit-logs']
-const defaultTable: ReportTableKey = 'cases'
+export const REPORT_TABLES: ReportTableKey[] = [
+  'strategies',
+  'strategy-approval-log',
+  'strategy-steps',
+  'strategy-execution-log',
+  'agents',
+  'pre-emi-cases',
+  'dpd-cases',
+  'bounce-cases',
+  'cases',
+  'payments',
+  'communications',
+  'allocations',
+  'ptps',
+  'audit-logs',
+]
+const defaultTable: ReportTableKey = 'strategies'
 
 const normalizeTableKey = (value?: string | null): ReportTableKey => {
   if (value && REPORT_TABLES.includes(value as ReportTableKey)) {

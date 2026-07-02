@@ -12,14 +12,20 @@ public sealed class DcspQueryRepository
 
     private static readonly Dictionary<string, string[]> TableColumns = new(StringComparer.OrdinalIgnoreCase)
     {
+        ["strategies"] = ["strategy_id", "strategy_name", "strategy_code", "strategy_version", "journey_type", "dpd_range_from", "dpd_range_to", "bucket", "product_code", "state", "customer_segment", "outstanding_range_min", "outstanding_range_max", "priority", "effective_date", "expiry_date", "status", "description", "created_by", "created_at", "updated_by", "updated_at", "is_active"],
+        ["strategy_approval_log"] = ["approval_log_id", "strategy_id", "from_status", "to_status", "action", "actor_id", "actor_role", "remarks", "performed_at", "ip_address"],
+        ["strategy_steps"] = ["strategy_step_id", "step_number", "step_name", "trigger_delay_value", "channel", "template_code", "retry_count", "retry_delay_hours", "payment_check_before_step", "condition_expression", "escalation_trigger", "escalation_target", "status", "created_by", "created_at", "updated_by", "updated_at", "strategy_id", "is_active"],
+        ["strategy_execution_log"] = ["execution_id", "case_type", "case_id", "strategy_id", "status", "assigned_at", "completed_at"],
         ["agents"] = ["agent_id", "agent_name", "role", "branch", "zone", "state", "max_capacity", "current_load", "language", "mobile", "email", "status"],
-        ["allocations"] = ["allocation_id", "case_id", "allocated_to", "role", "allocated_at", "deallocated_at", "reason", "allocation_status"],
-        ["audit_logs"] = ["log_id", "entity_type", "entity_id", "action", "old_value", "new_value", "user_name", "ip_address", "created_at"],
-        ["cases"] = ["case_id", "case_number", "pr_number", "loan_number", "customer_id", "journey_type", "dpd", "strategy_id", "assigned_to", "outstanding_principal", "outstanding_interest", "outstanding_total", "status", "branch", "zone", "state", "created_at", "updated_at"],
-        ["communications"] = ["communication_id", "case_id", "channel", "template_name", "status", "sent_at", "delivered_at", "read_at", "response_status", "retry_count", "created_at"],
+        ["cases"] = ["case_id", "case_number", "pr_number", "loan_number", "customer_id", "journey_type", "bucket", "dpd", "strategy_id", "assigned_to", "outstanding_principal", "outstanding_interest", "outstanding_total", "status", "branch", "zone", "state", "created_at", "updated_at"],
+        ["pre_emi_cases"] = ["pre_emi_case_id", "case_ref", "pr_number", "customer_id", "customer_name", "mobile_number", "alternate_mobile", "email_id", "product_name", "pre_emi_amount", "pre_emi_date", "strategy_id", "status", "mifin_batch_ref", "mifin_extraction_date", "is_active", "created_at", "updated_at"],
+        ["dpd_cases"] = ["dpd_case_id", "case_ref", "pr_number", "customer_id", "customer_name", "mobile_number", "alternate_mobile", "email_id", "state", "branch_name", "product_name", "disbursal_date", "loan_amount", "emi_amount", "outstanding_principal", "outstanding_interest", "total_outstanding", "last_payment_date", "last_payment_amount", "next_emi_date", "dpd", "bucket", "loan_status", "strategy_id", "status", "mifin_batch_ref", "mifin_extraction_date", "is_active", "created_at", "updated_at"],
+        ["bounce_cases"] = ["bounce_case_id", "case_ref", "pr_number", "customer_id", "customer_name", "mobile_number", "alternate_mobile", "email_id", "state", "branch_name", "product_name", "disbursal_date", "loan_amount", "emi_amount", "outstanding_principal", "outstanding_interest", "total_outstanding", "last_payment_date", "last_payment_amount", "next_emi_date", "dpd", "bucket", "loan_status", "bounce_date", "bounce_reason", "nach_status", "bounce_cycle", "strategy_id", "status", "mifin_batch_ref", "mifin_extraction_date", "is_active", "created_at", "updated_at"],
         ["payments"] = ["payment_id", "case_id", "loan_number", "amount", "payment_date", "payment_mode", "pg_transaction_id", "payment_status", "reconciled", "payment_source", "created_at"],
+        ["communications"] = ["communication_id", "case_id", "channel", "template_name", "status", "sent_at", "delivered_at", "read_at", "response_status", "retry_count", "created_at"],
+        ["allocations"] = ["allocation_id", "case_id", "allocated_to", "role", "allocated_at", "deallocated_at", "reason", "allocation_status"],
         ["ptps"] = ["ptp_id", "case_id", "agent_id", "ptp_date", "ptp_amount", "honoured", "actual_payment_date", "created_at"],
-        ["strategies"] = ["strategy_id", "strategy_code", "strategy_version", "strategy_name", "journey_type", "bucket", "dpd_range_from", "dpd_range_to", "priority", "status", "effective_date", "expiry_date", "created_at"]
+        ["audit_logs"] = ["log_id", "entity_type", "entity_id", "action", "old_value", "new_value", "user_name", "ip_address", "created_at"]
     };
 
     public DcspQueryRepository(IDbConnectionFactory dbConnectionFactory)

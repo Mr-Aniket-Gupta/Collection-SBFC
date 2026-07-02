@@ -14,11 +14,17 @@ const norm = (value: unknown): string => safeToString(value).trim().toUpperCase(
 const id = (value: unknown): string => safeToString(value).trim()
 
 export interface ReportTableBundle {
+  strategies: DcspTableRow[]
+  'strategy-approval-log': DcspTableRow[]
+  'strategy-steps': DcspTableRow[]
+  'strategy-execution-log': DcspTableRow[]
+  agents: DcspTableRow[]
+  'pre-emi-cases': DcspTableRow[]
+  'dpd-cases': DcspTableRow[]
+  'bounce-cases': DcspTableRow[]
   cases: DcspTableRow[]
   payments: DcspTableRow[]
   communications: DcspTableRow[]
-  strategies: DcspTableRow[]
-  agents: DcspTableRow[]
   allocations: DcspTableRow[]
   ptps: DcspTableRow[]
   'audit-logs': DcspTableRow[]
@@ -45,22 +51,34 @@ export interface GlobalFilterContext {
 }
 
 export const REPORT_TABLE_KEYS: ReportTableKey[] = [
+  'strategies',
+  'strategy-approval-log',
+  'strategy-steps',
+  'strategy-execution-log',
+  'agents',
+  'pre-emi-cases',
+  'dpd-cases',
+  'bounce-cases',
   'cases',
   'payments',
   'communications',
-  'strategies',
-  'agents',
   'allocations',
   'ptps',
   'audit-logs',
 ]
 
 export const EMPTY_BUNDLE = (): ReportTableBundle => ({
+  strategies: [],
+  'strategy-approval-log': [],
+  'strategy-steps': [],
+  'strategy-execution-log': [],
+  agents: [],
+  'pre-emi-cases': [],
+  'dpd-cases': [],
+  'bounce-cases': [],
   cases: [],
   payments: [],
   communications: [],
-  strategies: [],
-  agents: [],
   allocations: [],
   ptps: [],
   'audit-logs': [],
@@ -96,6 +114,18 @@ export const CATEGORY_FILTER_CONFIG: Record<string, CategoryFilterConfig> = {
     primaryTable: 'strategies',
     primaryPredicate: (row) => norm(row.status) === 'ACTIVE',
   },
+  'Pre EMI Cases': {
+    primaryTable: 'pre-emi-cases',
+    primaryPredicate: (row) => norm(row.status) === 'PENDING_STRATEGY',
+  },
+  'DPD Cases': {
+    primaryTable: 'dpd-cases',
+    primaryPredicate: (row) => Number(row.dpd ?? 0) >= 0,
+  },
+  'Bounce Cases': {
+    primaryTable: 'bounce-cases',
+    primaryPredicate: (row) => norm(row.status) === 'PENDING_STRATEGY' || norm(row.status) === 'PENDING',
+  },
   'Communication Reports': {
     primaryTable: 'communications',
     primaryPredicate: (row) => isCommunicationRow(row) && norm(row.status) === 'DELIVERED',
@@ -124,6 +154,11 @@ const seedIdsFromPrimaryRow = (row: DcspTableRow, tableKey: ReportTableKey, ids:
       addId(row.case_id, ids.caseIds)
       break
     case 'strategies':
+      addId(row.strategy_id, ids.strategyIds)
+      break
+    case 'pre-emi-cases':
+    case 'dpd-cases':
+    case 'bounce-cases':
       addId(row.strategy_id, ids.strategyIds)
       break
     case 'cases':
@@ -244,6 +279,9 @@ const rowMatchesIds = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalF
     case 'communications':
     case 'ptps':
     case 'allocations':
+    case 'pre-emi-cases':
+    case 'dpd-cases':
+    case 'bounce-cases':
       return (
         (caseId !== '' && ids.caseIds.has(caseId)) ||
         (loanNumber !== '' && ids.loanNumbers.has(loanNumber))

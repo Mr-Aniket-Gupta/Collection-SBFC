@@ -110,7 +110,7 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
       </div>
     </div>
 
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
+    <div className="flex flex-wrap gap-3">
       {cards.map((card) => {
         const isActive = selectedCategory === card.title
         const metric = categoryMetrics.get(card.title)
@@ -120,6 +120,7 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
             key={card.id}
             type="button"
             onClick={() => onSelectCategory(card)}
+            style={{ flex: '1 1 180px' }}
             className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 ${
               isActive
                 ? 'border-[var(--color-gold)] bg-[#FFFBF2] shadow-md ring-2 ring-[rgba(206,155,1,0.18)]'
@@ -127,16 +128,20 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
             }`}
           >
             <div className={`absolute inset-x-0 top-0 h-1 ${card.accent}`} />
-            <div className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl ${card.iconBg}`}>
-              {card.icon}
+            <div className="flex items-start gap-3">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.iconBg}`}>
+                {card.icon}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-[13px] font-bold leading-snug text-[var(--color-navy)]">{card.title}</h4>
+                <p className="mt-1 text-[22px] font-extrabold leading-none text-[var(--color-navy)]">
+                  {metric?.value ?? '—'}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">
+                  {metric?.subtitle ?? 'Click to load'}
+                </p>
+              </div>
             </div>
-            <h4 className="text-[13px] font-bold leading-snug text-[var(--color-navy)]">{card.title}</h4>
-            <p className="mt-2 text-[22px] font-extrabold leading-none text-[var(--color-navy)]">
-              {metric?.value ?? '—'}
-            </p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">
-              {metric?.subtitle ?? 'Click to load'}
-            </p>
           </button>
         )
       })}
