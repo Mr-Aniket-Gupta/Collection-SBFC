@@ -20,11 +20,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Path mapping */
-    // "baseUrl": ".",
-    // "paths": {
-      // "@/*": ["src/*"]
-    // }
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src"]
 }

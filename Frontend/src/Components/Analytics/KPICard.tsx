@@ -48,11 +48,11 @@ export const KPICard: React.FC<KPICardProps> = ({ card }) => {
         {card.comparisonValue && (
           <p className="text-[12px] font-semibold text-[var(--color-blue)]">{card.comparisonValue}</p>
         )}
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex flex-wrap items-start gap-x-2 gap-y-1 mt-1">
           {card.trend && (
             <span
               className={`
-                inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold
+                inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 whitespace-nowrap
                 ${card.trendDirection === 'up' ? 'bg-[rgba(206,155,1,0.14)] text-[var(--color-gold)]' : ''}
                 ${card.trendDirection === 'down' ? 'bg-[var(--color-ice)] text-[var(--color-blue)]' : ''}
                 ${card.trendDirection === 'neutral' ? 'bg-[var(--color-ice)] text-[var(--color-ink-muted)]' : ''}
@@ -61,7 +61,7 @@ export const KPICard: React.FC<KPICardProps> = ({ card }) => {
               {card.trend}
             </span>
           )}
-          <span className="text-[12px] text-[var(--color-ink-muted)]">{card.subtitle}</span>
+          <span className="text-[12px] text-[var(--color-ink-muted)] leading-tight flex-1 min-w-[120px]">{card.subtitle}</span>
         </div>
       </div>
     </div>

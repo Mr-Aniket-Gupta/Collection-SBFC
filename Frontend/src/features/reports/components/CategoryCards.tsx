@@ -110,41 +110,82 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
       </div>
     </div>
 
-    <div className="flex flex-wrap gap-3">
-      {cards.map((card) => {
-        const isActive = selectedCategory === card.title
-        const metric = categoryMetrics.get(card.title)
+    <div className="flex flex-col gap-3">
+      {/* Top Row: First 5 Cards */}
+      <div className="flex flex-wrap gap-3">
+        {cards.slice(0, 5).map((card) => {
+          const isActive = selectedCategory === card.title
+          const metric = categoryMetrics.get(card.title)
 
-        return (
-          <button
-            key={card.id}
-            type="button"
-            onClick={() => onSelectCategory(card)}
-            style={{ flex: '1 1 180px' }}
-            className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 ${
-              isActive
-                ? 'border-[var(--color-gold)] bg-[#FFFBF2] shadow-md ring-2 ring-[rgba(206,155,1,0.18)]'
-                : 'border-[rgba(5,0,88,0.08)] bg-[#FAFBFD] hover:-translate-y-0.5 hover:border-[rgba(206,155,1,0.35)] hover:shadow-md'
-            }`}
-          >
-            <div className={`absolute inset-x-0 top-0 h-1 ${card.accent}`} />
-            <div className="flex items-start gap-3">
-              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.iconBg}`}>
-                {card.icon}
+          return (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => onSelectCategory(card)}
+              style={{ flex: '1 1 180px' }}
+              className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 ${
+                isActive
+                  ? 'border-[var(--color-gold)] bg-[#FFFBF2] shadow-md ring-2 ring-[rgba(206,155,1,0.18)]'
+                  : 'border-[rgba(5,0,88,0.08)] bg-[#FAFBFD] hover:-translate-y-0.5 hover:border-[rgba(206,155,1,0.35)] hover:shadow-md'
+              }`}
+            >
+              <div className={`absolute inset-x-0 top-0 h-1 ${card.accent}`} />
+              <div className="flex items-start gap-3">
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.iconBg}`}>
+                  {card.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-[13px] font-bold leading-snug text-[var(--color-navy)]">{card.title}</h4>
+                  <p className="mt-1 text-[22px] font-extrabold leading-none text-[var(--color-navy)]">
+                    {metric?.value ?? '—'}
+                  </p>
+                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">
+                    {metric?.subtitle ?? 'Click to load'}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-[13px] font-bold leading-snug text-[var(--color-navy)]">{card.title}</h4>
-                <p className="mt-1 text-[22px] font-extrabold leading-none text-[var(--color-navy)]">
-                  {metric?.value ?? '—'}
-                </p>
-                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">
-                  {metric?.subtitle ?? 'Click to load'}
-                </p>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Bottom Row: Remaining 4 Cards */}
+      <div className="flex flex-wrap gap-3">
+        {cards.slice(5).map((card) => {
+          const isActive = selectedCategory === card.title
+          const metric = categoryMetrics.get(card.title)
+
+          return (
+            <button
+              key={card.id}
+              type="button"
+              onClick={() => onSelectCategory(card)}
+              style={{ flex: '1 1 180px' }}
+              className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 ${
+                isActive
+                  ? 'border-[var(--color-gold)] bg-[#FFFBF2] shadow-md ring-2 ring-[rgba(206,155,1,0.18)]'
+                  : 'border-[rgba(5,0,88,0.08)] bg-[#FAFBFD] hover:-translate-y-0.5 hover:border-[rgba(206,155,1,0.35)] hover:shadow-md'
+              }`}
+            >
+              <div className={`absolute inset-x-0 top-0 h-1 ${card.accent}`} />
+              <div className="flex items-start gap-3">
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.iconBg}`}>
+                  {card.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-[13px] font-bold leading-snug text-[var(--color-navy)]">{card.title}</h4>
+                  <p className="mt-1 text-[22px] font-extrabold leading-none text-[var(--color-navy)]">
+                    {metric?.value ?? '—'}
+                  </p>
+                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">
+                    {metric?.subtitle ?? 'Click to load'}
+                  </p>
+                </div>
               </div>
-            </div>
-          </button>
-        )
-      })}
+            </button>
+          )
+        })}
+      </div>
     </div>
   </>
 )
