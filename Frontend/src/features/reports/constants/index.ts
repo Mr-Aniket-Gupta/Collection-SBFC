@@ -110,5 +110,5 @@ export const RECOVERY_PIE_COLORS = [
   '#000182',
   '#CE9B01',
   '#050058',
-  '#D9EAF5'
+  '#3d9ddd'
 ]

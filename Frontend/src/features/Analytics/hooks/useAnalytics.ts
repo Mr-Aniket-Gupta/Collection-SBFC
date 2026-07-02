@@ -1,13 +1,12 @@
 // Custom hook that manages state and fetches data for the analytics dashboard.
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { reportsService } from '@/features/reports/services/reportsService'
 import { analyticsService } from '../services/analyticsService'
 import type { DateRangeOption } from '@/features/reports/types'
 import { getDefaultCustomFromDate, getDefaultCustomToDate } from '@/features/reports/utils/dateFilter'
-import type { DcspTableRow } from '@/features/reports/types'
 import { safeToString } from '@/features/reports/utils/tableUtils'
+import { fetchReportTableBundle } from '@/features/reports/utils/reportDataUtils'
 
 export function useAnalytics() {
   const [selectedDateFilter, setSelectedDateFilter] = useState<DateRangeOption>('This Month')
@@ -26,18 +25,15 @@ export function useAnalytics() {
     'Custom Range',
   ]
 
-  const { data: caseTableRows } = useQuery({
+  const { data: tableBundle } = useQuery({
     queryKey: ['analyticsCaseOptions'],
-    queryFn: async () => {
-      const response = await reportsService.fetchTable('cases', 1, 200)
-      return response.items
-    },
+    queryFn: () => fetchReportTableBundle(200),
     placeholderData: (prev) => prev,
   })
 
   const branchOptions = useMemo(() => {
     const values = new Set<string>()
-    ;(caseTableRows ?? []).forEach((row: DcspTableRow) => {
+    ;(tableBundle?.cases ?? []).forEach((row) => {
       const rowState = safeToString(row.state).trim()
       const rowZone = safeToString(row.zone).trim()
       const rowBranch = safeToString(row.branch).trim()
@@ -48,11 +44,11 @@ export function useAnalytics() {
       if (rowBranch) values.add(rowBranch)
     })
     return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [caseTableRows, stateFilter, zoneFilter])
+  }, [tableBundle, stateFilter, zoneFilter])
 
   const zoneOptions = useMemo(() => {
     const values = new Set<string>()
-    ;(caseTableRows ?? []).forEach((row: DcspTableRow) => {
+    ;(tableBundle?.cases ?? []).forEach((row) => {
       const rowState = safeToString(row.state).trim()
       const rowZone = safeToString(row.zone).trim()
       const rowBranch = safeToString(row.branch).trim()
@@ -63,11 +59,11 @@ export function useAnalytics() {
       if (rowZone) values.add(rowZone)
     })
     return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [caseTableRows, stateFilter, branchFilter])
+  }, [tableBundle, stateFilter, branchFilter])
 
   const stateOptions = useMemo(() => {
     const values = new Set<string>()
-    ;(caseTableRows ?? []).forEach((row: DcspTableRow) => {
+    ;(tableBundle?.cases ?? []).forEach((row) => {
       const rowState = safeToString(row.state).trim()
       const rowZone = safeToString(row.zone).trim()
       const rowBranch = safeToString(row.branch).trim()
@@ -78,22 +74,22 @@ export function useAnalytics() {
       if (rowState) values.add(rowState)
     })
     return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [caseTableRows, zoneFilter, branchFilter])
+  }, [tableBundle, zoneFilter, branchFilter])
 
   // Automatically reset filters if the selected value is no longer in the filtered options list
-  useMemo(() => {
+  useEffect(() => {
     if (branchFilter && !branchOptions.includes(branchFilter)) {
       setBranchFilter('')
     }
   }, [branchOptions, branchFilter])
 
-  useMemo(() => {
+  useEffect(() => {
     if (zoneFilter && !zoneOptions.includes(zoneFilter)) {
       setZoneFilter('')
     }
   }, [zoneOptions, zoneFilter])
 
-  useMemo(() => {
+  useEffect(() => {
     if (stateFilter && !stateOptions.includes(stateFilter)) {
       setStateFilter('')
     }

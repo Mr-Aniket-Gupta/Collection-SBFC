@@ -1,3 +1,6 @@
+// Active Cases by Branch chart in report page 
+
+
 import React from 'react'
 import {
   ResponsiveContainer,

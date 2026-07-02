@@ -1,3 +1,7 @@
+// Bucket-wise Trend
+// Strategy buckets: 0-30, 31-60, 61-90, 90+
+
+
 import React from 'react'
 import {
   ResponsiveContainer,

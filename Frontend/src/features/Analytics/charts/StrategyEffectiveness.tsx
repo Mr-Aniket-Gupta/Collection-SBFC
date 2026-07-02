@@ -13,6 +13,7 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
   const totalPages = Math.ceil(data.length / itemsPerPage)
+  const formatPercent = (value: number) => `${value.toFixed(2)}%`
 
   const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages))
   const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1))
@@ -28,10 +29,10 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
       <div className="flex flex-col gap-6 mt-2 min-h-[320px]">
         {paginatedData.map((strategy) => (
           <div key={strategy.name} className="flex flex-col gap-1.5">
-            <ProgressBar
-              label={strategy.name}
-              percentage={strategy.percentage}
-              target={strategy.target}
+              <ProgressBar
+                label={strategy.name}
+                percentage={strategy.percentage}
+                target={strategy.target}
               color={strategy.color}
               showPercentageBadge
               showTargetLabel
@@ -42,12 +43,12 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-[var(--color-ice)]" />
               <span className="text-[11px] text-[var(--color-ink-muted)]">
-                Target: {strategy.target}%
+                Target: {formatPercent(strategy.target)}
                 {strategy.percentage >= strategy.target ? (
                   <span className="ml-2 text-[var(--color-gold)] font-semibold">Achieved</span>
                 ) : (
                   <span className="ml-2 text-[var(--color-blue)] font-semibold">
-                    {(strategy.target - strategy.percentage).toFixed(1)}% to go
+                    {formatPercent(strategy.target - strategy.percentage)} to go
                   </span>
                 )}
               </span>

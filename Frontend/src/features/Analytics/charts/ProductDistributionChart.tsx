@@ -24,7 +24,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].payload.color }} />
           <p className="text-[12px] font-semibold text-[var(--color-navy)]">{payload[0].name}</p>
         </div>
-        <p className="text-[18px] font-bold text-[var(--color-navy)]">{payload[0].value}%</p>
+        <p className="text-[18px] font-bold text-[var(--color-navy)]">{Number(payload[0].value).toFixed(2)}%</p>
       </div>
     )
   }
@@ -43,6 +43,7 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
   subtitle = 'Collection portfolio breakdown by product type',
 }) => {
   const total = data.reduce((sum, item) => sum + item.value, 0)
+  const formatPercent = (value: number) => `${value.toFixed(2)}%`
 
   return (
     <ChartCard
@@ -83,7 +84,7 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
 
           {/* Center Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p className="text-[28px] font-bold text-[var(--color-navy)]">{total}%</p>
+            <p className="text-[28px] font-bold text-[var(--color-navy)]">{formatPercent(total)}</p>
             <p className="text-[11px] text-[var(--color-ink-muted)] font-medium">Total</p>
           </div>
         </div>
@@ -98,7 +99,7 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
               />
               <div className="flex items-center justify-between flex-1 min-w-0">
                 <span className="text-[12px] text-[var(--color-ink-muted)] font-medium truncate">{item.name}</span>
-                <span className="text-[12px] font-bold text-[var(--color-navy)] ml-1">{item.value}%</span>
+                <span className="text-[12px] font-bold text-[var(--color-navy)] ml-1">{formatPercent(item.value)}</span>
               </div>
             </div>
           ))}

@@ -1,3 +1,7 @@
+// This service handles all API calls related to report tables. 
+// It requests paginated data from the appropriate backend endpoint and returns the processed response for use in the UI.
+
+
 import { fetchWithFallback, unwrap } from '@/lib/apiClient'
 import type { DcspPagedResult, DcspTableRow } from '../types'
 

@@ -1,3 +1,5 @@
+// This utility acts as the central filtering engine for the Reports module. It applies category, date, branch, zone, and state filters, propagates matching IDs across related tables, and returns a synchronized dataset for charts, tables, and dashboard cards.
+
 import type { ReportTableKey } from '../hooks/useReports'
 import type { DcspTableRow } from '../types'
 import { isWithinDateRange } from './dateFilter'

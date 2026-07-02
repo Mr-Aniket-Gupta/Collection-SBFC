@@ -1,3 +1,8 @@
+// This file mainly contains the TypeScript types and interfaces used throughout the Reports module. 
+// It defines the structure of API responses, report table rows, chart data, filter options, sorting options, 
+// and shared models to ensure type safety and consistency across the application.
+
+
 /** Row shape returned by the generic DCSP query endpoints. */
 export interface DcspTableRow {
   [key: string]: string | number | boolean | null

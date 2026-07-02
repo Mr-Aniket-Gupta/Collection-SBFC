@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { PageHeader, KPICard } from '@/Components/Analytics'
+import { ReportSelectFilter } from '@/features/reports/components/ReportSelectFilter'
 import { PerformanceRadar } from '../charts/PerformanceRadar'
 import { StrategyEffectiveness } from '../charts/StrategyEffectiveness'
 import { HourlyCallDistribution } from '../charts/HourlyCallDistribution'
@@ -40,21 +41,25 @@ export const AnalyticsPage: React.FC = () => {
         selectedDateFilter={selectedDateFilter}
         customFromDate={customFromDate}
         customToDate={customToDate}
-        branchFilter={branchFilter}
-        zoneFilter={zoneFilter}
-        stateFilter={stateFilter}
-        branchOptions={branchOptions}
-        zoneOptions={zoneOptions}
-        stateOptions={stateOptions}
         onDateFilterChange={setSelectedDateFilter}
         onCustomFromDateChange={setCustomFromDate}
         onCustomToDateChange={setCustomToDate}
+
+        branchFilter={branchFilter}
+        zoneFilter={zoneFilter}
+        stateFilter={stateFilter}
+
+        branchOptions={branchOptions}
+        zoneOptions={zoneOptions}
+        stateOptions={stateOptions}
+
         onBranchFilterChange={setBranchFilter}
         onZoneFilterChange={setZoneFilter}
         onStateFilterChange={setStateFilter}
+
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
-      />
+      />   
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">

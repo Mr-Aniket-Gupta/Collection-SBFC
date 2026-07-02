@@ -1,3 +1,5 @@
+// This utility centralizes report data processing by fetching all report tables, organizing them into a unified bundle, transforming them into a common report format, and providing grouped data for dashboard components such as charts, filters, and MIS summary cards.
+
 import { reportsService } from '../services/reportsService'
 import type { ReportLibraryRow } from '../types'
 import type { ReportTableKey } from '../hooks/useReports'

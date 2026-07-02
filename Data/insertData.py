@@ -69,16 +69,23 @@ def rand_datetime(days_back=WINDOW_DAYS_BACK, days_fwd=WINDOW_DAYS_FWD):
 
 def rand_datetime_after(base_dt, max_days_after=30):
     """
-    Diye gaye base_dt ke baad (kabhi kabhi pehle bhi 1 din tak) ek random
-    datetime deta hai -- ye dependent records (jaise payment ek case ke
-    baad) ko realistic banata hai. Result kabhi bhi "today" (now) se
-    aage nahi jaata, taaki poora data last-6-months window ke andar rahe.
-    ~TODAY_PROB chance hai ki (agar possible ho) seedhe "aaj" ki date mil jaaye.
+    base_dt ke BAAD ka ek random datetime deta hai (kabhi bhi base_dt se pehle nahi).
+    FIX: pehle 'earliest' ko base_dt se kuch ghante peeche kar diya jata tha,
+    jisse result occasionally base_dt se pehle ban jata tha (e.g. payment_date
+    case created_at se pehle) -- ab earliest hamesha base_dt hi hai.
     """
     now = datetime.now()
+    if base_dt >= now:
+        # base_dt already "now" ke aas-paas hai, seedha usi ko thoda aage badha do
+        return base_dt
+
     if random.random() < TODAY_PROB and base_dt <= now:
-        return today_datetime()
-    earliest = base_dt - timedelta(hours=random.randint(0, 24))
+        candidate = today_datetime()
+        # today_datetime() base_dt se pehle na ho, isse guard karo
+        if candidate >= base_dt:
+            return candidate
+
+    earliest = base_dt
     latest = min(base_dt + timedelta(days=max_days_after), now)
     if latest <= earliest:
         latest = earliest + timedelta(seconds=1)
@@ -166,6 +173,14 @@ def insert_agents(cur):
 
 
 def insert_cases(cur, strategy_ids, agent_ids):
+    """
+    FIX: 'bucket' column pehle INSERT column-list me missing tha (jabki DB me
+    NOT NULL hai), jiski wajah se values-tuple (18 values) aur column-list
+    (17 columns) match nahi karte the -> psycopg2 parameter-count error, aur
+    baaki har value apni sahi column se ek slot shift ho jati thi
+    (dpd me bucket-string jaana, assigned_to me strategy_id jaana, etc).
+    Ab 'bucket' column add kar diya gaya hai aur har value apni sahi jagah par hai.
+    """
     ids = []
     created_dates = []
     for _ in range(ROWS_PER_TABLE):

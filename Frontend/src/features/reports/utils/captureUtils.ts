@@ -1,3 +1,6 @@
+// This utility file handles printing, image capture, file download, and sharing of report sections. 
+// It provides reusable functions to print a selected DOM element, convert it into a PNG image, download the image, or share it using the browser's native sharing capabilities.
+
 import { toBlob } from 'html-to-image'
 
 /** Captures a DOM element as PNG and triggers browser print with preserved styling. */

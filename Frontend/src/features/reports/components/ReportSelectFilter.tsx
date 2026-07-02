@@ -1,3 +1,6 @@
+// Dropdown -> Branch, Zone, State
+
+
 import React, { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 
@@ -60,11 +63,10 @@ export const ReportSelectFilter: React.FC<ReportSelectFilterProps> = ({
               onChange('')
               setOpen(false)
             }}
-            className={`w-full px-4 py-2.5 text-left text-[13px] font-medium transition-colors ${
-              !value
+            className={`w-full px-4 py-2.5 text-left text-[13px] font-medium transition-colors ${!value
                 ? 'bg-[var(--color-navy)] text-white'
                 : 'text-[var(--color-navy)] hover:bg-[var(--color-ice)]'
-            }`}
+              }`}
           >
             {allLabel}
           </button>
@@ -78,11 +80,10 @@ export const ReportSelectFilter: React.FC<ReportSelectFilterProps> = ({
                 onChange(option)
                 setOpen(false)
               }}
-              className={`w-full px-4 py-2.5 text-left text-[13px] font-medium transition-colors ${
-                value === option
+              className={`w-full px-4 py-2.5 text-left text-[13px] font-medium transition-colors ${value === option
                   ? 'bg-[var(--color-navy)] text-white'
                   : 'text-[var(--color-navy)] hover:bg-[var(--color-ice)]'
-              }`}
+                }`}
             >
               {option}
             </button>

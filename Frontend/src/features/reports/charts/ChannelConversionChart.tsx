@@ -1,3 +1,6 @@
+// Channel Conversion Rate
+// SMS, WhatsApp, Email, AI Call & Field visit counts
+
 import React from 'react'
 import {
   ResponsiveContainer,

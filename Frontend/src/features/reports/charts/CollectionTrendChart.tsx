@@ -1,3 +1,6 @@
+// Collection Trend
+
+
 import React from 'react'
 import {
   ResponsiveContainer,

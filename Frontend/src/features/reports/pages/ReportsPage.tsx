@@ -1,4 +1,4 @@
- import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -19,7 +19,6 @@ import {
   CollectionTrendChart,
   PaymentVolumeTrendChart,
   RecoveryDistributionChart,
-  PaymentRecoverySpeedWidget,
 } from '@/features/reports/charts'
 
 
@@ -38,11 +37,11 @@ import { downloadMultiSheetWorkbook, shareCsvFile, toExportRows } from '@/featur
 import { buildMisCardMetrics, groupTableRowsFromBundle } from '@/features/reports/utils/misCardMetrics'
 import {
   applyCategoryGlobalFilter,
-  countBundleRows,
+  // countBundleRows,
   EMPTY_BUNDLE,
-  extractBranchOptions,
-  extractZoneOptions,
-  extractStateOptions,
+  // extractBranchOptions,
+  // extractZoneOptions,
+  // extractStateOptions,
   filterBundleByBranchZone,
   filterBundleByDateRange,
 } from '@/features/reports/utils/reportFilterEngine'
@@ -330,10 +329,10 @@ export const ReportsPage: React.FC = () => {
     [locationFilteredBundle],
   )
 
-  const statusOptions = useMemo(
-    () => Array.from(new Set(syncReports.map((r) => r.status).filter(Boolean))).sort(),
-    [syncReports],
-  )
+  // const statusOptions = useMemo(
+  //   () => Array.from(new Set(syncReports.map((r) => r.status).filter(Boolean))).sort(),
+  //   [syncReports],
+  // )
 
   const chartReports = syncReports
 
@@ -417,7 +416,11 @@ export const ReportsPage: React.FC = () => {
   }]
 
   const buildExportSheets = () => {
-    const sheets = [
+    type ExportSheet = {
+      name: string
+      rows: Record<string, string>[]
+    }
+    const sheets:ExportSheet[] = [
       {
         name: 'Summary',
         rows: [
@@ -429,10 +432,10 @@ export const ReportsPage: React.FC = () => {
           { metric: 'Filtered Records', value: String(filteredRows.length) },
         ],
       },
-      { name: 'Channel Conversion', rows: channelConversionData.map((d) => ({ channel: d.channel, count: String(d.sent) })) },
-      { name: 'Bucket Trend', rows: bucketWiseTrendData.map((d) => ({ month: d.month, '0-30': String(d['0-30']), '31-60': String(d['31-60']), '61-90': String(d['61-90']), '90+': String(d['90+']) })) },
-      { name: 'Collection Trend', rows: collectionTrendData.map((d) => ({ month: d.month, success: String(d.success), failed: String(d.failed), pending: String(d.pending) })) },
-      { name: 'Recovery Split', rows: recoveryDistributionData.map((d) => ({ name: d.name, percent: String(d.value) })) },
+      // { name: 'Channel Conversion', rows: channelConversionData.map((d) => ({ channel: d.channel, count: String(d.sent) })) },
+      // { name: 'Bucket Trend', rows: bucketWiseTrendData.map((d) => ({ month: d.month, '0-30': String(d['0-30']), '31-60': String(d['31-60']), '61-90': String(d['61-90']), '90+': String(d['90+']) })) },
+      // { name: 'Collection Trend', rows: collectionTrendData.map((d) => ({ month: d.month, success: String(d.success), failed: String(d.failed), pending: String(d.pending) })) },
+      // { name: 'Recovery Split', rows: recoveryDistributionData.map((d) => ({ name: d.name, percent: String(d.value) })) },
     ].filter((sheet) => sheet.rows.length > 0)
 
     const tableKeys: ReportTableKey[] = [
@@ -590,19 +593,10 @@ export const ReportsPage: React.FC = () => {
     </>
   )
 
-  const renderRecoverySpeedWidget = () => (
-    <div className="mt-6">
-      <PaymentRecoverySpeedWidget
-        bundle={{ cases: syncBundle.cases, payments: syncBundle.payments }}
-        dateRange={dateRange}
-        customFromDate={customFromDate}
-        customToDate={customToDate}
-      />
-    </div>
-  )
 
 
 
+  // frontend show
 
   return (
     <div className="reports-page -m-6 space-y-6 p-6">
@@ -653,7 +647,6 @@ export const ReportsPage: React.FC = () => {
             </div>
             <div className="mt-6 space-y-6">
               {renderTrends()}
-              {renderRecoverySpeedWidget()}
             </div>
 
           </div>

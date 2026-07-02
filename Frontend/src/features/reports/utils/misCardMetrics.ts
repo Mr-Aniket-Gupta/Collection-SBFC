@@ -1,3 +1,8 @@
+/*
+This utility processes raw payment, strategy, and communication data to calculate business metrics for the top MIS dashboard cards. 
+It removes duplicate records, performs calculations such as recovery amount, success rate, digital recovery percentage, and bounce rate, then returns formatted values for display.
+*/
+
 import type { DcspTableRow } from '../types'
 import { formatCurrencyINR, formatPercent } from './formatters'
 import { safeToString } from './tableUtils'

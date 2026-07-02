@@ -27,6 +27,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   const [width, setWidth] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
+  const formatPercent = (value: number) => `${value.toFixed(2)}%`
 
   useEffect(() => {
     if (!animated) {
@@ -48,10 +49,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           )}
           {showPercentageBadge && (
             <div className="flex items-center gap-2 shrink-0 ml-2">
-              <span className="text-[13px] font-bold text-[var(--color-navy)]">{percentage}%</span>
+              <span className="text-[13px] font-bold text-[var(--color-navy)]">{formatPercent(percentage)}</span>
               {target !== undefined && showTargetLabel && (
                 <span className="text-[11px] text-[var(--color-ink-muted)] font-medium">
-                  Target {target}%
+                  Target {formatPercent(target)}
                 </span>
               )}
             </div>
