@@ -10,6 +10,16 @@ public sealed class AnalyticsRepository
 {
     private readonly IDbConnectionFactory _dbConnectionFactory;
 
+    private sealed record AnalyticsKpiSnapshot(
+        decimal ClosedOutstandingPrincipal,
+        decimal TotalOutstandingPrincipal,
+        decimal ClosedOutstandingTotal,
+        decimal TotalOutstandingTotal,
+        decimal TotalCommunications,
+        decimal DeliveredCommunications,
+        decimal TotalPtps,
+        decimal HonouredPtps);
+
     public AnalyticsRepository(IDbConnectionFactory dbConnectionFactory)
     {
         _dbConnectionFactory = dbConnectionFactory;
@@ -23,39 +33,96 @@ public sealed class AnalyticsRepository
         var communication = await GetCommunicationPerformanceAsync(request, cancellationToken);
         var channelPerformance = await GetChannelPerformanceAsync(request, cancellationToken);
         var bucketDistribution = await GetBucketDistributionAsync(request, cancellationToken);
-        return new AnalyticsDashboardDto(kpiCards, radar, strategy, communication, channelPerformance, bucketDistribution);
+        var branchContributors = await GetBranchContributorsAsync(request, cancellationToken);
+        var agentContributors = await GetAgentContributorsAsync(request, cancellationToken);
+        return new AnalyticsDashboardDto(kpiCards, radar, strategy, communication, channelPerformance, bucketDistribution, branchContributors, agentContributors);
     }
 
     public async Task<IReadOnlyList<KpiCardDto>> GetKpiCardsAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
             SELECT
+                COALESCE((SELECT SUM(outstanding_principal) FROM cases WHERE LOWER(status) IN ('closed', 'settled', 'resolved') AND (@state IS NULL OR state = @state) AND (@branch IS NULL OR branch = @branch) AND (@zone IS NULL OR zone = @zone) AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS closed_outstanding_principal,
                 COALESCE((SELECT SUM(outstanding_principal) FROM cases WHERE (@state IS NULL OR state = @state) AND (@branch IS NULL OR branch = @branch) AND (@zone IS NULL OR zone = @zone) AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS total_outstanding_principal,
+                COALESCE((SELECT SUM(outstanding_total) FROM cases WHERE LOWER(status) IN ('closed', 'settled', 'resolved') AND (@state IS NULL OR state = @state) AND (@branch IS NULL OR branch = @branch) AND (@zone IS NULL OR zone = @zone) AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS closed_outstanding_total,
                 COALESCE((SELECT SUM(outstanding_total) FROM cases WHERE (@state IS NULL OR state = @state) AND (@branch IS NULL OR branch = @branch) AND (@zone IS NULL OR zone = @zone) AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS total_outstanding,
+                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN cases c ON c.case_id = comm.case_id WHERE (@state IS NULL OR c.state = @state) AND (@branch IS NULL OR c.branch = @branch) AND (@zone IS NULL OR c.zone = @zone) AND (@start_date IS NULL OR comm.created_at::date >= @start_date) AND (@end_date IS NULL OR comm.created_at::date <= @end_date)), 0) AS total_communications,
                 COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN cases c ON c.case_id = comm.case_id WHERE LOWER(comm.status) = 'delivered' AND (@state IS NULL OR c.state = @state) AND (@branch IS NULL OR c.branch = @branch) AND (@zone IS NULL OR c.zone = @zone) AND (@start_date IS NULL OR comm.created_at::date >= @start_date) AND (@end_date IS NULL OR comm.created_at::date <= @end_date)), 0) AS total_delivered,
+                COALESCE((SELECT COUNT(*)::numeric FROM ptps p INNER JOIN cases c ON c.case_id = p.case_id WHERE (@state IS NULL OR c.state = @state) AND (@branch IS NULL OR c.branch = @branch) AND (@zone IS NULL OR c.zone = @zone) AND (@start_date IS NULL OR p.created_at::date >= @start_date) AND (@end_date IS NULL OR p.created_at::date <= @end_date)), 0) AS total_ptps,
                 COALESCE((SELECT COUNT(p.ptp_id)::numeric FROM ptps p INNER JOIN cases c ON c.case_id = p.case_id WHERE p.honoured = true AND (@state IS NULL OR c.state = @state) AND (@branch IS NULL OR c.branch = @branch) AND (@zone IS NULL OR c.zone = @zone) AND (@start_date IS NULL OR p.created_at::date >= @start_date) AND (@end_date IS NULL OR p.created_at::date <= @end_date)), 0) AS honoured_ptps
             """;
 
+        var current = await ReadKpiSnapshotAsync(sql, request.StartDate, request.EndDate, request, cancellationToken);
+        var previous = await ReadPreviousKpiSnapshotAsync(sql, request, cancellationToken);
+
+        var closedOutstandingPrincipalLakhs = current.ClosedOutstandingPrincipal / 100000.0m;
+        var totalOutstandingPrincipalLakhs = current.TotalOutstandingPrincipal / 100000.0m;
+        var closedOutstandingTotalLakhs = current.ClosedOutstandingTotal / 100000.0m;
+        var totalOutstandingLakhs = current.TotalOutstandingTotal / 100000.0m;
+        var totalCommunications = current.TotalCommunications;
+        var deliveredCommunications = current.DeliveredCommunications;
+        var totalPtps = current.TotalPtps;
+        var honouredPtps = current.HonouredPtps;
+
+        return
+        [
+            new("total-outstanding-principal", "Total Outstanding Principal", closedOutstandingPrincipalLakhs.ToString("N2") + " L", $"{totalOutstandingPrincipalLakhs:N2} L out of all principal", "Closed principal out of filtered principal total", BuildTrendText(current.ClosedOutstandingPrincipal, previous.ClosedOutstandingPrincipal), BuildTrendDirection(current.ClosedOutstandingPrincipal, previous.ClosedOutstandingPrincipal), "wallet", "#000182", "bg-[var(--color-ice)]"),
+            new("total-outstanding", "Total Outstanding", closedOutstandingTotalLakhs.ToString("N2") + " L", $"{totalOutstandingLakhs:N2} L out of all total outstanding", "Closed outstanding out of filtered outstanding total", BuildTrendText(current.ClosedOutstandingTotal, previous.ClosedOutstandingTotal), BuildTrendDirection(current.ClosedOutstandingTotal, previous.ClosedOutstandingTotal), "receipt", "#CE9B01", "bg-[rgba(206,155,1,0.13)]"),
+            new("total-delivered", "Total Delivered", deliveredCommunications.ToString("N0"), $"{totalCommunications:N0} out of all communication rows", "Delivered rows out of filtered communications", BuildTrendText(current.DeliveredCommunications, previous.DeliveredCommunications), BuildTrendDirection(current.DeliveredCommunications, previous.DeliveredCommunications), "message-circle", "#050058", "bg-[var(--color-ice)]"),
+            new("ptps-honoured", "PTPs Honoured", honouredPtps.ToString("N0"), $"{totalPtps:N0} out of all PTP rows", "Honoured PTPs out of filtered PTPs", BuildTrendText(current.HonouredPtps, previous.HonouredPtps), BuildTrendDirection(current.HonouredPtps, previous.HonouredPtps), "check-circle", "#CE9B01", "bg-[rgba(206,155,1,0.13)]")
+        ];
+    }
+
+    private async Task<AnalyticsKpiSnapshot> ReadKpiSnapshotAsync(string sql, DateOnly? startDate, DateOnly? endDate, AnalyticsQueryRequest request, CancellationToken cancellationToken)
+    {
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
-        command.AddDateRange(request.StartDate, request.EndDate);
+        command.AddDateRange(startDate, endDate);
         command.AddNullableText("@state", request.State);
         command.AddNullableText("@branch", request.Branch);
         command.AddNullableText("@zone", request.Zone);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
+        return new AnalyticsKpiSnapshot(
+            reader.GetDecimal(0),
+            reader.GetDecimal(1),
+            reader.GetDecimal(2),
+            reader.GetDecimal(3),
+            reader.GetDecimal(4),
+            reader.GetDecimal(5),
+            reader.GetDecimal(6),
+            reader.GetDecimal(7));
+    }
 
-        var outstandingPrincipalLakhs = reader.GetDecimal(0) / 100000.0m;
-        var outstandingTotalLakhs = reader.GetDecimal(1) / 100000.0m;
+    private async Task<AnalyticsKpiSnapshot> ReadPreviousKpiSnapshotAsync(string sql, AnalyticsQueryRequest request, CancellationToken cancellationToken)
+    {
+        if (request.StartDate is null || request.EndDate is null)
+        {
+            return new AnalyticsKpiSnapshot(0, 0, 0, 0, 0, 0, 0, 0);
+        }
 
-        return
-        [
-            new("total-outstanding-principal", "Total Outstanding Principal", outstandingPrincipalLakhs.ToString("N2") + " L", "From cases", null, "neutral", "wallet", "#000182", "bg-[var(--color-ice)]"),
-            new("total-outstanding", "Total Outstanding", outstandingTotalLakhs.ToString("N2") + " L", "From cases", null, "neutral", "receipt", "#CE9B01", "bg-[rgba(206,155,1,0.13)]"),
-            new("total-delivered", "Total Delivered", reader.GetDecimal(2).ToString("N0"), "From communications", null, "neutral", "message-circle", "#050058", "bg-[var(--color-ice)]"),
-            new("ptps-honoured", "PTPs Honoured", reader.GetDecimal(3).ToString("N0"), "From ptps", null, "neutral", "check-circle", "#CE9B01", "bg-[rgba(206,155,1,0.13)]")
-        ];
+        var span = request.EndDate.Value.DayNumber - request.StartDate.Value.DayNumber + 1;
+        var previousEnd = request.StartDate.Value.AddDays(-1);
+        var previousStart = previousEnd.AddDays(-(span - 1));
+        return await ReadKpiSnapshotAsync(sql, previousStart, previousEnd, request, cancellationToken);
+    }
+
+    private static string? BuildTrendText(decimal current, decimal previous)
+    {
+        if (previous == 0) return null;
+        var pct = ((current - previous) / previous) * 100m;
+        var rounded = Math.Round(pct, 1, MidpointRounding.AwayFromZero);
+        var sign = rounded > 0 ? "+" : "";
+        return $"{sign}{rounded:N1}% vs previous period";
+    }
+
+    private static string? BuildTrendDirection(decimal current, decimal previous)
+    {
+        if (previous == 0) return "neutral";
+        if (current > previous) return "up";
+        if (current < previous) return "down";
+        return "neutral";
     }
 
     public async Task<IReadOnlyList<RadarDataPointDto>> GetRadarAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
@@ -281,6 +348,78 @@ public sealed class AnalyticsRepository
             """;
 
         return await ReadDistributionAsync(sql, request, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<PerformanceDto>> GetBranchContributorsAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT
+                COALESCE(c.branch, 'Unknown') AS name,
+                COALESCE(SUM(c.outstanding_total), 0)::numeric AS value,
+                COALESCE(SUM(c.outstanding_total), 0)::numeric AS target
+            FROM cases c
+            WHERE (@state IS NULL OR c.state = @state)
+              AND (@branch IS NULL OR c.branch = @branch)
+              AND (@zone IS NULL OR c.zone = @zone)
+              AND (@start_date IS NULL OR c.created_at::date >= @start_date)
+              AND (@end_date IS NULL OR c.created_at::date <= @end_date)
+            GROUP BY c.branch
+            ORDER BY value DESC
+            LIMIT @limit;
+            """;
+
+        await using var connection = _dbConnectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.AddDateRange(request.StartDate, request.EndDate);
+        command.AddNullableText("@state", request.State);
+        command.AddNullableText("@branch", request.Branch);
+        command.AddNullableText("@zone", request.Zone);
+        command.Parameters.AddWithValue("@limit", request.Limit);
+        var result = new List<PerformanceDto>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Add(new PerformanceDto(reader.GetString(0), reader.GetDecimal(1), reader.GetDecimal(2)));
+        }
+        return result;
+    }
+
+    public async Task<IReadOnlyList<AgentPerformanceDto>> GetAgentContributorsAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT
+                COALESCE(a.agent_name, 'Unassigned') AS agent_name,
+                COUNT(c.case_id)::int AS allocated_cases,
+                COUNT(c.case_id) FILTER (WHERE LOWER(c.status) IN ('closed', 'settled', 'resolved'))::int AS resolved_cases,
+                COALESCE(SUM(c.outstanding_total) FILTER (WHERE LOWER(c.status) IN ('closed', 'settled', 'resolved')), 0)::numeric AS recovered_amount
+            FROM cases c
+            LEFT JOIN agents a ON a.agent_id = c.assigned_to
+            WHERE (@state IS NULL OR c.state = @state)
+              AND (@branch IS NULL OR c.branch = @branch)
+              AND (@zone IS NULL OR c.zone = @zone)
+              AND (@start_date IS NULL OR c.created_at::date >= @start_date)
+              AND (@end_date IS NULL OR c.created_at::date <= @end_date)
+            GROUP BY a.agent_name
+            ORDER BY resolved_cases DESC, allocated_cases DESC
+            LIMIT @limit;
+            """;
+
+        await using var connection = _dbConnectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.AddDateRange(request.StartDate, request.EndDate);
+        command.AddNullableText("@state", request.State);
+        command.AddNullableText("@branch", request.Branch);
+        command.AddNullableText("@zone", request.Zone);
+        command.Parameters.AddWithValue("@limit", request.Limit);
+        var result = new List<AgentPerformanceDto>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            result.Add(new AgentPerformanceDto(reader.GetString(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetDecimal(3)));
+        }
+        return result;
     }
 
     private async Task<IReadOnlyList<ProductDistributionDto>> ReadDistributionAsync(string sql, AnalyticsQueryRequest request, CancellationToken cancellationToken)

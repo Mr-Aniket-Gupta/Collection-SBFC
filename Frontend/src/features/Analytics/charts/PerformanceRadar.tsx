@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 import { ChartCard } from '@/Components'
 import type { RadarDataPoint } from '../types/analytics.types'
+import { formatCappedPercent } from '@/features/reports/utils/formatters'
 
 interface CustomTooltipProps {
   active?: boolean
@@ -23,7 +24,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
     return (
       <div className="bg-white border border-[rgba(5,0,88,0.12)] rounded-xl px-3 py-2.5 shadow-lg">
         <p className="text-[11px] text-[var(--color-ink-muted)] font-medium">{payload[0].payload.metric}</p>
-        <p className="text-[16px] font-bold text-[var(--color-navy)]">{Number(payload[0].value).toFixed(2)}%</p>
+        <p className="text-[16px] font-bold text-[var(--color-navy)]">{formatCappedPercent(Number(payload[0].value))}</p>
       </div>
     )
   }
@@ -35,8 +36,6 @@ interface PerformanceRadarProps {
 }
 
 export const PerformanceRadar: React.FC<PerformanceRadarProps> = ({ data }) => {
-  const formatPercent = (value: number) => `${value.toFixed(2)}%`
-
   return (
     <ChartCard
       title="Performance Radar"
@@ -88,7 +87,7 @@ export const PerformanceRadar: React.FC<PerformanceRadarProps> = ({ data }) => {
             className="flex items-center gap-1.5 px-3 py-1 bg-[var(--color-ice)] rounded-full"
           >
             <span className="text-[10px] font-semibold text-[var(--color-blue)]">{item.metric}</span>
-            <span className="text-[10px] font-bold text-[var(--color-navy)]">{formatPercent(item.value)}</span>
+            <span className="text-[10px] font-bold text-[var(--color-navy)]">{formatCappedPercent(item.value)}</span>
           </div>
         ))}
       </div>

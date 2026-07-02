@@ -43,7 +43,10 @@ export const ChartDataModal: React.FC<ChartDataModalProps> = ({ isOpen, onClose,
         }
       })
     })
-    return ordered
+    return ordered.filter((col) => {
+      const lower = col.toLowerCase()
+      return lower !== 'color' && lower !== 'bgcolor' && lower !== 'iconcolor'
+    })
   }, [data])
 
   if (!isOpen) return null

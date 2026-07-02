@@ -45,6 +45,9 @@ export const KPICard: React.FC<KPICardProps> = ({ card }) => {
       <div className="flex flex-col gap-1">
         <p className="text-[12px] font-bold text-[var(--color-ink-muted)] uppercase tracking-wide">{card.title}</p>
         <p className="text-[28px] font-bold text-[var(--color-navy)] leading-tight">{card.value}</p>
+        {card.comparisonValue && (
+          <p className="text-[12px] font-semibold text-[var(--color-blue)]">{card.comparisonValue}</p>
+        )}
         <div className="flex items-center gap-2 mt-1">
           {card.trend && (
             <span

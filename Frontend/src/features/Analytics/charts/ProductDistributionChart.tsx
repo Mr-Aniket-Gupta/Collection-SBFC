@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { ChartCard } from '@/Components'
 import type { ProductDistribution } from '../types/analytics.types'
+import { formatCappedPercent } from '@/features/reports/utils/formatters'
 
 interface CustomTooltipProps {
   active?: boolean
@@ -24,7 +25,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: payload[0].payload.color }} />
           <p className="text-[12px] font-semibold text-[var(--color-navy)]">{payload[0].name}</p>
         </div>
-        <p className="text-[18px] font-bold text-[var(--color-navy)]">{Number(payload[0].value).toFixed(2)}%</p>
+        <p className="text-[18px] font-bold text-[var(--color-navy)]">{formatCappedPercent(Number(payload[0].value))}</p>
       </div>
     )
   }
@@ -43,7 +44,12 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
   subtitle = 'Collection portfolio breakdown by product type',
 }) => {
   const total = data.reduce((sum, item) => sum + item.value, 0)
-  const formatPercent = (value: number) => `${value.toFixed(2)}%`
+  const palette =
+    title === 'Recovery Efficiency'
+      ? ['#3A7D44', '#5AA469', '#8B5CF6', '#7C3AED', '#0B3C5D']
+      : title === 'Portfolio Risk Distribution'
+        ? ['#0B3C5D', '#2E86AB', '#CE9B01', '#F3B61F', '#9E2A2B']
+        : ['#000182', '#CE9B01', '#050058', '#7C8CA6', '#2E86AB']
 
   return (
     <ChartCard
@@ -73,7 +79,7 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
                 {data.map((entry) => (
                   <Cell
                     key={entry.name}
-                    fill={entry.color}
+                    fill={palette[data.indexOf(entry) % palette.length]}
                     stroke="transparent"
                   />
                 ))}
@@ -84,7 +90,7 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
 
           {/* Center Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <p className="text-[28px] font-bold text-[var(--color-navy)]">{formatPercent(total)}</p>
+            <p className="text-[28px] font-bold text-[var(--color-navy)]">{formatCappedPercent(total)}</p>
             <p className="text-[11px] text-[var(--color-ink-muted)] font-medium">Total</p>
           </div>
         </div>
@@ -95,11 +101,11 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
             <div key={item.name} className="flex items-center gap-2.5">
               <div
                 className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: item.color }}
+                style={{ backgroundColor: palette[data.indexOf(item) % palette.length] }}
               />
               <div className="flex items-center justify-between flex-1 min-w-0">
                 <span className="text-[12px] text-[var(--color-ink-muted)] font-medium truncate">{item.name}</span>
-                <span className="text-[12px] font-bold text-[var(--color-navy)] ml-1">{formatPercent(item.value)}</span>
+                <span className="text-[12px] font-bold text-[var(--color-navy)] ml-1">{formatCappedPercent(item.value)}</span>
               </div>
             </div>
           ))}

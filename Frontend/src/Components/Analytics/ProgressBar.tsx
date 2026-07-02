@@ -1,6 +1,7 @@
 // ProgressBar Component
 
 import React, { useEffect, useRef, useState } from 'react'
+import { clampPercent, formatCappedPercent } from '@/features/reports/utils/formatters'
 
 interface ProgressBarProps {
   label?: string
@@ -27,15 +28,14 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   const [width, setWidth] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
-  const formatPercent = (value: number) => `${value.toFixed(2)}%`
 
   useEffect(() => {
     if (!animated) {
-      setWidth(percentage)
+      setWidth(clampPercent(percentage))
       return
     }
     // Trigger animation after mount
-    const timer = setTimeout(() => setWidth(percentage), 120)
+    const timer = setTimeout(() => setWidth(clampPercent(percentage)), 120)
     return () => clearTimeout(timer)
   }, [percentage, animated])
 
@@ -49,10 +49,10 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           )}
           {showPercentageBadge && (
             <div className="flex items-center gap-2 shrink-0 ml-2">
-              <span className="text-[13px] font-bold text-[var(--color-navy)]">{formatPercent(percentage)}</span>
+              <span className="text-[13px] font-bold text-[var(--color-navy)]">{formatCappedPercent(percentage)}</span>
               {target !== undefined && showTargetLabel && (
                 <span className="text-[11px] text-[var(--color-ink-muted)] font-medium">
-                  Target {formatPercent(target)}
+                  Target {formatCappedPercent(target)}
                 </span>
               )}
             </div>
@@ -69,7 +69,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         <div
           className="h-full rounded-full transition-all duration-700 ease-out"
           style={{
-            width: `${width}%`,
+            width: `${clampPercent(width)}%`,
             backgroundColor: color,
           }}
         />

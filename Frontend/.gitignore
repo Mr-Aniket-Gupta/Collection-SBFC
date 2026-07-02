@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+.agent
+.venv
+.log
+.bin
+.obj

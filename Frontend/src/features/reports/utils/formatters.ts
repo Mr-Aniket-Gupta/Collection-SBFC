@@ -14,6 +14,13 @@ export const formatCurrencyINR = (amount: number): string => {
   }).format(amount)
 }
 
-export const formatPercent = (value: number): string => `${value.toFixed(1)}%`
+export const formatPercent = (value: number): string => `${clampPercent(value).toFixed(1)}%`
 
 export const formatNumber = (value: number): string => new Intl.NumberFormat('en-IN').format(value)
+
+export const clampPercent = (value: number): number => {
+  if (!Number.isFinite(value)) return 0
+  return Math.max(0, Math.min(100, value))
+}
+
+export const formatCappedPercent = (value: number): string => `${clampPercent(value).toFixed(1)}%`

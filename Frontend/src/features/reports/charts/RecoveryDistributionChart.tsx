@@ -6,6 +6,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recha
 import { ChartCard } from '@/Components'
 import type { RecoveryDistributionData } from '../types'
 import { RECOVERY_PIE_COLORS } from '../constants'
+import { clampPercent } from '../utils/formatters'
 
 interface RecoveryDistributionChartProps {
   data: RecoveryDistributionData[]
@@ -34,7 +35,7 @@ export const RecoveryDistributionChart: React.FC<RecoveryDistributionChartProps>
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
             formatter={(value, _name, item) => {
-              const percentage = Number(value ?? 0)
+              const percentage = clampPercent(Number(value ?? 0))
               const amount = item.payload?.amount ?? 0
 
               return `${percentage}% (₹${amount.toLocaleString('en-IN')})`

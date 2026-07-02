@@ -36,6 +36,7 @@ export interface KPICard {
   id: string
   title: string
   value: string
+  comparisonValue?: string | null
   subtitle: string
   trend?: string | null
   trendDirection?: 'up' | 'down' | 'neutral' | null
@@ -53,4 +54,6 @@ export interface AnalyticsDashboardPayload {
   communicationPerformance: HourlyCallData[]
   channelPerformance: ProductDistribution[]
   bucketDistribution: ProductDistribution[]
+  branchContributors: Array<{ name: string; value: number; target: number }>
+  agentContributors: Array<{ agentName: string; allocatedCases: number; resolvedCases: number; recoveredAmount: number }>
 }

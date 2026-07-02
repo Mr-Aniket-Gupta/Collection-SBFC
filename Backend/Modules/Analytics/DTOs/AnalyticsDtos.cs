@@ -4,6 +4,7 @@ public sealed record KpiCardDto(
     string Id,
     string Title,
     string Value,
+    string? ComparisonValue,
     string Subtitle,
     string? Trend,
     string? TrendDirection,
@@ -33,4 +34,6 @@ public sealed record AnalyticsDashboardDto(
     IReadOnlyList<StrategyRowDto> StrategyPerformance,
     IReadOnlyList<HourlyCallDataDto> CommunicationPerformance,
     IReadOnlyList<ProductDistributionDto> ChannelPerformance,
-    IReadOnlyList<ProductDistributionDto> BucketDistribution);
+    IReadOnlyList<ProductDistributionDto> BucketDistribution,
+    IReadOnlyList<PerformanceDto> BranchContributors,
+    IReadOnlyList<AgentPerformanceDto> AgentContributors);

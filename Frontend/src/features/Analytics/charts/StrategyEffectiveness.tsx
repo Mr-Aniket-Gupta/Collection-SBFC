@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { ChartCard, ProgressBar } from '@/Components'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { StrategyRow } from '../types/analytics.types'
+import { formatCappedPercent } from '@/features/reports/utils/formatters'
 
 interface StrategyEffectivenessProps {
   data: StrategyRow[]
@@ -13,8 +14,6 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
   const totalPages = Math.ceil(data.length / itemsPerPage)
-  const formatPercent = (value: number) => `${value.toFixed(2)}%`
-
   const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages))
   const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1))
 
@@ -43,12 +42,12 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-[var(--color-ice)]" />
               <span className="text-[11px] text-[var(--color-ink-muted)]">
-                Target: {formatPercent(strategy.target)}
+                Target: {formatCappedPercent(strategy.target)}
                 {strategy.percentage >= strategy.target ? (
                   <span className="ml-2 text-[var(--color-gold)] font-semibold">Achieved</span>
                 ) : (
                   <span className="ml-2 text-[var(--color-blue)] font-semibold">
-                    {formatPercent(strategy.target - strategy.percentage)} to go
+                    {formatCappedPercent(strategy.target - strategy.percentage)} to go
                   </span>
                 )}
               </span>
