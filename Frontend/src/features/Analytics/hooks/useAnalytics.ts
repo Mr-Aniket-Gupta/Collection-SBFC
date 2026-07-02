@@ -102,7 +102,17 @@ export function useAnalytics() {
   })
 
   const handleRefresh = () => {
+    resetFilters()
     refetch()
+  }
+
+  const resetFilters = () => {
+    setSelectedDateFilter('Last 6 Months')
+    setCustomFromDate(getDefaultCustomFromDate())
+    setCustomToDate(getDefaultCustomToDate())
+    setBranchFilter('')
+    setZoneFilter('')
+    setStateFilter('')
   }
 
   return {
@@ -126,5 +136,6 @@ export function useAnalytics() {
     dashboard: data,
     error,
     handleRefresh,
+    resetFilters,
   }
 }

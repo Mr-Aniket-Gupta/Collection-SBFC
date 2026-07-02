@@ -344,6 +344,20 @@ export const ReportsPage: React.FC = () => {
   const branchCaseTrend = useMemo(() => buildBranchCaseTrend(chartReports), [chartReports])
   const communicationFunnel = useMemo(() => buildCommunicationFunnel(chartReports), [chartReports])
 
+  const resetAllFilters = () => {
+    setDateRange(DEFAULT_DATE_RANGE)
+    setCustomFromDate(getDefaultCustomFromDate())
+    setCustomToDate(getDefaultCustomToDate())
+    setBranchFilter('')
+    setZoneFilter('')
+    setStateFilter('')
+    setSearch('')
+    setSelectedCategory('')
+    setStatusFilter('')
+    setSortOrder('asc')
+    setPage(1)
+  }
+
   const selectCategory = (cat: CategoryCardConfig) => {
     const same = selectedCategory === cat.title
     setSelectedCategory(same ? '' : cat.title)
@@ -353,12 +367,13 @@ export const ReportsPage: React.FC = () => {
   }
 
   const refreshPageContent = async () => {
-    sessionStorage.setItem(DATE_STORAGE_KEY, dateRange)
-    sessionStorage.setItem(CUSTOM_FROM_STORAGE_KEY, customFromDate)
-    sessionStorage.setItem(CUSTOM_TO_STORAGE_KEY, customToDate)
-    sessionStorage.setItem(BRANCH_FILTER_STORAGE_KEY, branchFilter)
-    sessionStorage.setItem(ZONE_FILTER_STORAGE_KEY, zoneFilter)
-    sessionStorage.setItem(STATE_FILTER_STORAGE_KEY, stateFilter)
+    resetAllFilters()
+    sessionStorage.setItem(DATE_STORAGE_KEY, DEFAULT_DATE_RANGE)
+    sessionStorage.setItem(CUSTOM_FROM_STORAGE_KEY, getDefaultCustomFromDate())
+    sessionStorage.setItem(CUSTOM_TO_STORAGE_KEY, getDefaultCustomToDate())
+    sessionStorage.setItem(BRANCH_FILTER_STORAGE_KEY, '')
+    sessionStorage.setItem(ZONE_FILTER_STORAGE_KEY, '')
+    sessionStorage.setItem(STATE_FILTER_STORAGE_KEY, '')
     await Promise.all([refetchLibrary(), refetch()])
     toast.success('Reports refreshed')
   }
@@ -400,9 +415,7 @@ export const ReportsPage: React.FC = () => {
   }
 
   const resetDetailedFilters = async () => {
-    setSearch('')
-    setSortOrder('asc')
-    setStatusFilter('')
+    resetAllFilters()
     await refetch()
     toast.success('Filters reset & table refreshed')
   }
