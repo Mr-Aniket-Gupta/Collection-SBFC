@@ -1,28 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
-namespace backend.Modules.Reports.Controllers;
-
-public static class ApiResponseHelper
-{
-    public static IActionResult ApiResponse(
-        ControllerBase controller,
-        string apiCode,
-        HttpStatusCode statusCode,
-        string message,
-        string status,
-        object? payload)
-    {
-        return controller.StatusCode((int)statusCode, new
-        {
-            apiCodeStatus = apiCode,
-            statusCode = (int)statusCode,
-            message,
-            status,
-            payload
-        });
-    }
-}
+namespace backend.Common.Controllers;
 
 public abstract class ApiControllerBase : ControllerBase
 {

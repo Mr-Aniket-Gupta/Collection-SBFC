@@ -1,6 +1,7 @@
 using backend.Modules.Analytics.Repositories;
 using backend.Modules.Analytics.Requests;
 using Microsoft.AspNetCore.Mvc;
+using backend.Common.Controllers;
 
 namespace backend.Modules.Analytics.Controllers;
 

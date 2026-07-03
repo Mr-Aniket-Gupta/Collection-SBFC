@@ -1,5 +1,6 @@
 using backend.Modules.Reports.Services;
 using Microsoft.AspNetCore.Mvc;
+using backend.Common.Controllers;
 
 namespace backend.Modules.Reports.Controllers;
 
