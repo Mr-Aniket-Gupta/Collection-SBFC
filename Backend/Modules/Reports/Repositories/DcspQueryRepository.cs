@@ -1,10 +1,9 @@
-using backend.Common.Dtos;
+using backend.Modules.Reports.DTOs;
 using backend.Database;
 using Npgsql;
 using NpgsqlTypes;
-using System.Text;
 
-namespace backend.Common.Database;
+namespace backend.Modules.Reports.Repositories;
 
 public sealed class DcspQueryRepository
 {

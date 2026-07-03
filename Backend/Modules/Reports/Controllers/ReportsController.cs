@@ -1,4 +1,3 @@
-using backend.Common.Controllers;
 using backend.Modules.Reports.Services;
 using Microsoft.AspNetCore.Mvc;
 

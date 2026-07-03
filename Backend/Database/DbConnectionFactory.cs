@@ -2,6 +2,11 @@ using Npgsql;
 
 namespace backend.Database;
 
+public interface IDbConnectionFactory
+{
+    NpgsqlConnection CreateConnection();
+}
+
 public sealed class DbConnectionFactory : IDbConnectionFactory
 {
     private readonly string _connectionString;

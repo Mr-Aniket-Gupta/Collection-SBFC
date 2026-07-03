@@ -1,5 +1,5 @@
-using backend.Common.Database;
-using backend.Common.Dtos;
+using backend.Modules.Reports.DTOs;
+using backend.Modules.Reports.Repositories;
 
 namespace backend.Modules.Reports.Services;
 

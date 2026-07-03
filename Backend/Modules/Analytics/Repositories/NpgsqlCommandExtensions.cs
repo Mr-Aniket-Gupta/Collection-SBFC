@@ -1,7 +1,7 @@
 using Npgsql;
 using NpgsqlTypes;
 
-namespace backend.Common.Database;
+namespace backend.Modules.Analytics.Repositories;
 
 public static class NpgsqlCommandExtensions
 {

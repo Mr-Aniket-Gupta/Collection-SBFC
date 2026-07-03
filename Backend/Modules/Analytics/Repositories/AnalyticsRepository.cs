@@ -1,4 +1,3 @@
-using backend.Common.Database;
 using backend.Modules.Analytics.DTOs;
 using backend.Modules.Analytics.Requests;
 using backend.Database;

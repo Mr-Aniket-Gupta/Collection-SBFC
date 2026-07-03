@@ -1,5 +1,4 @@
-using backend.Common.Database;
-using backend.Modules.Reports.Controllers;
+using backend.Modules.Reports.Repositories;
 using backend.Modules.Reports.Services;
 
 namespace backend.Modules.Reports.Config;

@@ -1,4 +1,3 @@
-using backend.Common.Controllers;
 using backend.Modules.Analytics.Repositories;
 using backend.Modules.Analytics.Requests;
 using Microsoft.AspNetCore.Mvc;
