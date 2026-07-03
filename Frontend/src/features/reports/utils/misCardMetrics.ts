@@ -25,7 +25,7 @@ const parseAmount = (value: unknown): number => {
 const uniqueRows = (rows: DcspTableRow[], idKey: string): DcspTableRow[] => {
   const seen = new Set<string>()
   return rows.filter((row) => {
-    const id = safeToString(row[idKey] ?? row.case_id ?? row.id).trim()
+    const id = safeToString(row[idKey] ?? row.strategy_id ?? row.case_id ?? row.id).trim()
     if (!id || seen.has(id)) return false
     seen.add(id)
     return true
@@ -35,7 +35,7 @@ const uniqueRows = (rows: DcspTableRow[], idKey: string): DcspTableRow[] => {
 const uniqueCaseIds = (rows: DcspTableRow[]): Set<string> => {
   const ids = new Set<string>()
   rows.forEach((row) => {
-    const caseId = safeToString(row.case_id).trim()
+    const caseId = safeToString(row.strategy_id || row.case_id).trim()
     if (caseId) ids.add(caseId)
   })
   return ids
@@ -172,7 +172,7 @@ export function groupUniqueTableRows(
     if (!tableKey || !MIS_TABLE_KEYS.includes(tableKey as MisTableKey)) return
     const table = tableKey as MisTableKey
 
-    const id = safeToString(report.source[idKeys[table]] ?? report.source.case_id ?? report.source.id).trim()
+    const id = safeToString(report.source[idKeys[table]] ?? report.source.strategy_id ?? report.source.case_id ?? report.source.id).trim()
     if (!id || seenByTable[table].has(id)) return
 
     seenByTable[table].add(id)

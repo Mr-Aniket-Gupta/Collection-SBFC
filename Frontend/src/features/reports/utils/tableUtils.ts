@@ -108,12 +108,26 @@ export const getBranchName = (row: Record<string, unknown> | undefined): string 
   for (const key of candidates) {
     const v = (row as Record<string, unknown>)[key]
     const s = safeToString(v).trim()
-    if (s) return s
+    if (s) return normalizeBranchName(s)
   }
   // fallback: try any plausible-looking key
   const alt = Object.keys(row).find((k) => k.toLowerCase().includes('branch') || k.toLowerCase() === 'name')
-  if (alt) return safeToString((row as Record<string, unknown>)[alt]).trim()
+  if (alt) return normalizeBranchName(safeToString((row as Record<string, unknown>)[alt]).trim())
   return ''
+}
+
+function normalizeBranchName(input: string): string {
+  if (!input) return ''
+  let name = input.toString().trim().replace(/\s+/g, ' ')
+  // If it starts with 'Branch ', move it to the end -> 'Branch A1' -> 'A1 Branch'
+  if (/^branch\s+/i.test(name)) {
+    name = name.replace(/^branch\s+/i, '').trim() + ' Branch'
+  }
+  // Collapse multiple occurrences of the word 'Branch' to a single trailing 'Branch'
+  const parts = name.split(' ').filter(Boolean)
+  const nonBranch = parts.filter((p) => !/^branch$/i.test(p))
+  if (nonBranch.length === 0) return 'Branch'
+  return (nonBranch.join(' ') + (parts.some((p) => /^branch$/i.test(p)) ? ' Branch' : '')).trim()
 }
 
 // ---------------------------------------------------------------------------

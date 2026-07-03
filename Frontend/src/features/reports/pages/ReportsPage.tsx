@@ -170,23 +170,22 @@ export const ReportsPage: React.FC = () => {
 
 
   const branchOptions = useMemo(() => {
-    const branchesFromTable = Array.from(
-      new Set(
-        tableBundle.branches
-          .map((row) => getBranchName(row))
-          .filter((name) => name !== ''),
-      ),
-    ).sort((a, b) => a.localeCompare(b))
+    const normalize = (s?: string) => (s ?? '').toString().trim().replace(/\s+/g, ' ')
 
+    const buildFromRows = (rows: any[] | undefined) => {
+      const seen = new Map<string, string>()
+      ;(rows ?? []).forEach((row) => {
+        const raw = getBranchName(row)
+        const name = normalize(raw)
+        if (name) seen.set(name, name)
+      })
+      return Array.from(seen.values()).sort((a, b) => a.localeCompare(b))
+    }
+
+    const branchesFromTable = buildFromRows(tableBundle.branches)
     if (branchesFromTable.length > 0) return branchesFromTable
 
-    return Array.from(
-      new Set(
-        tableBundle['dpd-cases']
-          .map((row) => getBranchName(row))
-          .filter((name) => name !== ''),
-      ),
-    ).sort((a, b) => a.localeCompare(b))
+    return buildFromRows(tableBundle['dpd-cases'])
   }, [tableBundle])
 
   useEffect(() => {
@@ -275,14 +274,14 @@ export const ReportsPage: React.FC = () => {
     return ordered.length > 0 ? ordered : rawTableColumns
   }, [rows, rawTableColumns])
 
-const CASES_TABLE_KEYS: ReportTableKey[] = ['pre-emi-cases', 'dpd-cases', 'bounce-cases']
+  const CASES_TABLE_KEYS: ReportTableKey[] = ['pre-emi-cases', 'dpd-cases', 'bounce-cases']
 
-const effectiveTableColumns = useMemo(() => {
-  if (!CASES_TABLE_KEYS.includes(activeTable)) return tableColumns
-  const ordered = CASES_COLUMN_ORDER.filter((key) => tableColumns.includes(key))
-  const extras = tableColumns.filter((key) => !CASES_COLUMN_ORDER.includes(key))
-  return [...ordered, ...extras]
-}, [activeTable, tableColumns])
+  const effectiveTableColumns = useMemo(() => {
+    if (!CASES_TABLE_KEYS.includes(activeTable)) return tableColumns
+    const ordered = CASES_COLUMN_ORDER.filter((key) => tableColumns.includes(key))
+    const extras = tableColumns.filter((key) => !CASES_COLUMN_ORDER.includes(key))
+    return [...ordered, ...extras]
+  }, [activeTable, tableColumns])
 
   const currentTableReports = useMemo(
     () => rows.map((row, i) => makeReportRow(row, prettyTitle(activeTable), i)),
@@ -379,7 +378,8 @@ const effectiveTableColumns = useMemo(() => {
     setSelectedCategory(same ? '' : cat.title)
     setStatusFilter('')
     setPage(1)
-    if (!same) { navigate(`/reports/${cat.tableKey}`); setActiveTable(cat.tableKey) }
+    // Do NOT navigate to the detailed reports view when clicking a category card.
+    // Keep the user on the current tab (usually Overview) and apply the filter in-place.
   }
 
   const refreshPageContent = async () => {
@@ -477,7 +477,7 @@ const effectiveTableColumns = useMemo(() => {
       'allocations',
       'ptps',
       'audit-logs',
-     'branches',
+      'branches',
     ]
 
     tableKeys.forEach((key) => {
@@ -563,11 +563,13 @@ const effectiveTableColumns = useMemo(() => {
         { label: 'TOTAL RECORDS', value: ((syncBundle['pre-emi-cases']?.length || 0) + (syncBundle['dpd-cases']?.length || 0) + (syncBundle['bounce-cases']?.length || 0)).toLocaleString('en-IN'), diff: 'Total Cases in Bundle', dir: 'up' as const, icon: <Wallet className="h-5 w-5 text-[var(--color-navy)]" /> },
         { label: 'TOTAL BRANCH', value: branchOptions.length.toLocaleString('en-IN'), diff: 'Available Branches', dir: 'up' as const, icon: <Smartphone className="h-5 w-5 text-[var(--color-navy)]" /> },
         { label: 'TOTAL ZONE', value: zoneOptions.length.toLocaleString('en-IN'), diff: 'Available Zones', dir: 'up' as const, icon: <Target className="h-5 w-5 text-[var(--color-navy)]" /> },
-        { label: 'ACTIVE CASES', value: (
-          (syncBundle['pre-emi-cases'] || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'pending_strategy').length +
-          (syncBundle['dpd-cases'] || []).filter((c: any) => safeToString(c.loan_status).toLowerCase() === 'active').length +
-          (syncBundle['bounce-cases'] || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'pending_strategy' || safeToString(c.status).toLowerCase() === 'pending').length
-        ).toLocaleString('en-IN'), diff: 'Cases with active status', dir: 'up' as const, icon: <CheckCircle className="h-5 w-5 text-[var(--color-navy)]" /> },
+        {
+          label: 'ACTIVE CASES', value: (
+            (syncBundle['pre-emi-cases'] || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'pending_strategy').length +
+            (syncBundle['dpd-cases'] || []).filter((c: any) => safeToString(c.loan_status).toLowerCase() === 'active').length +
+            (syncBundle['bounce-cases'] || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'pending_strategy' || safeToString(c.status).toLowerCase() === 'pending').length
+          ).toLocaleString('en-IN'), diff: 'Cases with active status', dir: 'up' as const, icon: <CheckCircle className="h-5 w-5 text-[var(--color-navy)]" />
+        },
       ].map((kpi) => (
         <div key={kpi.label} className="reports-kpi-card flex flex-col relative">
           <div className="mb-2 flex items-start justify-between">
@@ -690,7 +692,7 @@ const effectiveTableColumns = useMemo(() => {
         {activeTab === 'Detailed Reports' && (
           <section>
             <h3 className="mb-4 text-[15px] font-bold text-[var(--color-navy)]">Raw DCSP Tables</h3>
-            
+
             {/* CASES GROUP */}
             <div className="mb-6">
               <h4 className="mb-2 text-[12px] font-bold uppercase text-[var(--color-ink-muted)]">📋 Cases</h4>

@@ -3,7 +3,7 @@ export const isCommunicationRow = (row: Record<string, unknown>) =>
   'channel' in row || 'communication_id' in row
 
 export const isCaseRow = (row: Record<string, unknown>) =>
-  ('case_id' in row || 'case_ref' in row) && 
+  ('dpd_case_id' in row || 'pre_emi_case_id' in row || 'bounce_case_id' in row || 'case_ref' in row || 'case_id' in row) &&
   ('dpd' in row || 'pre_emi_amount' in row || 'bounce_date' in row)
 
 export const isStrategyRow = (row: Record<string, unknown>) =>

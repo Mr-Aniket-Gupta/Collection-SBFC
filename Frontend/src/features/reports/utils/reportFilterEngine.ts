@@ -10,7 +10,7 @@ import {
 } from './rowDetectors'
 import { safeToString, getBranchName } from './tableUtils'
 
-const norm = (value: unknown): string => safeToString(value).trim().toUpperCase()
+const norm = (value: unknown): string => safeToString(value).toString().trim().replace(/\s+/g, ' ').toUpperCase()
 const id = (value: unknown): string => safeToString(value).trim()
 
 export interface ReportTableBundle {
@@ -149,11 +149,15 @@ const addId = (value: unknown, set: Set<string>) => {
 const seedIdsFromPrimaryRow = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalFilterIds) => {
   switch (tableKey) {
     case 'payments':
-      addId(row.case_id, ids.caseIds)
+      addId(row.strategy_id, ids.strategyIds)
       addId(row.loan_number, ids.loanNumbers)
       break
     case 'communications':
-      addId(row.case_id, ids.caseIds)
+      addId(row.strategy_id, ids.strategyIds)
+      break
+    case 'allocations':
+    case 'ptps':
+      addId(row.strategy_id, ids.strategyIds)
       break
     case 'strategies':
       addId(row.strategy_id, ids.strategyIds)
@@ -171,6 +175,7 @@ const seedIdsFromPrimaryRow = (row: DcspTableRow, tableKey: ReportTableKey, ids:
     //   addId(row.assigned_to, ids.agentIds)
     //   break
     default:
+      addId(row.strategy_id, ids.strategyIds)
       addId(row.case_id, ids.caseIds)
       break
   }
@@ -180,7 +185,7 @@ const enrichIdsFromCasesHub = (ids: GlobalFilterIds, cases: DcspTableRow[]): boo
   let changed = false
 
   cases.forEach((row) => {
-    const caseId = id(row.case_id)
+    const caseId = id(row.dpd_case_id ?? row.pre_emi_case_id ?? row.bounce_case_id ?? row.case_id)
     const customerId = id(row.customer_id)
     const loanNumber = id(row.loan_number)
     const strategyId = id(row.strategy_id)
@@ -205,12 +210,18 @@ const enrichIdsFromCasesHub = (ids: GlobalFilterIds, cases: DcspTableRow[]): boo
 
 const enrichAgentIds = (ids: GlobalFilterIds, bundle: ReportTableBundle) => {
   bundle.allocations.forEach((row) => {
-    const caseId = id(row.case_id)
-    if (caseId && ids.caseIds.has(caseId)) addId(row.allocated_to, ids.agentIds)
+    const caseId = id(row.dpd_case_id ?? row.pre_emi_case_id ?? row.bounce_case_id ?? row.case_id)
+    const strategyId = id(row.strategy_id)
+    if ((caseId && ids.caseIds.has(caseId)) || (strategyId && ids.strategyIds.has(strategyId))) {
+      addId(row.allocated_to, ids.agentIds)
+    }
   })
   bundle.ptps.forEach((row) => {
-    const caseId = id(row.case_id)
-    if (caseId && ids.caseIds.has(caseId)) addId(row.agent_id, ids.agentIds)
+    const caseId = id(row.dpd_case_id ?? row.pre_emi_case_id ?? row.bounce_case_id ?? row.case_id)
+    const strategyId = id(row.strategy_id)
+    if ((caseId && ids.caseIds.has(caseId)) || (strategyId && ids.strategyIds.has(strategyId))) {
+      addId(row.agent_id, ids.agentIds)
+    }
   })
 }
 
@@ -279,6 +290,7 @@ const rowMatchesIds = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalF
     case 'bounce-cases':
       return (
         (caseId !== '' && ids.caseIds.has(caseId)) ||
+        (strategyId !== '' && ids.strategyIds.has(strategyId)) ||
         (loanNumber !== '' && ids.loanNumbers.has(loanNumber))
       )
     case 'strategies':
@@ -396,7 +408,7 @@ export function extractStateOptions(bundle: ReportTableBundle): string[] {
   return Array.from(values).sort((a, b) => a.localeCompare(b))
 }
 
-/** Filters bundle rows using branch/zone/state from dpd_cases table; other tables match via case_id. */
+/** Filters bundle rows using branch/zone/state from dpd_cases table; other tables match via case_id or strategy_id. */
 export function filterBundleByBranchZone(
   bundle: ReportTableBundle,
   branchFilter: string,
@@ -406,14 +418,17 @@ export function filterBundleByBranchZone(
   if (!branchFilter && !zoneFilter && !stateFilter) return bundle
 
   const matchingCaseIds = new Set<string>()
-  
-  // Collect matching case_id from dpd-cases
+  const matchingStrategyIds = new Set<string>()
+
+  // Collect matching case_id and strategy_id from dpd-cases
   bundle['dpd-cases'].forEach((row) => {
     if (branchFilter && norm(getBranchName(row) || row.branch_name) !== norm(branchFilter)) return
     if (zoneFilter && norm(row.zone) !== norm(zoneFilter)) return
     if (stateFilter && norm(row.state) !== norm(stateFilter)) return
     const caseId = id(row.case_id)
+    const strategyId = id(row.strategy_id)
     if (caseId) matchingCaseIds.add(caseId)
+    if (strategyId) matchingStrategyIds.add(strategyId)
   })
 
   const filtered = EMPTY_BUNDLE()
@@ -431,7 +446,11 @@ export function filterBundleByBranchZone(
 
     filtered[tableKey] = bundle[tableKey].filter((row) => {
       const caseId = id(row.case_id)
-      return caseId !== '' && matchingCaseIds.has(caseId)
+      const strategyId = id(row.strategy_id)
+      return (
+        (caseId !== '' && matchingCaseIds.has(caseId)) ||
+        (strategyId !== '' && matchingStrategyIds.has(strategyId))
+      )
     })
   })
 

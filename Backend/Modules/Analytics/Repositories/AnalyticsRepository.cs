@@ -41,14 +41,14 @@ public sealed class AnalyticsRepository
     {
         const string sql = """
             SELECT
-                COALESCE((SELECT SUM(outstanding_principal) FROM dpd_cases WHERE LOWER(loan_status) IN ('closed', 'settled', 'resolved') AND (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR branch_name = @branch_name)  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS closed_outstanding_principal,
-                COALESCE((SELECT SUM(outstanding_principal) FROM dpd_cases WHERE (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR branch_name = @branch_name)  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS total_outstanding_principal,
-                COALESCE((SELECT SUM(total_outstanding) FROM dpd_cases WHERE LOWER(loan_status) IN ('closed', 'settled', 'resolved') AND (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR branch_name = @branch_name)  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS closed_outstanding_total,
-                COALESCE((SELECT SUM(total_outstanding) FROM dpd_cases WHERE (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR branch_name = @branch_name)  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS total_outstanding,
-                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN dpd_cases c ON c.dpd_case_id = comm.case_id WHERE (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR c.branch_name = @branch_name)  AND (@start_date IS NULL OR comm.created_at::date >= @start_date) AND (@end_date IS NULL OR comm.created_at::date <= @end_date)), 0) AS total_communications,
-                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN dpd_cases c ON c.dpd_case_id = comm.case_id WHERE LOWER(comm.status) = 'delivered' AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR c.branch_name = @branch_name)  AND (@start_date IS NULL OR comm.created_at::date >= @start_date) AND (@end_date IS NULL OR comm.created_at::date <= @end_date)), 0) AS total_delivered,
-                COALESCE((SELECT COUNT(*)::numeric FROM ptps p INNER JOIN dpd_cases c ON c.dpd_case_id = p.case_id WHERE (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR c.branch_name = @branch_name)  AND (@start_date IS NULL OR p.created_at::date >= @start_date) AND (@end_date IS NULL OR p.created_at::date <= @end_date)), 0) AS total_ptps,
-                COALESCE((SELECT COUNT(p.ptp_id)::numeric FROM ptps p INNER JOIN dpd_cases c ON c.dpd_case_id = p.case_id WHERE p.honoured = true AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR c.branch_name = @branch_name)  AND (@start_date IS NULL OR p.created_at::date >= @start_date) AND (@end_date IS NULL OR p.created_at::date <= @end_date)), 0) AS honoured_ptps
+                COALESCE((SELECT SUM(outstanding_principal) FROM dpd_cases WHERE LOWER(loan_status) IN ('closed', 'settled', 'resolved') AND (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(branch_name)) = LOWER(TRIM(@branch_name)))  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS closed_outstanding_principal,
+                COALESCE((SELECT SUM(outstanding_principal) FROM dpd_cases WHERE (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(branch_name)) = LOWER(TRIM(@branch_name)))  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS total_outstanding_principal,
+                COALESCE((SELECT SUM(total_outstanding) FROM dpd_cases WHERE LOWER(loan_status) IN ('closed', 'settled', 'resolved') AND (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(branch_name)) = LOWER(TRIM(@branch_name)))  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS closed_outstanding_total,
+                COALESCE((SELECT SUM(total_outstanding) FROM dpd_cases WHERE (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(branch_name)) = LOWER(TRIM(@branch_name)))  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS total_outstanding,
+                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id WHERE (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(c.branch_name)) = LOWER(TRIM(@branch_name)))  AND (@start_date IS NULL OR comm.created_at::date >= @start_date) AND (@end_date IS NULL OR comm.created_at::date <= @end_date)), 0) AS total_communications,
+                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id WHERE LOWER(comm.status) = 'delivered' AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(c.branch_name)) = LOWER(TRIM(@branch_name)))  AND (@start_date IS NULL OR comm.created_at::date >= @start_date) AND (@end_date IS NULL OR comm.created_at::date <= @end_date)), 0) AS total_delivered,
+                COALESCE((SELECT COUNT(*)::numeric FROM ptps p INNER JOIN dpd_cases c ON c.strategy_id = p.strategy_id WHERE (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(c.branch_name)) = LOWER(TRIM(@branch_name)))  AND (@start_date IS NULL OR p.created_at::date >= @start_date) AND (@end_date IS NULL OR p.created_at::date <= @end_date)), 0) AS total_ptps,
+                COALESCE((SELECT COUNT(p.ptp_id)::numeric FROM ptps p INNER JOIN dpd_cases c ON c.strategy_id = p.strategy_id WHERE p.honoured = true AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(c.branch_name)) = LOWER(TRIM(@branch_name)))  AND (@start_date IS NULL OR p.created_at::date >= @start_date) AND (@end_date IS NULL OR p.created_at::date <= @end_date)), 0) AS honoured_ptps
             """;
 
         var current = await ReadKpiSnapshotAsync(sql, request.StartDate, request.EndDate, request, cancellationToken);
@@ -132,9 +132,9 @@ public sealed class AnalyticsRepository
                 COALESCE((
                     SELECT ROUND((COUNT(*) FILTER (WHERE LOWER(comm.status) = 'delivered')::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
                     FROM communications comm
-                    INNER JOIN dpd_cases c ON c.dpd_case_id = comm.case_id
+                    INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id
                     WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+                      AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
                       
                       AND (@start_date IS NULL OR comm.created_at::date >= @start_date)
                       AND (@end_date IS NULL OR comm.created_at::date <= @end_date)
@@ -144,9 +144,9 @@ public sealed class AnalyticsRepository
                 COALESCE((
                     SELECT ROUND((COUNT(*) FILTER (WHERE comm.response_status IS NOT NULL AND comm.response_status <> '')::numeric / NULLIF(COUNT(*) FILTER (WHERE LOWER(comm.status) = 'delivered'), 0)) * 100, 1)
                     FROM communications comm
-                    INNER JOIN dpd_cases c ON c.dpd_case_id = comm.case_id
+                    INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id
                     WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+                      AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
                       
                       AND (@start_date IS NULL OR comm.created_at::date >= @start_date)
                       AND (@end_date IS NULL OR comm.created_at::date <= @end_date)
@@ -156,9 +156,9 @@ public sealed class AnalyticsRepository
                 COALESCE((
                     SELECT ROUND((COUNT(*) FILTER (WHERE p.honoured = true)::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
                     FROM ptps p
-                    INNER JOIN dpd_cases c ON c.dpd_case_id = p.case_id
+                    INNER JOIN dpd_cases c ON c.strategy_id = p.strategy_id
                     WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+                      AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
                       
                       AND (@start_date IS NULL OR p.created_at::date >= @start_date)
                       AND (@end_date IS NULL OR p.created_at::date <= @end_date)
@@ -168,9 +168,9 @@ public sealed class AnalyticsRepository
                 COALESCE((
                     SELECT ROUND((SUM(pay.amount) FILTER (WHERE LOWER(pay.payment_status) = 'success')::numeric / NULLIF(SUM(c.total_outstanding), 0)) * 100, 1)
                     FROM payments pay
-                    INNER JOIN dpd_cases c ON c.dpd_case_id = pay.case_id
+                    INNER JOIN dpd_cases c ON c.strategy_id = pay.strategy_id
                     WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+                      AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
                       
                       AND (@start_date IS NULL OR pay.created_at::date >= @start_date)
                       AND (@end_date IS NULL OR pay.created_at::date <= @end_date)
@@ -180,9 +180,9 @@ public sealed class AnalyticsRepository
                 COALESCE((
                     SELECT ROUND((COUNT(*) FILTER (WHERE LOWER(pay.payment_status) = 'success')::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
                     FROM payments pay
-                    INNER JOIN dpd_cases c ON c.dpd_case_id = pay.case_id
+                    INNER JOIN dpd_cases c ON c.strategy_id = pay.strategy_id
                     WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+                      AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
                       
                       AND (@start_date IS NULL OR pay.created_at::date >= @start_date)
                       AND (@end_date IS NULL OR pay.created_at::date <= @end_date)
@@ -193,7 +193,7 @@ public sealed class AnalyticsRepository
                     SELECT ROUND((COUNT(*) FILTER (WHERE LOWER(c.loan_status) IN ('resolved', 'settled', 'closed'))::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
                     FROM dpd_cases c
                     WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+                      AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
                       
                       AND (@start_date IS NULL OR c.created_at::date >= @start_date)
                       AND (@end_date IS NULL OR c.created_at::date <= @end_date)
@@ -223,7 +223,7 @@ public sealed class AnalyticsRepository
 
     public async Task<IReadOnlyList<StrategyRowDto>> GetStrategyPerformanceAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
-        const string sql = """
+            const string sql = """
             SELECT 
                 COALESCE(s.strategy_name, 'Unknown') AS name,
                 CASE 
@@ -232,7 +232,7 @@ public sealed class AnalyticsRepository
                 END AS percentage,
                 COALESCE(s.dpd_range_to, 0)::numeric AS target
             FROM strategies s
-            LEFT JOIN dpd_cases c ON c.strategy_id = s.strategy_id AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR c.branch_name = @branch_name) 
+            LEFT JOIN dpd_cases c ON c.strategy_id = s.strategy_id AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR LOWER(TRIM(c.branch_name)) = LOWER(TRIM(@branch_name)))
             GROUP BY s.strategy_id, s.strategy_name, s.dpd_range_to, s.priority
             ORDER BY percentage DESC, s.priority ASC NULLS LAST, s.strategy_name ASC
             LIMIT @limit;
@@ -260,11 +260,11 @@ public sealed class AnalyticsRepository
         const string sql = """
                         SELECT TO_CHAR(date_trunc('hour', comm.created_at), 'HH24:00') AS hour, COUNT(*)::int AS calls, COUNT(*) FILTER (WHERE LOWER(comm.status) = 'delivered')::int AS responses
                         FROM communications comm
-                        INNER JOIN dpd_cases c ON c.dpd_case_id = comm.case_id
+                    INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id
                         WHERE (@start_date IS NULL OR comm.created_at::date >= @start_date)
                             AND (@end_date IS NULL OR comm.created_at::date <= @end_date)
                             AND (@state IS NULL OR c.state = @state)
-                            AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+                            AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
                             
                         GROUP BY date_trunc('hour', comm.created_at)
                         ORDER BY date_trunc('hour', comm.created_at)
@@ -293,20 +293,20 @@ public sealed class AnalyticsRepository
         const string sql = """
             WITH CasePayments AS (
                 SELECT 
-                    case_id, 
+                    strategy_id, 
                     COALESCE(SUM(amount) FILTER (WHERE LOWER(payment_status) = 'success'), 0) AS recovered_amount
                 FROM payments
                 WHERE (@start_date IS NULL OR created_at::date >= @start_date)
                   AND (@end_date IS NULL OR created_at::date <= @end_date)
-                GROUP BY case_id
+                GROUP BY strategy_id
             )
             SELECT 
                 COALESCE(c.product_name, 'Unknown') AS name,
                 COALESCE(ROUND((SUM(cp.recovered_amount)::numeric / NULLIF(SUM(c.total_outstanding), 0)) * 100, 1), 0) AS value
             FROM dpd_cases c
-            LEFT JOIN CasePayments cp ON cp.case_id = c.dpd_case_id
+            LEFT JOIN CasePayments cp ON cp.strategy_id = c.strategy_id
             WHERE (@state IS NULL OR c.state = @state)
-              AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+              AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
               
             GROUP BY c.product_name
             ORDER BY value DESC
@@ -326,7 +326,7 @@ public sealed class AnalyticsRepository
             WHERE (@start_date IS NULL OR c.created_at::date >= @start_date)
               AND (@end_date IS NULL OR c.created_at::date <= @end_date)
               AND (@state IS NULL OR c.state = @state)
-              AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+              AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
               
             GROUP BY c.bucket
             ORDER BY value DESC
@@ -345,7 +345,7 @@ public sealed class AnalyticsRepository
                 COALESCE(SUM(c.total_outstanding), 0)::numeric AS target
             FROM dpd_cases c
             WHERE (@state IS NULL OR c.state = @state)
-              AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+              AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
               
               AND (@start_date IS NULL OR c.created_at::date >= @start_date)
               AND (@end_date IS NULL OR c.created_at::date <= @end_date)
@@ -380,10 +380,10 @@ public sealed class AnalyticsRepository
             COUNT(DISTINCT c.dpd_case_id) FILTER (WHERE LOWER(c.loan_status) IN ('closed', 'settled', 'resolved'))::int AS resolved_cases,
             COALESCE(SUM(c.total_outstanding) FILTER (WHERE LOWER(c.loan_status) IN ('closed', 'settled', 'resolved')), 0)::numeric AS recovered_amount
         FROM dpd_cases c
-        LEFT JOIN ptps p ON p.case_id = c.dpd_case_id
+        LEFT JOIN ptps p ON p.strategy_id = c.strategy_id
         LEFT JOIN agents a ON a.agent_id = p.agent_id
         WHERE (@state IS NULL OR c.state = @state)
-          AND (@branch_name IS NULL OR c.branch_name = @branch_name)
+          AND (@branch_name IS NULL OR lower(replace(lower(trim(c.branch_name)),'branch','')) = lower(replace(lower(trim(@branch_name)),'branch','')))
           AND (@start_date IS NULL OR c.created_at::date >= @start_date)
           AND (@end_date IS NULL OR c.created_at::date <= @end_date)
         GROUP BY a.agent_name

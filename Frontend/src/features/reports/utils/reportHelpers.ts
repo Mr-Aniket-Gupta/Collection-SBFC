@@ -10,8 +10,8 @@ const pickValue = (row: DcspTableRow, keys: string[]): string => {
 export function makeReportRow(row: DcspTableRow, category: string, index: number): ReportLibraryRow {
   const id =
     pickValue(row, [
-      'report_id', 'id', 'case_id', 'payment_id', 'communication_id',
-      'strategy_id', 'agent_id', 'allocation_id', 'ptp_id', 'audit_id',
+      'report_id', 'id', 'strategy_id', 'case_id', 'payment_id', 'communication_id',
+      'agent_id', 'allocation_id', 'ptp_id', 'audit_id',
     ]) || `${category.replace(/\s+/g, '-').toUpperCase()}-${index + 1}`
 
   const name =

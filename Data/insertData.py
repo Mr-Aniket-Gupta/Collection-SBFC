@@ -169,7 +169,7 @@ ALLOC_STATUS = ["ACTIVE", "DEALLOCATED"]
 
 AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE"]
 
-# --- Pools for pre_emi_cases / dpd_cases / bounce_cases / strategy_execution_log ---
+# --- Pools for pre_emi_cases / dpd_cases / bounce_cases ---
 PRODUCT_NAMES = ["Personal Loan", "Home Loan", "Car Loan", "Business Loan", "Education Loan"]
 PENDING_STRATEGY_STATUSES = ["PENDING_STRATEGY", "STRATEGY_ASSIGNED", "IN_PROGRESS", "CLOSED"]
 LOAN_STATUSES = ["ACTIVE", "NPA", "WRITTEN_OFF", "CLOSED"]
@@ -184,9 +184,7 @@ BOUNCE_REASONS = [
 EXEC_STATUSES = ["RUNNING", "COMPLETED", "FAILED", "CANCELLED"]
 EXEC_CASE_TYPES = ["PRE_EMI", "DPD", "BOUNCE"]
 
-# CASE_STATUS used generically for audit_logs' "status changed" simulation
-# (kept even though there's no generic `cases` table any more, since it's
-# only used to fabricate plausible old/new values, not to drive real inserts).
+# CASE_STATUS used generically for audit_logs' "status changed" simulation.
 CASE_STATUS = ["OPEN", "CLOSED", "IN_PROGRESS", "ESCALATED", "SETTLED"]
 
 # --- Pools for branches ---
@@ -239,13 +237,8 @@ def gen_mifin_batch_ref(i):
 
 
 # ---------------------------------------------------------------------------
-# NEW: guaranteed-unique email helper. faker's own fake.unique.email()
-# can raise "UniquenessException" once its internal retry budget is
-# exhausted (it can happen once you push ROWS well past a few hundred
-# across all four tables that call it: agents / pre_emi_cases /
-# dpd_cases / bounce_cases). Salting with RUN_TOKEN + a running counter
-# makes every email deterministically unique without relying on Faker's
-# internal retry logic at all.
+# Guaranteed-unique email helper (avoids Faker's UniquenessException once
+# ROWS gets large across agents / pre_emi_cases / dpd_cases / bounce_cases).
 # ---------------------------------------------------------------------------
 _email_counter = 0
 
@@ -389,12 +382,12 @@ def main():
             agent_ids.append(cur.fetchone()[0])
 
         # -------------------------------------------------------------
-        # 3. branches (no dependencies, but created_by/updated_by are
-        #    populated from real agent_ids so every column has a
-        #    meaningful, non-null value). One row per real (state,
-        #    branch) pair used elsewhere in the hierarchy, plus zone
-        #    picked from that state's zone list for hub_branch_name
-        #    consistency.
+        # 3. branches (no FK dependency in your DDL, but your schema adds
+        #    a NOT NULL `strategy_id` column on `branches`, so every row
+        #    needs a real strategy_id picked from strategies created above.
+        #    created_by/updated_by are populated from real agent_ids.
+        #    One row per real (state, branch) pair used elsewhere in the
+        #    hierarchy, plus zone picked from that state's zone list.
         # -------------------------------------------------------------
         for i, (state, branch_name) in enumerate(ALL_BRANCHES):
             zones_for_branch = STATE_BRANCH_ZONE[state][branch_name]
@@ -408,13 +401,14 @@ def main():
             cur.execute(
                 """
                 INSERT INTO public.branches
-                    (code, name, zone_code, region_code, cost_center, status,
+                    (strategy_id, code, name, zone_code, region_code, cost_center, status,
                      created_at, created_by, updated_at, updated_by,
                      branch_type, branch_office_type, location,
                      hub_branch_id, hub_branch_name, branch_manager_name, address)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
+                    random.choice(strategy_ids),
                     gen_branch_code(i),
                     f"{branch_name} Branch",
                     ZONE_CODE_MAP[zone],
@@ -439,11 +433,6 @@ def main():
         # 4. pre_emi_cases (references strategies) - pre_emi_date /
         #     mifin_extraction_date / created_at / updated_at spread
         #     across every month, past through current
-        #
-        #     NOTE: moved ahead of communications/payments/allocations/
-        #     ptps because this schema has NO generic `cases` table --
-        #     case_id in those tables must come from one of
-        #     pre_emi_cases / dpd_cases / bounce_cases instead.
         # -------------------------------------------------------------
         pre_emi_ids = []
         for i in range(ROWS):
@@ -633,10 +622,10 @@ def main():
             bounce_case_ids.append(cur.fetchone()[0])
 
         # Combined pool of every real case id across the three case tables.
-        # communications / payments / allocations / ptps just need SOME
-        # valid case id (their case_id column has no FK any more), so we
-        # draw from this shared pool rather than a non-existent `cases`
-        # table.
+        # Only used below for audit_logs' polymorphic entity_id (entity_type
+        # = 'case'). payments/communications/allocations/ptps do NOT use
+        # this any more -- your schema gives those tables a `strategy_id`
+        # column instead of `case_id`.
         all_case_ids = pre_emi_ids + dpd_case_ids + bounce_case_ids
 
         # -------------------------------------------------------------
@@ -708,7 +697,7 @@ def main():
             )
 
         # -------------------------------------------------------------
-        # 9. allocations (references case ids + agents) - allocated_at
+        # 9. allocations (schema: strategy_id, NOT case_id) - allocated_at
         #    spread across every month
         # -------------------------------------------------------------
         for i in range(ROWS):
@@ -719,12 +708,12 @@ def main():
             cur.execute(
                 """
                 INSERT INTO public.allocations
-                    (case_id, allocated_to, role, allocated_at, deallocated_at,
+                    (strategy_id, allocated_to, role, allocated_at, deallocated_at,
                      reason, allocation_status)
                 VALUES (%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
-                    random.choice(all_case_ids),
+                    random.choice(strategy_ids),
                     random.choice(agent_ids),
                     random.choice(ALLOC_ROLES),
                     allocated_at,
@@ -735,8 +724,8 @@ def main():
             )
 
         # -------------------------------------------------------------
-        # 10. communications (references case ids) - sent_at/created_at
-        #    spread across every month
+        # 10. communications (schema: strategy_id, NOT case_id) -
+        #     sent_at/created_at spread across every month
         # -------------------------------------------------------------
         for i in range(ROWS):
             sent_at = random_dt_in_month(*pick_month(i))
@@ -750,12 +739,12 @@ def main():
             cur.execute(
                 """
                 INSERT INTO public.communications
-                    (case_id, channel, template_name, status, sent_at,
+                    (strategy_id, channel, template_name, status, sent_at,
                      delivered_at, read_at, response_status, retry_count, created_at)
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
-                    random.choice(all_case_ids),
+                    random.choice(strategy_ids),
                     random.choice(CHANNELS),
                     f"template_{random.randint(1, 15)}",
                     random.choice(COMM_STATUS),
@@ -769,21 +758,21 @@ def main():
             )
 
         # -------------------------------------------------------------
-        # 11. payments (references case ids) - payment_date/created_at
-        #     spread across every month
+        # 11. payments (schema: strategy_id, NOT case_id) -
+        #     payment_date/created_at spread across every month
         # -------------------------------------------------------------
         for i in range(ROWS):
             payment_date = random_dt_in_month(*pick_month(i))
             cur.execute(
                 """
                 INSERT INTO public.payments
-                    (case_id, loan_number, amount, payment_date, payment_mode,
+                    (strategy_id, loan_number, amount, payment_date, payment_mode,
                      pg_transaction_id, payment_status, reconciled, payment_source,
                      created_at)
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
-                    random.choice(all_case_ids),
+                    random.choice(strategy_ids),
                     f"LN{RUN_TOKEN}{random.randint(0, ROWS - 1):04d}",
                     round(random.uniform(500, 20000), 2),
                     payment_date,
@@ -797,8 +786,8 @@ def main():
             )
 
         # -------------------------------------------------------------
-        # 12. ptps (references case ids + agents) - ptp_date/created_at
-        #     spread across every month, no NULLs
+        # 12. ptps (schema: strategy_id + agent_id, NOT case_id) -
+        #     ptp_date/created_at spread across every month, no NULLs
         # -------------------------------------------------------------
         for i in range(ROWS):
             month_year, month_num = pick_month(i)
@@ -814,12 +803,12 @@ def main():
             cur.execute(
                 """
                 INSERT INTO public.ptps
-                    (case_id, agent_id, ptp_date, ptp_amount, honoured,
+                    (strategy_id, agent_id, ptp_date, ptp_amount, honoured,
                      actual_payment_date, created_at)
                 VALUES (%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
-                    random.choice(all_case_ids),
+                    random.choice(strategy_ids),
                     random.choice(agent_ids),
                     ptp_date,
                     round(random.uniform(500, 20000), 2),
@@ -830,7 +819,8 @@ def main():
             )
 
         # -------------------------------------------------------------
-        # 13. audit_logs (entity_id is bigint -> use real case/agent ids)
+        # 13. audit_logs (schema adds NOT NULL `strategy_id` on top of
+        #     the existing polymorphic entity_type/entity_id columns) -
         #     created_at spread across every month
         # -------------------------------------------------------------
         entity_pool = [("case", cid) for cid in all_case_ids] + [("agent", aid) for aid in agent_ids]
@@ -841,11 +831,12 @@ def main():
             cur.execute(
                 """
                 INSERT INTO public.audit_logs
-                    (entity_type, entity_id, action, old_value, new_value,
+                    (strategy_id, entity_type, entity_id, action, old_value, new_value,
                      user_name, ip_address, created_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
+                    random.choice(strategy_ids),
                     entity_type,
                     entity_id,
                     random.choice(AUDIT_ACTIONS),
@@ -858,23 +849,21 @@ def main():
             )
 
         # -------------------------------------------------------------
-        # 14. strategy_execution_log (references strategies, and one of
-        #     pre_emi_cases/dpd_cases/bounce_cases depending on
-        #     case_type) - assigned_at spread across every month,
-        #     completed_at after assigned_at (for non-RUNNING rows)
+        # 14. strategy_execution_log (schema declares `strategy_id`
+        #     TWICE in your DDL, which Postgres will reject with
+        #     "column strategy_id specified more than once" when you
+        #     run CREATE TABLE -- remove the duplicate line from your
+        #     DDL, keeping just one `strategy_id BIGINT NOT NULL
+        #     REFERENCES strategies(strategy_id)`. There is also no
+        #     `case_id` column in this table at all, so we no longer
+        #     reference pre_emi_ids/dpd_case_ids/bounce_case_ids here.
+        #     assigned_at spread across every month, completed_at after
+        #     assigned_at (for non-RUNNING rows)
         # -------------------------------------------------------------
-        exec_case_pool = {
-            "PRE_EMI": pre_emi_ids,
-            "DPD": dpd_case_ids,
-            "BOUNCE": bounce_case_ids,
-        }
         for i in range(ROWS):
             case_type = random.choice(EXEC_CASE_TYPES)
-            case_id_val = random.choice(exec_case_pool[case_type])
             assigned_at = random_dt_in_month(*pick_month(i))
             exec_status = random.choice(EXEC_STATUSES)
-            # completed_at only makes sense once the run has finished;
-            # leave it NULL while still RUNNING to match real-world data.
             completed_at = (
                 None
                 if exec_status == "RUNNING"
@@ -883,12 +872,11 @@ def main():
             cur.execute(
                 """
                 INSERT INTO public.strategy_execution_log
-                    (case_type, case_id, strategy_id, status, assigned_at, completed_at)
-                VALUES (%s,%s,%s,%s,%s,%s)
+                    (case_type, strategy_id, status, assigned_at, completed_at)
+                VALUES (%s,%s,%s,%s,%s)
                 """,
                 (
                     case_type,
-                    case_id_val,
                     random.choice(strategy_ids),
                     exec_status,
                     assigned_at,
@@ -904,9 +892,8 @@ def main():
             f"{MONTHS[0][1]}/{MONTHS[0][0]} through the current month "
             f"{MONTHS[-1][1]}/{MONTHS[-1][0]}), including pre_emi_cases, "
             f"dpd_cases, bounce_cases, and strategy_execution_log. "
-            f"communications/payments/allocations/ptps drew case_id from "
-            f"a combined pool of {len(all_case_ids)} ids across all three "
-            f"case tables (no generic `cases` table in this schema)."
+            f"payments/communications/allocations/ptps used strategy_id "
+            f"(per your schema), not case_id."
         )
 
     except Exception as e:
