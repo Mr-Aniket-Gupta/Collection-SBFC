@@ -15,12 +15,13 @@ export type ReportTableKey =
   | 'pre-emi-cases'
   | 'dpd-cases'
   | 'bounce-cases'
-  | 'cases'
+
   | 'payments'
   | 'communications'
   | 'allocations'
   | 'ptps'
   | 'audit-logs'
+  | 'branches'
 
 export const REPORT_TABLES: ReportTableKey[] = [
   'strategies',
@@ -31,12 +32,13 @@ export const REPORT_TABLES: ReportTableKey[] = [
   'pre-emi-cases',
   'dpd-cases',
   'bounce-cases',
-  'cases',
+  // 'cases',
   'payments',
   'communications',
   'allocations',
   'ptps',
   'audit-logs',
+  'branches',
 ]
 const defaultTable: ReportTableKey = 'strategies'
 

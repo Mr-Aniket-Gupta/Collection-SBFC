@@ -15,12 +15,13 @@ const ENDPOINTS = {
   'pre-emi-cases': 'pre-emi-cases',
   'dpd-cases': 'dpd-cases',
   'bounce-cases': 'bounce-cases',
-  cases: 'cases',
+  // cases: 'cases',
   payments: 'payments',
   communications: 'communications',
   allocations: 'allocations',
   ptps: 'ptps',
   'audit-logs': 'audit-logs',
+  branches: 'branches',
 } as const
 
 export type ReportEndpointKey = keyof typeof ENDPOINTS

@@ -20,7 +20,7 @@ const menuItems = [
   { to: '/cases', label: 'Case Management', icon: Briefcase },
   { to: '/strategy', label: 'Strategy Builder', icon: GitBranch },
   { to: '/approvals', label: 'Approvals', icon: ClipboardCheck },
-  { to: '/reports/cases', label: 'Reports', icon: BarChart3 },
+  { to: '/reports/dpd-cases', label: 'Reports', icon: BarChart3 },
   { to: '/analytics/dashboard', label: 'Analytics', icon: TrendingUp },
   { to: '/users', label: 'User Management', icon: Users },
   { to: '/masters', label: 'Masters Config', icon: Database },

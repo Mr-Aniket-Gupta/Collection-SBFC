@@ -22,12 +22,13 @@ export interface ReportTableBundle {
   'pre-emi-cases': DcspTableRow[]
   'dpd-cases': DcspTableRow[]
   'bounce-cases': DcspTableRow[]
-  cases: DcspTableRow[]
+  // cases: DcspTableRow[]
   payments: DcspTableRow[]
   communications: DcspTableRow[]
   allocations: DcspTableRow[]
   ptps: DcspTableRow[]
   'audit-logs': DcspTableRow[]
+  branches: DcspTableRow[]
 }
 
 export interface GlobalFilterIds {
@@ -59,12 +60,13 @@ export const REPORT_TABLE_KEYS: ReportTableKey[] = [
   'pre-emi-cases',
   'dpd-cases',
   'bounce-cases',
-  'cases',
+  // 'cases',
   'payments',
   'communications',
   'allocations',
   'ptps',
   'audit-logs',
+  'branches',
 ]
 
 export const EMPTY_BUNDLE = (): ReportTableBundle => ({
@@ -76,12 +78,12 @@ export const EMPTY_BUNDLE = (): ReportTableBundle => ({
   'pre-emi-cases': [],
   'dpd-cases': [],
   'bounce-cases': [],
-  cases: [],
   payments: [],
   communications: [],
   allocations: [],
   ptps: [],
   'audit-logs': [],
+  branches: [],
 })
 
 const emptyIds = (): GlobalFilterIds => ({
@@ -161,13 +163,13 @@ const seedIdsFromPrimaryRow = (row: DcspTableRow, tableKey: ReportTableKey, ids:
     case 'bounce-cases':
       addId(row.strategy_id, ids.strategyIds)
       break
-    case 'cases':
-      addId(row.case_id, ids.caseIds)
-      addId(row.customer_id, ids.customerIds)
-      addId(row.loan_number, ids.loanNumbers)
-      addId(row.strategy_id, ids.strategyIds)
-      addId(row.assigned_to, ids.agentIds)
-      break
+    // case 'cases':
+    //   addId(row.case_id, ids.caseIds)
+    //   addId(row.customer_id, ids.customerIds)
+    //   addId(row.loan_number, ids.loanNumbers)
+    //   addId(row.strategy_id, ids.strategyIds)
+    //   addId(row.assigned_to, ids.agentIds)
+    //   break
     default:
       addId(row.case_id, ids.caseIds)
       break
@@ -226,7 +228,7 @@ export function resolveGlobalFilterIds(
   primaryRows.forEach((row) => seedIdsFromPrimaryRow(row, config.primaryTable, ids))
 
   for (let pass = 0; pass < 4; pass += 1) {
-    const changed = enrichIdsFromCasesHub(ids, bundle.cases)
+    const changed = enrichIdsFromCasesHub(ids, bundle['dpd-cases'])
     if (!changed) break
   }
 
@@ -268,13 +270,6 @@ const rowMatchesIds = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalF
   const agentId = id(row.agent_id ?? row.assigned_to ?? row.allocated_to)
 
   switch (tableKey) {
-    case 'cases':
-      return (
-        (caseId !== '' && ids.caseIds.has(caseId)) ||
-        (customerId !== '' && ids.customerIds.has(customerId)) ||
-        (loanNumber !== '' && ids.loanNumbers.has(loanNumber)) ||
-        (strategyId !== '' && ids.strategyIds.has(strategyId))
-      )
     case 'payments':
     case 'communications':
     case 'ptps':
@@ -355,37 +350,37 @@ export function filterBundleByDateRange(
   return filtered
 }
 
-/** Collects distinct branch values from the cases table. */
+/** Collects distinct branch values from dpd_cases table. */
 export function extractBranchOptions(bundle: ReportTableBundle): string[] {
   const values = new Set<string>()
-  bundle.cases.forEach((row) => {
-    const branch = safeToString(row.branch).trim()
+  bundle['dpd-cases'].forEach((row) => {
+    const branch = safeToString(row.branch_name).trim()
     if (branch) values.add(branch)
   })
   return Array.from(values).sort((a, b) => a.localeCompare(b))
 }
 
-/** Collects distinct zone values from the cases table. */
+/** Collects distinct zone values from dpd_cases table. */
 export function extractZoneOptions(bundle: ReportTableBundle): string[] {
   const values = new Set<string>()
-  bundle.cases.forEach((row) => {
+  bundle['dpd-cases'].forEach((row) => {
     const zone = safeToString(row.zone).trim()
     if (zone) values.add(zone)
   })
   return Array.from(values).sort((a, b) => a.localeCompare(b))
 }
 
-/** Collects distinct state values from the cases table. */
+/** Collects distinct state values from dpd_cases table. */
 export function extractStateOptions(bundle: ReportTableBundle): string[] {
   const values = new Set<string>()
-  bundle.cases.forEach((row) => {
+  bundle['dpd-cases'].forEach((row) => {
     const state = safeToString(row.state).trim()
     if (state) values.add(state)
   })
   return Array.from(values).sort((a, b) => a.localeCompare(b))
 }
 
-/** Filters bundle rows using branch/zone/state from the cases table; other tables match via case_id. */
+/** Filters bundle rows using branch/zone/state from dpd_cases table; other tables match via case_id. */
 export function filterBundleByBranchZone(
   bundle: ReportTableBundle,
   branchFilter: string,
@@ -394,24 +389,30 @@ export function filterBundleByBranchZone(
 ): ReportTableBundle {
   if (!branchFilter && !zoneFilter && !stateFilter) return bundle
 
-  const matchingCaseIds = new Set<string>()
-  const filteredCases = bundle.cases.filter((row) => {
-    if (branchFilter && norm(row.branch) !== norm(branchFilter)) return false
-    if (zoneFilter && norm(row.zone) !== norm(zoneFilter)) return false
-    if (stateFilter && norm(row.state) !== norm(stateFilter)) return false
-    const caseId = id(row.case_id)
-    if (caseId) matchingCaseIds.add(caseId)
-    return true
+  const matchingCaseRefs = new Set<string>()
+  
+  // Collect matching case_ref from dpd-cases
+  bundle['dpd-cases'].forEach((row) => {
+    if (branchFilter && norm(row.branch_name) !== norm(branchFilter)) return
+    if (zoneFilter && norm(row.zone) !== norm(zoneFilter)) return
+    if (stateFilter && norm(row.state) !== norm(stateFilter)) return
+    const caseRef = id(row.case_ref)
+    if (caseRef) matchingCaseRefs.add(caseRef)
+  })
+  
+  // Also collect from pre-emi-cases and bounce-cases for consistency
+  bundle['pre-emi-cases'].forEach((row) => {
+    const caseRef = id(row.case_ref)
+    if (caseRef && matchingCaseRefs.has(caseRef)) return // already matched
+    // pre-emi-cases may not have branch/zone/state, so skip location filtering
   })
 
   const filtered = EMPTY_BUNDLE()
-  filtered.cases = filteredCases
 
   REPORT_TABLE_KEYS.forEach((tableKey) => {
-    if (tableKey === 'cases') return
     filtered[tableKey] = bundle[tableKey].filter((row) => {
       const caseId = id(row.case_id)
-      return caseId !== '' && matchingCaseIds.has(caseId)
+      return caseId !== '' && matchingCaseRefs.has(caseId)
     })
   })
 

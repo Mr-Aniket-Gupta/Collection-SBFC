@@ -33,42 +33,29 @@ export function useAnalytics() {
 
   const branchOptions = useMemo(() => {
     const values = new Set<string>()
-    ;(tableBundle?.cases ?? []).forEach((row) => {
+    ;(tableBundle?.['dpd-cases'] ?? []).forEach((row) => {
       const rowState = safeToString(row.state).trim()
-      const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch).trim()
+      const rowBranch = safeToString(row.branch_name).trim()
 
       if (stateFilter && rowState !== stateFilter) return
-      if (zoneFilter && rowZone !== zoneFilter) return
 
       if (rowBranch) values.add(rowBranch)
     })
     return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [tableBundle, stateFilter, zoneFilter])
+  }, [tableBundle, stateFilter])
 
   const zoneOptions = useMemo(() => {
-    const values = new Set<string>()
-    ;(tableBundle?.cases ?? []).forEach((row) => {
-      const rowState = safeToString(row.state).trim()
-      const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch).trim()
-
-      if (stateFilter && rowState !== stateFilter) return
-      if (branchFilter && rowBranch !== branchFilter) return
-
-      if (rowZone) values.add(rowZone)
-    })
-    return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [tableBundle, stateFilter, branchFilter])
+    // Zone is not available in dpd_cases; keep the filter list empty to avoid invalid selections.
+    return []
+  }, [])
 
   const stateOptions = useMemo(() => {
     const values = new Set<string>()
-    ;(tableBundle?.cases ?? []).forEach((row) => {
+    ;(tableBundle?.['dpd-cases'] ?? []).forEach((row) => {
       const rowState = safeToString(row.state).trim()
-      const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch).trim()
+      const rowBranch = safeToString(row.branch_name).trim()
 
-      if (zoneFilter && rowZone !== zoneFilter) return
+      if (zoneFilter) return
       if (branchFilter && rowBranch !== branchFilter) return
 
       if (rowState) values.add(rowState)

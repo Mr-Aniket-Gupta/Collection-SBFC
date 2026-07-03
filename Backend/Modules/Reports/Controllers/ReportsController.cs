@@ -16,10 +16,6 @@ public sealed class ReportsController : ApiControllerBase
         _service = service;
     }
 
-    [HttpGet("cases")]
-    public Task<IActionResult> GetCases([FromQuery] int page = 1, [FromQuery] int limit = 25, CancellationToken cancellationToken = default)
-        => ExecuteAsync("REPORT-CASES", "Cases fetched successfully.", () => _service.GetCasesAsync(page, limit, cancellationToken), "Unable to process cases request.", "Reports");
-
     [HttpGet("payments")]
     public Task<IActionResult> GetPayments([FromQuery] int page = 1, [FromQuery] int limit = 25, CancellationToken cancellationToken = default)
         => ExecuteAsync("REPORT-PAYMENTS", "Payments fetched successfully.", () => _service.GetPaymentsAsync(page, limit, cancellationToken), "Unable to process payments request.", "Reports");
@@ -71,4 +67,8 @@ public sealed class ReportsController : ApiControllerBase
     [HttpGet("audit-logs")]
     public Task<IActionResult> GetAuditLogs([FromQuery] int page = 1, [FromQuery] int limit = 25, CancellationToken cancellationToken = default)
         => ExecuteAsync("REPORT-AUDIT-LOGS", "Audit logs fetched successfully.", () => _service.GetAuditLogsAsync(page, limit, cancellationToken), "Unable to process audit logs request.", "Reports");
+    
+    [HttpGet("branches")]
+    public Task<IActionResult> GetBranches([FromQuery] int page = 1, [FromQuery] int limit = 25, CancellationToken cancellationToken = default)
+       => ExecuteAsync("REPORT-BRANCHES", "Branches fetched successfully.", () => _service.GetBranchesAsync(page, limit, cancellationToken), "Unable to process branches request.", "Reports");
 }

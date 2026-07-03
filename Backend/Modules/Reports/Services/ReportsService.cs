@@ -12,9 +12,6 @@ public sealed class ReportsService
         _repository = repository;
     }
 
-    public Task<PagedResult<TableRowDto>> GetCasesAsync(int page, int limit, CancellationToken cancellationToken)
-        => _repository.GetTablePageAsync("cases", page, limit, cancellationToken);
-
     public Task<PagedResult<TableRowDto>> GetPaymentsAsync(int page, int limit, CancellationToken cancellationToken)
         => _repository.GetTablePageAsync("payments", page, limit, cancellationToken);
 
@@ -53,4 +50,7 @@ public sealed class ReportsService
 
     public Task<PagedResult<TableRowDto>> GetAuditLogsAsync(int page, int limit, CancellationToken cancellationToken)
         => _repository.GetTablePageAsync("audit_logs", page, limit, cancellationToken);
+        
+    public Task<PagedResult<TableRowDto>> GetBranchesAsync(int page, int limit, CancellationToken cancellationToken)
+        => _repository.GetTablePageAsync("branches", page, limit, cancellationToken);
 }

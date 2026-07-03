@@ -218,8 +218,9 @@ export function buildBranchCaseTrend(reports: ReportLibraryRow[]): TrendSeriesDa
   const summary = new Map<string, number>()
   reports.forEach(({ source }) => {
     if (!isCaseRow(source)) return
-    const branch = safeToString(source.branch || source.zone || source.state) || 'Unknown'
+    const branch = safeToString(source.branch_name || source.branch || source.zone || source.state) || 'Unknown'
     if (safeToString(source.status).toLowerCase().includes('close')) return
+    if (safeToString(source.loan_status).toLowerCase().includes('close')) return
     summary.set(branch, (summary.get(branch) ?? 0) + 1)
   })
 

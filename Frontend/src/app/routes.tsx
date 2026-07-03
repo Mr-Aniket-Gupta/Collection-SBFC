@@ -16,7 +16,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'reports',
-        element: <Navigate to="/reports/cases" replace />,
+        element: <Navigate to="/reports/dpd-cases" replace />,
       },
       {
         path: 'reports/:tableKey',

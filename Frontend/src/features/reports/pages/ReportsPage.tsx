@@ -98,10 +98,20 @@ const CATEGORY_CARDS: CategoryCardConfig[] = [
   { id: 'digital', title: 'Digital Recovery', tableKey: 'payments', icon: <Smartphone className="h-5 w-5 text-[#8D6B19]" />, accent: 'bg-[#8D6B19]', iconBg: 'bg-[#FDF9F0]' },
   { id: 'payment', title: 'Payment MIS', tableKey: 'payments', icon: <Wallet className="h-5 w-5 text-[#2C3E50]" />, accent: 'bg-[#2C3E50]', iconBg: 'bg-[#F4F6F7]' },
   { id: 'strategy', title: 'Strategy Reports', tableKey: 'strategies', icon: <Share2 className="h-5 w-5 text-[#5B2C6F]" />, accent: 'bg-[#5B2C6F]', iconBg: 'bg-[#F4ECF7]' },
+  { id: 'comm', title: 'Communication Reports', tableKey: 'communications', icon: <Search className="h-5 w-5 text-[#D35400]" />, accent: 'bg-[#D35400]', iconBg: 'bg-[#FDEDEC]' },
+]
+
+// CASES GROUP
+const CASES_TABLES: CategoryCardConfig[] = [
   { id: 'preemi', title: 'Pre EMI Cases', tableKey: 'pre-emi-cases', icon: <CheckCircle className="h-5 w-5 text-[#2874A6]" />, accent: 'bg-[#2874A6]', iconBg: 'bg-[#EBF5FB]' },
   { id: 'dpd', title: 'DPD Cases', tableKey: 'dpd-cases', icon: <TrendingUp className="h-5 w-5 text-[#117A65]" />, accent: 'bg-[#117A65]', iconBg: 'bg-[#E8F8F5]' },
-  { id: 'comm', title: 'Communication Reports', tableKey: 'communications', icon: <Search className="h-5 w-5 text-[#D35400]" />, accent: 'bg-[#D35400]', iconBg: 'bg-[#FDEDEC]' },
   { id: 'bounce', title: 'Bounce Analysis', tableKey: 'bounce-cases', icon: <Target className="h-5 w-5 text-[var(--color-gold)]" />, accent: 'bg-[var(--color-gold)]', iconBg: 'bg-[rgba(206,155,1,0.12)]' },
+]
+
+// LOGS GROUP
+const LOGS_TABLES: CategoryCardConfig[] = [
+  { id: 'audit', title: 'Audit Logs', tableKey: 'audit-logs', icon: <Smartphone className="h-5 w-5 text-[#8B5CF6]" />, accent: 'bg-[#8B5CF6]', iconBg: 'bg-[#F3E8FF]' },
+  { id: 'approval', title: 'Strategy Approval Logs', tableKey: 'strategy-approval-log', icon: <CheckCircle className="h-5 w-5 text-[#059669]" />, accent: 'bg-[#059669]', iconBg: 'bg-[#ECFDF5]' },
 ]
 
 const TABS = ['Overview', 'Detailed Reports'] as const
@@ -164,10 +174,10 @@ export const ReportsPage: React.FC = () => {
 
   const branchOptions = useMemo(() => {
     const values = new Set<string>()
-    tableBundle.cases.forEach((row) => {
+    tableBundle['dpd-cases'].forEach((row) => {
       const rowState = safeToString(row.state).trim()
       const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch).trim()
+      const rowBranch = safeToString(row.branch_name).trim()
 
       if (stateFilter && rowState.toLowerCase() !== stateFilter.toLowerCase()) return
       if (zoneFilter && rowZone.toLowerCase() !== zoneFilter.toLowerCase()) return
@@ -179,10 +189,10 @@ export const ReportsPage: React.FC = () => {
 
   const zoneOptions = useMemo(() => {
     const values = new Set<string>()
-    tableBundle.cases.forEach((row) => {
+    tableBundle['dpd-cases'].forEach((row) => {
       const rowState = safeToString(row.state).trim()
       const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch).trim()
+      const rowBranch = safeToString(row.branch_name).trim()
 
       if (stateFilter && rowState.toLowerCase() !== stateFilter.toLowerCase()) return
       if (branchFilter && rowBranch.toLowerCase() !== branchFilter.toLowerCase()) return
@@ -194,10 +204,10 @@ export const ReportsPage: React.FC = () => {
 
   const stateOptions = useMemo(() => {
     const values = new Set<string>()
-    tableBundle.cases.forEach((row) => {
+    tableBundle['dpd-cases'].forEach((row) => {
       const rowState = safeToString(row.state).trim()
       const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch).trim()
+      const rowBranch = safeToString(row.branch_name).trim()
 
       if (zoneFilter && rowZone.toLowerCase() !== zoneFilter.toLowerCase()) return
       if (branchFilter && rowBranch.toLowerCase() !== branchFilter.toLowerCase()) return
@@ -443,10 +453,6 @@ export const ReportsPage: React.FC = () => {
           { metric: 'Filtered Records', value: String(filteredRows.length) },
         ],
       },
-      // { name: 'Channel Conversion', rows: channelConversionData.map((d) => ({ channel: d.channel, count: String(d.sent) })) },
-      // { name: 'Bucket Trend', rows: bucketWiseTrendData.map((d) => ({ month: d.month, '0-30': String(d['0-30']), '31-60': String(d['31-60']), '61-90': String(d['61-90']), '90+': String(d['90+']) })) },
-      // { name: 'Collection Trend', rows: collectionTrendData.map((d) => ({ month: d.month, success: String(d.success), failed: String(d.failed), pending: String(d.pending) })) },
-      // { name: 'Recovery Split', rows: recoveryDistributionData.map((d) => ({ name: d.name, percent: String(d.value) })) },
     ].filter((sheet) => sheet.rows.length > 0)
 
     const tableKeys: ReportTableKey[] = [
@@ -458,12 +464,12 @@ export const ReportsPage: React.FC = () => {
       'pre-emi-cases',
       'dpd-cases',
       'bounce-cases',
-      'cases',
       'payments',
       'communications',
       'allocations',
       'ptps',
       'audit-logs',
+      // FUTURE: 'branches' - Uncomment when branch filter is ready
     ]
 
     tableKeys.forEach((key) => {
@@ -546,10 +552,14 @@ export const ReportsPage: React.FC = () => {
   const renderKpis = () => (
     <div className="reports-kpi-grid">
       {[
-        { label: 'TOTAL RECORDS', value: (syncBundle.cases || []).length.toLocaleString('en-IN'), diff: 'Total Cases in Bundle', dir: 'up' as const, icon: <Wallet className="h-5 w-5 text-[var(--color-navy)]" /> },
+        { label: 'TOTAL RECORDS', value: ((syncBundle['pre-emi-cases']?.length || 0) + (syncBundle['dpd-cases']?.length || 0) + (syncBundle['bounce-cases']?.length || 0)).toLocaleString('en-IN'), diff: 'Total Cases in Bundle', dir: 'up' as const, icon: <Wallet className="h-5 w-5 text-[var(--color-navy)]" /> },
         { label: 'TOTAL BRANCH', value: branchOptions.length.toLocaleString('en-IN'), diff: 'Available Branches', dir: 'up' as const, icon: <Smartphone className="h-5 w-5 text-[var(--color-navy)]" /> },
         { label: 'TOTAL ZONE', value: zoneOptions.length.toLocaleString('en-IN'), diff: 'Available Zones', dir: 'up' as const, icon: <Target className="h-5 w-5 text-[var(--color-navy)]" /> },
-        { label: 'ACTIVE CASES', value: (syncBundle.cases || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'active').length.toLocaleString('en-IN'), diff: 'Cases with active status', dir: 'up' as const, icon: <CheckCircle className="h-5 w-5 text-[var(--color-navy)]" /> },
+        { label: 'ACTIVE CASES', value: (
+          (syncBundle['pre-emi-cases'] || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'pending_strategy').length +
+          (syncBundle['dpd-cases'] || []).filter((c: any) => safeToString(c.loan_status).toLowerCase() === 'active').length +
+          (syncBundle['bounce-cases'] || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'pending_strategy' || safeToString(c.status).toLowerCase() === 'pending').length
+        ).toLocaleString('en-IN'), diff: 'Cases with active status', dir: 'up' as const, icon: <CheckCircle className="h-5 w-5 text-[var(--color-navy)]" /> },
       ].map((kpi) => (
         <div key={kpi.label} className="reports-kpi-card flex flex-col relative">
           <div className="mb-2 flex items-start justify-between">
@@ -672,21 +682,68 @@ export const ReportsPage: React.FC = () => {
         {activeTab === 'Detailed Reports' && (
           <section>
             <h3 className="mb-4 text-[15px] font-bold text-[var(--color-navy)]">Raw DCSP Tables</h3>
-            <div className="flex flex-wrap gap-2">
-              {reportTables.map((table) => (
-                <button
-                  key={table}
-                  type="button"
-                  onClick={() => {
-                    navigate(`/reports/${table}`)
-                    setActiveTable(table as ReportTableKey)
-                    setPage(1)
-                  }}
-                  className={`rounded-lg border px-4 py-2 text-left transition-all ${activeTable === table ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-md' : 'border-[rgba(5,0,88,0.12)] bg-white text-[var(--color-navy)] hover:bg-[var(--color-ice)]'}`}
-                >
-                  <div className="text-[12px] font-bold">{prettyTitle(table)}</div>
-                </button>
-              ))}
+            
+            {/* CASES GROUP */}
+            <div className="mb-6">
+              <h4 className="mb-2 text-[12px] font-bold uppercase text-[var(--color-ink-muted)]">📋 Cases</h4>
+              <div className="flex flex-wrap gap-2">
+                {['pre-emi-cases', 'dpd-cases', 'bounce-cases'].map((table) => (
+                  <button
+                    key={table}
+                    type="button"
+                    onClick={() => {
+                      navigate(`/reports/${table}`)
+                      setActiveTable(table as ReportTableKey)
+                      setPage(1)
+                    }}
+                    className={`rounded-lg border px-4 py-2 text-left transition-all ${activeTable === table ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-md' : 'border-[rgba(5,0,88,0.12)] bg-white text-[var(--color-navy)] hover:bg-[var(--color-ice)]'}`}
+                  >
+                    <div className="text-[12px] font-bold">{prettyTitle(table)}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* LOGS GROUP */}
+            <div className="mb-6">
+              <h4 className="mb-2 text-[12px] font-bold uppercase text-[var(--color-ink-muted)]">📝 Logs</h4>
+              <div className="flex flex-wrap gap-2">
+                {['audit-logs', 'strategy-approval-log'].map((table) => (
+                  <button
+                    key={table}
+                    type="button"
+                    onClick={() => {
+                      navigate(`/reports/${table}`)
+                      setActiveTable(table as ReportTableKey)
+                      setPage(1)
+                    }}
+                    className={`rounded-lg border px-4 py-2 text-left transition-all ${activeTable === table ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-md' : 'border-[rgba(5,0,88,0.12)] bg-white text-[var(--color-navy)] hover:bg-[var(--color-ice)]'}`}
+                  >
+                    <div className="text-[12px] font-bold">{prettyTitle(table)}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* OTHER TABLES */}
+            <div>
+              <h4 className="mb-2 text-[12px] font-bold uppercase text-[var(--color-ink-muted)]">📊 Other Tables</h4>
+              <div className="flex flex-wrap gap-2">
+                {reportTables.filter(t => !['pre-emi-cases', 'dpd-cases', 'bounce-cases', 'audit-logs', 'strategy-approval-log'].includes(t)).map((table) => (
+                  <button
+                    key={table}
+                    type="button"
+                    onClick={() => {
+                      navigate(`/reports/${table}`)
+                      setActiveTable(table as ReportTableKey)
+                      setPage(1)
+                    }}
+                    className={`rounded-lg border px-4 py-2 text-left transition-all ${activeTable === table ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-md' : 'border-[rgba(5,0,88,0.12)] bg-white text-[var(--color-navy)] hover:bg-[var(--color-ice)]'}`}
+                  >
+                    <div className="text-[12px] font-bold">{prettyTitle(table)}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </section>
         )}
