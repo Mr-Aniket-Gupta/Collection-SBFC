@@ -1,10 +1,11 @@
 // Renders progress bars to show the effectiveness of various strategies.
 
 import React, { useState } from 'react'
-import { ChartCard, ProgressBar } from '@/Components'
+import { ChartCard } from '@/Components'
+import { ProgressBar } from '../Components/ProgressBar'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { StrategyRow } from '../types/analytics.types'
-import { formatCappedPercent } from '@/features/reports/utils/formatters'
+import { formatCappedPercent } from '@/Components/formatters'
 
 interface StrategyEffectivenessProps {
   data: StrategyRow[]

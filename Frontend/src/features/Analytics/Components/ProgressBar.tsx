@@ -1,7 +1,7 @@
 // ProgressBar Component
 
 import React, { useEffect, useRef, useState } from 'react'
-import { clampPercent, formatCappedPercent } from '@/features/reports/utils/formatters'
+import { clampPercent, formatCappedPercent } from '@/Components/formatters'
 
 interface ProgressBarProps {
   label?: string

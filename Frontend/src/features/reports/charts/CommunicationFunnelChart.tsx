@@ -14,7 +14,7 @@ import {
 } from 'recharts'
 import { ChartCard } from '@/Components'
 import type { FunnelStageData } from '../types'
-import { clampPercent } from '../utils/formatters'
+import { clampPercent } from '../../../Components/formatters'
 
 interface CommunicationFunnelChartProps {
   data: FunnelStageData[]

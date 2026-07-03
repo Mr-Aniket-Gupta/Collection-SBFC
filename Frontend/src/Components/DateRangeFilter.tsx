@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { Calendar, ChevronDown } from 'lucide-react'
-import type { DateRangeOption } from '../types'
+import type { DateRangeOption } from '@/features/reports/types'
 import {
   clampCustomToDate,
   DATE_RANGE_OPTIONS,
@@ -10,7 +10,7 @@ import {
   getDefaultCustomFromDate,
   getDefaultCustomToDate,
   getMaxCustomToDate,
-} from '../utils/dateFilter'
+} from '../Components/dateFilter'
 
 interface DateRangeFilterProps {
   value: DateRangeOption

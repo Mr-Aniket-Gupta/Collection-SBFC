@@ -1,4 +1,4 @@
-import type { DateRangeOption, DcspTableRow } from '../types'
+import type { DateRangeOption, DcspTableRow } from '@/features/reports/types'
 
 const DATE_KEYS = ['created_at', 'createdDate', 'created_date', 'updated_at', 'payment_date', 'ptp_date']
 

@@ -2,7 +2,7 @@ import React from 'react'
 import { RotateCw } from 'lucide-react'
 import type { ReportTableKey } from '../hooks/useReports'
 import type { MisCardMetric } from '../utils/misCardMetrics'
-import { DateRangeFilter } from './DateRangeFilter'
+import { DateRangeFilter } from '@/Components'
 import { ReportSelectFilter } from './ReportSelectFilter'
 import type { DateRangeOption } from '../types'
 

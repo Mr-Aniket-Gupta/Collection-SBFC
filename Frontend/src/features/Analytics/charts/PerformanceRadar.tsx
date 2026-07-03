@@ -12,7 +12,7 @@ import {
 } from 'recharts'
 import { ChartCard } from '@/Components'
 import type { RadarDataPoint } from '../types/analytics.types'
-import { formatCappedPercent } from '@/features/reports/utils/formatters'
+import { formatCappedPercent } from '@/Components/formatters'
 
 interface CustomTooltipProps {
   active?: boolean

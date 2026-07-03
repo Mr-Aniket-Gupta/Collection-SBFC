@@ -1,5 +1,3 @@
 export { ChartCard } from './ChartCard'
 export { ChartDataModal } from './ChartDataModal'
-export { KPICard } from './Analytics/KPICard'
-export { PageHeader } from './Analytics/PageHeader'
-export { ProgressBar } from './Analytics/ProgressBar'
+export { DateRangeFilter } from './DateRangeFilter'

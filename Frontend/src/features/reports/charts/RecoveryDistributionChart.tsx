@@ -6,7 +6,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recha
 import { ChartCard } from '@/Components'
 import type { RecoveryDistributionData } from '../types'
 import { RECOVERY_PIE_COLORS } from '../constants'
-import { clampPercent } from '../utils/formatters'
+import { clampPercent } from '../../../Components/formatters'
 
 interface RecoveryDistributionChartProps {
   data: RecoveryDistributionData[]

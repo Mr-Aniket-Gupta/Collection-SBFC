@@ -9,7 +9,7 @@ import type {
   TrendSeriesData,
 } from '../types'
 import { isCommunicationRow, isPaymentRow, isStrategyRow, isCaseRow } from './rowDetectors'
-import { extractRowDate } from './dateFilter'
+import { extractRowDate } from '../../../Components/dateFilter'
 import { safeToString } from './tableUtils'
 
 export const COMMUNICATION_CHANNELS = ['SMS', 'WhatsApp Messages', 'Email', 'AI Call', 'Field visit'] as const

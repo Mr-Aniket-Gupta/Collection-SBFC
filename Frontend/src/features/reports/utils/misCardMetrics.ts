@@ -4,7 +4,7 @@ It removes duplicate records, performs calculations such as recovery amount, suc
 */
 
 import type { DcspTableRow } from '../types'
-import { formatCurrencyINR, formatPercent } from './formatters'
+import { formatCurrencyINR, formatPercent } from '../../../Components/formatters'
 import { safeToString } from './tableUtils'
 import type { MisTableRows } from './reportDataUtils'
 export type { MisTableRows } from './reportDataUtils'

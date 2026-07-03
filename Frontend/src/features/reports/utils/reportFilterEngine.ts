@@ -2,7 +2,7 @@
 
 import type { ReportTableKey } from '../hooks/useReports'
 import type { DcspTableRow } from '../types'
-import { isWithinDateRange } from './dateFilter'
+import { isWithinDateRange } from '../../../Components/dateFilter'
 import type { DateRangeOption } from '../types'
 import {
   isCommunicationRow,
