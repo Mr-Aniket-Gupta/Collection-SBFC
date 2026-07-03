@@ -264,7 +264,7 @@ const idsAreEmpty = (ids: GlobalFilterIds): boolean =>
 
 const rowMatchesIds = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalFilterIds): boolean => {
   const caseId = id(row.case_id)
-  const customerId = id(row.customer_id)
+  // const customerId = id(row.customer_id)
   const loanNumber = id(row.loan_number)
   const strategyId = id(row.strategy_id)
   const agentId = id(row.agent_id ?? row.assigned_to ?? row.allocated_to)

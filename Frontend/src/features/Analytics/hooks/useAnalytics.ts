@@ -32,22 +32,26 @@ export function useAnalytics() {
   })
 
   const branchOptions = useMemo(() => {
-    const values = new Set<string>()
-    ;(tableBundle?.['dpd-cases'] ?? []).forEach((row) => {
-      const rowState = safeToString(row.state).trim()
-      const rowBranch = safeToString(row.branch_name).trim()
+    const values = Array.from(
+      new Set(
+        (tableBundle?.branches ?? [])
+          .map((row) => safeToString(row.name).trim())
+          .filter((name) => name !== ''),
+      ),
+    ).sort((a, b) => a.localeCompare(b))
 
-      if (stateFilter && rowState !== stateFilter) return
+    if (values.length > 0) return values
 
-      if (rowBranch) values.add(rowBranch)
-    })
-    return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [tableBundle, stateFilter])
+    return Array.from(
+      new Set(
+        (tableBundle?.['dpd-cases'] ?? [])
+          .map((row) => safeToString(row.branch_name).trim())
+          .filter((name) => name !== ''),
+      ),
+    ).sort((a, b) => a.localeCompare(b))
+  }, [tableBundle])
 
-  const zoneOptions = useMemo(() => {
-    // Zone is not available in dpd_cases; keep the filter list empty to avoid invalid selections.
-    return []
-  }, [])
+  const zoneOptions = useMemo(() => ['East', 'West', 'North', 'South'], [])
 
   const stateOptions = useMemo(() => {
     const values = new Set<string>()

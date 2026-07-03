@@ -99,6 +99,8 @@ const CATEGORY_CARDS: CategoryCardConfig[] = [
   { id: 'payment', title: 'Payment MIS', tableKey: 'payments', icon: <Wallet className="h-5 w-5 text-[#2C3E50]" />, accent: 'bg-[#2C3E50]', iconBg: 'bg-[#F4F6F7]' },
   { id: 'strategy', title: 'Strategy Reports', tableKey: 'strategies', icon: <Share2 className="h-5 w-5 text-[#5B2C6F]" />, accent: 'bg-[#5B2C6F]', iconBg: 'bg-[#F4ECF7]' },
   { id: 'comm', title: 'Communication Reports', tableKey: 'communications', icon: <Search className="h-5 w-5 text-[#D35400]" />, accent: 'bg-[#D35400]', iconBg: 'bg-[#FDEDEC]' },
+  { id: 'dpdCases', title: 'DPD Cases', tableKey: 'dpd-cases', icon: <TrendingUp className="h-5 w-5 text-[#117A65]" />, accent: 'bg-[#117A65]', iconBg: 'bg-[#E8F8F5]' },
+  { id: 'bounceAnalysis', title: 'Bounce Analysis', tableKey: 'payments', icon: <ArrowUpDown className="h-5 w-5 text-[#B03A2E]" />, accent: 'bg-[#B03A2E]', iconBg: 'bg-[#FDECEA]' },
 ]
 
 // CASES GROUP
@@ -173,44 +175,37 @@ export const ReportsPage: React.FC = () => {
   const tableBundle = rawTableBundle ?? EMPTY_BUNDLE()
 
   const branchOptions = useMemo(() => {
-    const values = new Set<string>()
-    tableBundle['dpd-cases'].forEach((row) => {
-      const rowState = safeToString(row.state).trim()
-      const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch_name).trim()
+    const branchesFromTable = Array.from(
+      new Set(
+        tableBundle.branches
+          .map((row) => safeToString(row.name).trim())
+          .filter((name) => name !== ''),
+      ),
+    ).sort((a, b) => a.localeCompare(b))
 
-      if (stateFilter && rowState.toLowerCase() !== stateFilter.toLowerCase()) return
-      if (zoneFilter && rowZone.toLowerCase() !== zoneFilter.toLowerCase()) return
+    if (branchesFromTable.length > 0) return branchesFromTable
 
-      if (rowBranch) values.add(rowBranch)
-    })
-    return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [tableBundle, stateFilter, zoneFilter])
+    return Array.from(
+      new Set(
+        tableBundle['dpd-cases']
+          .map((row) => safeToString(row.branch_name).trim())
+          .filter((name) => name !== ''),
+      ),
+    ).sort((a, b) => a.localeCompare(b))
+  }, [tableBundle])
 
-  const zoneOptions = useMemo(() => {
-    const values = new Set<string>()
-    tableBundle['dpd-cases'].forEach((row) => {
-      const rowState = safeToString(row.state).trim()
-      const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch_name).trim()
-
-      if (stateFilter && rowState.toLowerCase() !== stateFilter.toLowerCase()) return
-      if (branchFilter && rowBranch.toLowerCase() !== branchFilter.toLowerCase()) return
-
-      if (rowZone) values.add(rowZone)
-    })
-    return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [tableBundle, stateFilter, branchFilter])
+  const zoneOptions = useMemo(() => ['East', 'West', 'North', 'South'], [])
 
   const stateOptions = useMemo(() => {
+    const normalize = (value: string) => value.toLowerCase().trim()
     const values = new Set<string>()
     tableBundle['dpd-cases'].forEach((row) => {
       const rowState = safeToString(row.state).trim()
       const rowZone = safeToString(row.zone).trim()
       const rowBranch = safeToString(row.branch_name).trim()
 
-      if (zoneFilter && rowZone.toLowerCase() !== zoneFilter.toLowerCase()) return
-      if (branchFilter && rowBranch.toLowerCase() !== branchFilter.toLowerCase()) return
+      if (zoneFilter && normalize(rowZone) !== normalize(zoneFilter)) return
+      if (branchFilter && normalize(rowBranch) !== normalize(branchFilter)) return
 
       if (rowState) values.add(rowState)
     })
@@ -276,12 +271,14 @@ export const ReportsPage: React.FC = () => {
     return ordered.length > 0 ? ordered : rawTableColumns
   }, [rows, rawTableColumns])
 
-  const effectiveTableColumns = useMemo(() => {
-    if (activeTable !== 'cases') return tableColumns
-    const ordered = CASES_COLUMN_ORDER.filter((key) => tableColumns.includes(key))
-    const extras = tableColumns.filter((key) => !CASES_COLUMN_ORDER.includes(key))
-    return [...ordered, ...extras]
-  }, [activeTable, tableColumns])
+const CASES_TABLE_KEYS: ReportTableKey[] = ['pre-emi-cases', 'dpd-cases', 'bounce-cases']
+
+const effectiveTableColumns = useMemo(() => {
+  if (!CASES_TABLE_KEYS.includes(activeTable)) return tableColumns
+  const ordered = CASES_COLUMN_ORDER.filter((key) => tableColumns.includes(key))
+  const extras = tableColumns.filter((key) => !CASES_COLUMN_ORDER.includes(key))
+  return [...ordered, ...extras]
+}, [activeTable, tableColumns])
 
   const currentTableReports = useMemo(
     () => rows.map((row, i) => makeReportRow(row, prettyTitle(activeTable), i)),
