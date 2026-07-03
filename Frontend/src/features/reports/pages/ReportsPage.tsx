@@ -51,6 +51,7 @@ import {
   looksLikeJsonString,
   prettyTitle,
   safeToString,
+  getBranchName,
   shouldFormatDateColumn,
   stringifyCompact,
   tryFormatDate,
@@ -103,19 +104,6 @@ const CATEGORY_CARDS: CategoryCardConfig[] = [
   { id: 'bounceAnalysis', title: 'Bounce Analysis', tableKey: 'payments', icon: <ArrowUpDown className="h-5 w-5 text-[#B03A2E]" />, accent: 'bg-[#B03A2E]', iconBg: 'bg-[#FDECEA]' },
 ]
 
-// CASES GROUP
-const CASES_TABLES: CategoryCardConfig[] = [
-  { id: 'preemi', title: 'Pre EMI Cases', tableKey: 'pre-emi-cases', icon: <CheckCircle className="h-5 w-5 text-[#2874A6]" />, accent: 'bg-[#2874A6]', iconBg: 'bg-[#EBF5FB]' },
-  { id: 'dpd', title: 'DPD Cases', tableKey: 'dpd-cases', icon: <TrendingUp className="h-5 w-5 text-[#117A65]" />, accent: 'bg-[#117A65]', iconBg: 'bg-[#E8F8F5]' },
-  { id: 'bounce', title: 'Bounce Analysis', tableKey: 'bounce-cases', icon: <Target className="h-5 w-5 text-[var(--color-gold)]" />, accent: 'bg-[var(--color-gold)]', iconBg: 'bg-[rgba(206,155,1,0.12)]' },
-]
-
-// LOGS GROUP
-const LOGS_TABLES: CategoryCardConfig[] = [
-  { id: 'audit', title: 'Audit Logs', tableKey: 'audit-logs', icon: <Smartphone className="h-5 w-5 text-[#8B5CF6]" />, accent: 'bg-[#8B5CF6]', iconBg: 'bg-[#F3E8FF]' },
-  { id: 'approval', title: 'Strategy Approval Logs', tableKey: 'strategy-approval-log', icon: <CheckCircle className="h-5 w-5 text-[#059669]" />, accent: 'bg-[#059669]', iconBg: 'bg-[#ECFDF5]' },
-]
-
 const TABS = ['Overview', 'Detailed Reports'] as const
 
 export const ReportsPage: React.FC = () => {
@@ -156,6 +144,12 @@ export const ReportsPage: React.FC = () => {
   }, [customToDate])
 
   useEffect(() => {
+    if (params.tableKey) {
+      setActiveTab('Detailed Reports')
+    }
+  }, [params.tableKey])
+
+  useEffect(() => {
     sessionStorage.setItem(BRANCH_FILTER_STORAGE_KEY, branchFilter)
   }, [branchFilter])
 
@@ -174,11 +168,12 @@ export const ReportsPage: React.FC = () => {
 
   const tableBundle = rawTableBundle ?? EMPTY_BUNDLE()
 
+
   const branchOptions = useMemo(() => {
     const branchesFromTable = Array.from(
       new Set(
         tableBundle.branches
-          .map((row) => safeToString(row.name).trim())
+          .map((row) => getBranchName(row))
           .filter((name) => name !== ''),
       ),
     ).sort((a, b) => a.localeCompare(b))
@@ -188,11 +183,20 @@ export const ReportsPage: React.FC = () => {
     return Array.from(
       new Set(
         tableBundle['dpd-cases']
-          .map((row) => safeToString(row.branch_name).trim())
+          .map((row) => getBranchName(row))
           .filter((name) => name !== ''),
       ),
     ).sort((a, b) => a.localeCompare(b))
   }, [tableBundle])
+
+  useEffect(() => {
+    // Debug: log received bundle to help diagnose missing branches/states
+    // Remove this after debugging
+    // eslint-disable-next-line no-console
+    console.debug('ReportsPage: rawTableBundle', rawTableBundle)
+    // eslint-disable-next-line no-console
+    console.debug('ReportsPage: derived branchOptions', branchOptions)
+  }, [rawTableBundle, branchOptions])
 
   const zoneOptions = useMemo(() => ['East', 'West', 'North', 'South'], [])
 
@@ -202,7 +206,7 @@ export const ReportsPage: React.FC = () => {
     tableBundle['dpd-cases'].forEach((row) => {
       const rowState = safeToString(row.state).trim()
       const rowZone = safeToString(row.zone).trim()
-      const rowBranch = safeToString(row.branch_name).trim()
+      const rowBranch = getBranchName(row)
 
       if (zoneFilter && normalize(rowZone) !== normalize(zoneFilter)) return
       if (branchFilter && normalize(rowBranch) !== normalize(branchFilter)) return
@@ -363,6 +367,13 @@ const effectiveTableColumns = useMemo(() => {
     setPage(1)
   }
 
+  const selectReportTable = (table: ReportTableKey) => {
+    setSelectedCategory('')
+    navigate(`/reports/${table}`)
+    setActiveTable(table)
+    setPage(1)
+  }
+
   const selectCategory = (cat: CategoryCardConfig) => {
     const same = selectedCategory === cat.title
     setSelectedCategory(same ? '' : cat.title)
@@ -466,7 +477,7 @@ const effectiveTableColumns = useMemo(() => {
       'allocations',
       'ptps',
       'audit-logs',
-      // FUTURE: 'branches' - Uncomment when branch filter is ready
+     'branches',
     ]
 
     tableKeys.forEach((key) => {
@@ -688,11 +699,7 @@ const effectiveTableColumns = useMemo(() => {
                   <button
                     key={table}
                     type="button"
-                    onClick={() => {
-                      navigate(`/reports/${table}`)
-                      setActiveTable(table as ReportTableKey)
-                      setPage(1)
-                    }}
+                    onClick={() => selectReportTable(table as ReportTableKey)}
                     className={`rounded-lg border px-4 py-2 text-left transition-all ${activeTable === table ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-md' : 'border-[rgba(5,0,88,0.12)] bg-white text-[var(--color-navy)] hover:bg-[var(--color-ice)]'}`}
                   >
                     <div className="text-[12px] font-bold">{prettyTitle(table)}</div>
@@ -709,11 +716,7 @@ const effectiveTableColumns = useMemo(() => {
                   <button
                     key={table}
                     type="button"
-                    onClick={() => {
-                      navigate(`/reports/${table}`)
-                      setActiveTable(table as ReportTableKey)
-                      setPage(1)
-                    }}
+                    onClick={() => selectReportTable(table as ReportTableKey)}
                     className={`rounded-lg border px-4 py-2 text-left transition-all ${activeTable === table ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-md' : 'border-[rgba(5,0,88,0.12)] bg-white text-[var(--color-navy)] hover:bg-[var(--color-ice)]'}`}
                   >
                     <div className="text-[12px] font-bold">{prettyTitle(table)}</div>
@@ -730,11 +733,7 @@ const effectiveTableColumns = useMemo(() => {
                   <button
                     key={table}
                     type="button"
-                    onClick={() => {
-                      navigate(`/reports/${table}`)
-                      setActiveTable(table as ReportTableKey)
-                      setPage(1)
-                    }}
+                    onClick={() => selectReportTable(table as ReportTableKey)}
                     className={`rounded-lg border px-4 py-2 text-left transition-all ${activeTable === table ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-md' : 'border-[rgba(5,0,88,0.12)] bg-white text-[var(--color-navy)] hover:bg-[var(--color-ice)]'}`}
                   >
                     <div className="text-[12px] font-bold">{prettyTitle(table)}</div>

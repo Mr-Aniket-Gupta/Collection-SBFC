@@ -97,6 +97,25 @@ export const safeToString = (value: unknown): string => {
   return String(value)
 }
 
+/**
+ * Robustly extract a branch name from a row that may use different field names.
+ * Supports `name`, `branch_name`, `branch`, camelCase variants, and nested objects.
+ */
+export const getBranchName = (row: Record<string, unknown> | undefined): string => {
+  if (!row || typeof row !== 'object') return ''
+  // prefer explicit fields in order
+  const candidates = ['name', 'branch_name', 'branch', 'branchName', 'hub_branch_name']
+  for (const key of candidates) {
+    const v = (row as Record<string, unknown>)[key]
+    const s = safeToString(v).trim()
+    if (s) return s
+  }
+  // fallback: try any plausible-looking key
+  const alt = Object.keys(row).find((k) => k.toLowerCase().includes('branch') || k.toLowerCase() === 'name')
+  if (alt) return safeToString((row as Record<string, unknown>)[alt]).trim()
+  return ''
+}
+
 // ---------------------------------------------------------------------------
 // Date formatting
 // ---------------------------------------------------------------------------

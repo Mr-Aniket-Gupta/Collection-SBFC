@@ -2,6 +2,7 @@ using backend.Database;
 using backend.Modules.Analytics.Config;
 using backend.Modules.Reports.Config;
 using System.Text.Json;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
+
 builder.Services.AddReportsModule();
 builder.Services.AddAnalyticsModule();
 
@@ -42,7 +44,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseCors("Frontend");
+
+// Register BEFORE endpoints
+app.UseHttpMetrics();
+
 app.MapControllers();
+
+// Expose Prometheus metrics
+app.MapMetrics();
 
 app.Run();

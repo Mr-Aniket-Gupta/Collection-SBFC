@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { analyticsService } from '../services/analyticsService'
 import type { DateRangeOption } from '@/features/reports/types'
 import { getDefaultCustomFromDate, getDefaultCustomToDate } from '@/Components/dateFilter'
-import { safeToString } from '@/features/reports/utils/tableUtils'
+import { safeToString, getBranchName } from '@/features/reports/utils/tableUtils'
 import { fetchReportTableBundle } from '@/features/reports/utils/reportDataUtils'
 
 export function useAnalytics() {
@@ -35,7 +35,7 @@ export function useAnalytics() {
     const values = Array.from(
       new Set(
         (tableBundle?.branches ?? [])
-          .map((row) => safeToString(row.name).trim())
+          .map((row) => getBranchName(row))
           .filter((name) => name !== ''),
       ),
     ).sort((a, b) => a.localeCompare(b))
@@ -45,7 +45,7 @@ export function useAnalytics() {
     return Array.from(
       new Set(
         (tableBundle?.['dpd-cases'] ?? [])
-          .map((row) => safeToString(row.branch_name).trim())
+          .map((row) => getBranchName(row) || safeToString(row.branch_name).trim())
           .filter((name) => name !== ''),
       ),
     ).sort((a, b) => a.localeCompare(b))
@@ -57,7 +57,7 @@ export function useAnalytics() {
     const values = new Set<string>()
     ;(tableBundle?.['dpd-cases'] ?? []).forEach((row) => {
       const rowState = safeToString(row.state).trim()
-      const rowBranch = safeToString(row.branch_name).trim()
+      const rowBranch = getBranchName(row) || safeToString(row.branch_name).trim()
 
       if (zoneFilter) return
       if (branchFilter && rowBranch !== branchFilter) return

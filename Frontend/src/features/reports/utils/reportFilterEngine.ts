@@ -8,7 +8,7 @@ import {
   isCommunicationRow,
   isPaymentRow,
 } from './rowDetectors'
-import { safeToString } from './tableUtils'
+import { safeToString, getBranchName } from './tableUtils'
 
 const norm = (value: unknown): string => safeToString(value).trim().toUpperCase()
 const id = (value: unknown): string => safeToString(value).trim()
@@ -343,6 +343,14 @@ export function filterBundleByDateRange(
 ): ReportTableBundle {
   const filtered = EMPTY_BUNDLE()
   REPORT_TABLE_KEYS.forEach((tableKey) => {
+    // Reference tables such as `branches` are not time-series data and
+    // should not be excluded by the selected date range. Keep them
+    // unchanged so users can always view branch metadata.
+    if (tableKey === 'branches') {
+      filtered[tableKey] = bundle[tableKey]
+      return
+    }
+
     filtered[tableKey] = bundle[tableKey].filter((row) =>
       isWithinDateRange(row, dateRange, customFromDate, customToDate),
     )
@@ -353,10 +361,18 @@ export function filterBundleByDateRange(
 /** Collects distinct branch values from dpd_cases table. */
 export function extractBranchOptions(bundle: ReportTableBundle): string[] {
   const values = new Set<string>()
-  bundle['dpd-cases'].forEach((row) => {
-    const branch = safeToString(row.branch_name).trim()
-    if (branch) values.add(branch)
-  })
+  // Prefer explicit branches table names when available, else fall back to dpd-cases
+  if (bundle.branches && bundle.branches.length > 0) {
+    bundle.branches.forEach((row) => {
+      const branch = getBranchName(row)
+      if (branch) values.add(branch)
+    })
+  } else {
+    bundle['dpd-cases'].forEach((row) => {
+      const branch = getBranchName(row) || safeToString(row.branch_name).trim()
+      if (branch) values.add(branch)
+    })
+  }
   return Array.from(values).sort((a, b) => a.localeCompare(b))
 }
 
@@ -389,30 +405,33 @@ export function filterBundleByBranchZone(
 ): ReportTableBundle {
   if (!branchFilter && !zoneFilter && !stateFilter) return bundle
 
-  const matchingCaseRefs = new Set<string>()
+  const matchingCaseIds = new Set<string>()
   
-  // Collect matching case_ref from dpd-cases
+  // Collect matching case_id from dpd-cases
   bundle['dpd-cases'].forEach((row) => {
-    if (branchFilter && norm(row.branch_name) !== norm(branchFilter)) return
+    if (branchFilter && norm(getBranchName(row) || row.branch_name) !== norm(branchFilter)) return
     if (zoneFilter && norm(row.zone) !== norm(zoneFilter)) return
     if (stateFilter && norm(row.state) !== norm(stateFilter)) return
-    const caseRef = id(row.case_ref)
-    if (caseRef) matchingCaseRefs.add(caseRef)
-  })
-  
-  // Also collect from pre-emi-cases and bounce-cases for consistency
-  bundle['pre-emi-cases'].forEach((row) => {
-    const caseRef = id(row.case_ref)
-    if (caseRef && matchingCaseRefs.has(caseRef)) return // already matched
-    // pre-emi-cases may not have branch/zone/state, so skip location filtering
+    const caseId = id(row.case_id)
+    if (caseId) matchingCaseIds.add(caseId)
   })
 
   const filtered = EMPTY_BUNDLE()
 
   REPORT_TABLE_KEYS.forEach((tableKey) => {
+    if (tableKey === 'branches') {
+      filtered.branches = bundle.branches.filter((row) => {
+        const name = getBranchName(row)
+        if (branchFilter && norm(name) !== norm(branchFilter)) return false
+        if (zoneFilter && norm(row.zone_code) !== norm(zoneFilter)) return false
+        return true
+      })
+      return
+    }
+
     filtered[tableKey] = bundle[tableKey].filter((row) => {
       const caseId = id(row.case_id)
-      return caseId !== '' && matchingCaseRefs.has(caseId)
+      return caseId !== '' && matchingCaseIds.has(caseId)
     })
   })
 

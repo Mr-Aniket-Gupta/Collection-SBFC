@@ -4,6 +4,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { reportsService } from '../services/reportsService'
+import { flattenRows } from '../utils/tableUtils'
 import type { DcspTableRow } from '../types'
 
 export type ReportTableKey =
@@ -65,10 +66,12 @@ export const useReports = (initialTable?: string | null) => {
     placeholderData: (prev) => prev
   })
 
+  const rows = useMemo(() => flattenRows(data?.items ?? []), [data])
+
   const tableColumns = useMemo(() => {
-    const first = data?.items?.[0] as DcspTableRow | undefined
+    const first = rows[0] as DcspTableRow | undefined
     return first ? Object.keys(first) : []
-  }, [data])
+  }, [rows])
 
   const reset = useCallback(() => {
     setActiveTable(defaultTable)
@@ -84,7 +87,7 @@ export const useReports = (initialTable?: string | null) => {
     setPage,
     limit,
     setLimit,
-    rows: data?.items ?? [],
+    rows,
     total: data?.total ?? 0,
     tableColumns,
     isLoading,

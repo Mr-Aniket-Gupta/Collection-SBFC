@@ -1,6 +1,5 @@
 import random
 import calendar
-import uuid
 from datetime import datetime, timedelta, time
 
 import psycopg2
@@ -148,7 +147,6 @@ LANGUAGES = ["English", "Hindi", "Spanish", "French"]
 AGENT_STATUS = ["ACTIVE", "INACTIVE", "ON_LEAVE"]
 
 JOURNEY_TYPES = ["EARLY", "MID", "LATE", "LEGAL"]
-CASE_STATUS = ["OPEN", "CLOSED", "IN_PROGRESS", "ESCALATED", "SETTLED"]
 
 CHANNELS = ["SMS", "EMAIL", "IVR", "WHATSAPP", "CALL"]
 COMM_STATUS = ["SENT", "FAILED", "PENDING", "DELIVERED"]
@@ -171,7 +169,7 @@ ALLOC_STATUS = ["ACTIVE", "DEALLOCATED"]
 
 AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE"]
 
-# --- New pools for pre_emi_cases / dpd_cases / bounce_cases / strategy_execution_log ---
+# --- Pools for pre_emi_cases / dpd_cases / bounce_cases / strategy_execution_log ---
 PRODUCT_NAMES = ["Personal Loan", "Home Loan", "Car Loan", "Business Loan", "Education Loan"]
 PENDING_STRATEGY_STATUSES = ["PENDING_STRATEGY", "STRATEGY_ASSIGNED", "IN_PROGRESS", "CLOSED"]
 LOAN_STATUSES = ["ACTIVE", "NPA", "WRITTEN_OFF", "CLOSED"]
@@ -186,6 +184,36 @@ BOUNCE_REASONS = [
 EXEC_STATUSES = ["RUNNING", "COMPLETED", "FAILED", "CANCELLED"]
 EXEC_CASE_TYPES = ["PRE_EMI", "DPD", "BOUNCE"]
 
+# CASE_STATUS used generically for audit_logs' "status changed" simulation
+# (kept even though there's no generic `cases` table any more, since it's
+# only used to fabricate plausible old/new values, not to drive real inserts).
+CASE_STATUS = ["OPEN", "CLOSED", "IN_PROGRESS", "ESCALATED", "SETTLED"]
+
+# --- Pools for branches ---
+BRANCH_STATUS = ["A", "I"]  # Active / Inactive (column is character(1))
+BRANCH_TYPES = ["Branch", "Hub", "Satellite", "Regional Office"]
+BRANCH_OFFICE_TYPES = ["Head Office", "Zonal Office", "Regional Office", "Satellite"]
+
+# Deterministic zone/region codes derived from the zone/state names already
+# used everywhere else in this script, so `branches` lines up with the same
+# zones/states referenced by agents/dpd_cases/etc.
+ALL_ZONE_NAMES = sorted({z for branches in STATE_BRANCH_ZONE.values() for zs in branches.values() for z in zs})
+ZONE_CODE_MAP = {zone: f"ZN{idx + 1:02d}" for idx, zone in enumerate(ALL_ZONE_NAMES)}
+ALL_STATE_NAMES = list(STATE_BRANCH_ZONE.keys())
+REGION_CODE_MAP = {state: f"RG{idx + 1:02d}" for idx, state in enumerate(ALL_STATE_NAMES)}
+
+# Flatten (state, branch) pairs so every real branch name used elsewhere
+# in the seed data also gets a row in `branches`.
+ALL_BRANCHES = sorted({
+    (state, branch)
+    for state, branches in STATE_BRANCH_ZONE.items()
+    for branch in branches
+})
+
+
+def gen_branch_code(i):
+    return f"BR{RUN_TOKEN}{i:03d}"
+
 
 # ---------------------------------------------------------------------------
 # Unique per RUN token so re-running the script never collides with
@@ -194,16 +222,8 @@ EXEC_CASE_TYPES = ["PRE_EMI", "DPD", "BOUNCE"]
 RUN_TOKEN = datetime.now().strftime("%m%d%H%M%S")
 
 
-def gen_case_number(i):
-    return f"CASE{RUN_TOKEN}{i:05d}"
-
-
 def gen_pr_number(i):
     return f"PR{RUN_TOKEN}{i:04d}"
-
-
-def gen_loan_number(i):
-    return f"LN{RUN_TOKEN}{i:04d}"
 
 
 def gen_strategy_code(i):
@@ -216,6 +236,25 @@ def gen_case_ref(prefix, i):
 
 def gen_mifin_batch_ref(i):
     return f"MIFIN{RUN_TOKEN}{i:04d}"
+
+
+# ---------------------------------------------------------------------------
+# NEW: guaranteed-unique email helper. faker's own fake.unique.email()
+# can raise "UniquenessException" once its internal retry budget is
+# exhausted (it can happen once you push ROWS well past a few hundred
+# across all four tables that call it: agents / pre_emi_cases /
+# dpd_cases / bounce_cases). Salting with RUN_TOKEN + a running counter
+# makes every email deterministically unique without relying on Faker's
+# internal retry logic at all.
+# ---------------------------------------------------------------------------
+_email_counter = 0
+
+
+def gen_unique_email():
+    global _email_counter
+    _email_counter += 1
+    local_part = fake.user_name()
+    return f"{local_part}.{RUN_TOKEN}{_email_counter:05d}@example.com"
 
 
 def gen_audit_values(entity_type, agent_ids_pool):
@@ -343,287 +382,68 @@ def main():
                     random.randint(0, 20),
                     random.choice(LANGUAGES),
                     fake.msisdn()[:10],
-                    fake.unique.email(),
+                    gen_unique_email(),
                     random.choice(AGENT_STATUS),
                 ),
             )
             agent_ids.append(cur.fetchone()[0])
 
         # -------------------------------------------------------------
-        # 3. cases (references strategies, agents) - state/branch/zone
-        #    from hierarchy, created_at spread across every month
-        #    (past through current), updated_at after created_at
+        # 3. branches (no dependencies, but created_by/updated_by are
+        #    populated from real agent_ids so every column has a
+        #    meaningful, non-null value). One row per real (state,
+        #    branch) pair used elsewhere in the hierarchy, plus zone
+        #    picked from that state's zone list for hub_branch_name
+        #    consistency.
         # -------------------------------------------------------------
-        case_ids = []
-        for i in range(ROWS):
-            state, branch, zone = pick_location(i)
-            bucket, _, _, sample_dpd = pick_bucket_and_dpd()
-            principal = round(random.uniform(5000, 50000), 2)
-            interest = round(random.uniform(100, 5000), 2)
+        for i, (state, branch_name) in enumerate(ALL_BRANCHES):
+            zones_for_branch = STATE_BRANCH_ZONE[state][branch_name]
+            zone = random.choice(zones_for_branch)
             created_at = random_dt_in_month(*pick_month(i))
             updated_at = min(
-                created_at + timedelta(days=random.randint(0, 20)), datetime.now()
+                created_at + timedelta(days=random.randint(0, 30)), datetime.now()
             )
+            hub_branch_id = gen_branch_code(0)  # first branch acts as the hub
+            hub_branch_name = ALL_BRANCHES[0][1]
             cur.execute(
                 """
-                INSERT INTO public.cases
-                    (case_number, pr_number, loan_number, customer_id, journey_type,
-                     bucket, dpd, strategy_id, assigned_to, outstanding_principal,
-                     outstanding_interest, outstanding_total, status, branch, zone, state,
-                     created_at, updated_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                RETURNING case_id
+                INSERT INTO public.branches
+                    (code, name, zone_code, region_code, cost_center, status,
+                     created_at, created_by, updated_at, updated_by,
+                     branch_type, branch_office_type, location,
+                     hub_branch_id, hub_branch_name, branch_manager_name, address)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """,
                 (
-                    gen_case_number(i),
-                    gen_pr_number(i),
-                    gen_loan_number(i),
-                    f"CUST{i:06d}",
-                    random.choice(JOURNEY_TYPES),
-                    bucket,
-                    sample_dpd,
-                    # FIX: cases.strategy_id is BIGINT in the schema (no FK
-                    # constraint declared, but the column type is bigint,
-                    # NOT uuid). Must use a real strategy_id from the
-                    # strategies table we already inserted, otherwise
-                    # Postgres raises: invalid input syntax for type bigint.
-                    random.choice(strategy_ids),
-                    random.choice(agent_ids),
-                    principal,
-                    interest,
-                    principal + interest,
-                    random.choice(CASE_STATUS),
-                    branch,
-                    zone,
-                    state,
+                    gen_branch_code(i),
+                    f"{branch_name} Branch",
+                    ZONE_CODE_MAP[zone],
+                    REGION_CODE_MAP[state],
+                    f"CC{1000 + i}",
+                    random.choice(BRANCH_STATUS),
                     created_at,
+                    random.choice(agent_ids),
                     updated_at,
-                ),
-            )
-            case_ids.append(cur.fetchone()[0])
-
-        # -------------------------------------------------------------
-        # 4. strategy_steps (references strategies) - created_at spread
-        #    across every month, updated_at after created_at
-        # -------------------------------------------------------------
-        for i in range(ROWS):
-            created_at = random_dt_in_month(*pick_month(i))
-            updated_at = min(
-                created_at + timedelta(hours=random.randint(0, 240)), datetime.now()
-            )
-            cur.execute(
-                """
-                INSERT INTO public.strategy_steps
-                    (step_number, step_name, trigger_delay_value, channel,
-                     template_code, retry_count, retry_delay_hours,
-                     payment_check_before_step, condition_expression,
-                     escalation_trigger, escalation_target, status,
-                     created_by, created_at, updated_by, updated_at,
-                     strategy_id, is_active)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                    random.randint(1, 5),
-                    fake.word().title() + " Step",
-                    random.randint(1, 72),
-                    random.choice(CHANNELS),
-                    f"TPL{random.randint(1, 20):03d}",
-                    random.randint(0, 3),
-                    random.randint(1, 48),
-                    random.choice([True, False]),
-                    "dpd > 30",
-                    random.choice([True, False]),
-                    random.choice(["SUPERVISOR", "LEGAL_TEAM", "OPS_TEAM"]),
-                    random.choice(["ACTIVE", "INACTIVE"]),
-                    random.randint(1, 5),
-                    created_at,
-                    random.randint(1, 5),
-                    updated_at,
-                    random.choice(strategy_ids),
-                    random.choice([True, False]),
-                ),
-            )
-
-        # -------------------------------------------------------------
-        # 5. strategy_approval_log (references strategies) - performed_at
-        #    (NOT NULL) spread across every month, past through current
-        # -------------------------------------------------------------
-        for i in range(ROWS):
-            performed_at = random_dt_in_month(*pick_month(i))
-            cur.execute(
-                """
-                INSERT INTO public.strategy_approval_log
-                    (strategy_id, from_status, to_status, action, actor_id,
-                     actor_role, remarks, performed_at, ip_address)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                    random.choice(strategy_ids),
-                    random.choice(APPROVAL_STATUSES),
-                    random.choice(APPROVAL_STATUSES),
-                    random.choice(APPROVAL_ACTIONS),
-                    random.randint(1, 10),
-                    random.choice(ACTOR_ROLES),
-                    fake.sentence(),
-                    performed_at,
-                    fake.ipv4(),
-                ),
-            )
-
-        # -------------------------------------------------------------
-        # 6. allocations (references cases, agents) - allocated_at
-        #    spread across every month
-        # -------------------------------------------------------------
-        for i in range(ROWS):
-            allocated_at = random_dt_in_month(*pick_month(i))
-            deallocated_at = min(
-                allocated_at + timedelta(days=random.randint(1, 30)), datetime.now()
-            )
-            cur.execute(
-                """
-                INSERT INTO public.allocations
-                    (case_id, allocated_to, role, allocated_at, deallocated_at,
-                     reason, allocation_status)
-                VALUES (%s,%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                    random.choice(case_ids),
                     random.choice(agent_ids),
-                    random.choice(ALLOC_ROLES),
-                    allocated_at,
-                    deallocated_at,
-                    fake.sentence(),
-                    random.choice(ALLOC_STATUS),
+                    random.choice(BRANCH_TYPES),
+                    random.choice(BRANCH_OFFICE_TYPES),
+                    f"{branch_name}, {state}",
+                    hub_branch_id,
+                    hub_branch_name,
+                    fake.name(),
+                    fake.address().replace("\n", ", "),
                 ),
             )
 
         # -------------------------------------------------------------
-        # 7. communications (references cases) - sent_at/created_at
-        #    spread across every month
-        # -------------------------------------------------------------
-        for i in range(ROWS):
-            sent_at = random_dt_in_month(*pick_month(i))
-            delivered_at = min(
-                sent_at + timedelta(minutes=random.randint(1, 60)), datetime.now()
-            )
-            read_at = min(
-                delivered_at + timedelta(minutes=random.randint(1, 120)), datetime.now()
-            )
-            created_at = sent_at
-            cur.execute(
-                """
-                INSERT INTO public.communications
-                    (case_id, channel, template_name, status, sent_at,
-                     delivered_at, read_at, response_status, retry_count, created_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                    random.choice(case_ids),
-                    random.choice(CHANNELS),
-                    f"template_{random.randint(1, 15)}",
-                    random.choice(COMM_STATUS),
-                    sent_at,
-                    delivered_at,
-                    read_at,
-                    random.choice(RESPONSE_STATUS),
-                    random.randint(0, 3),
-                    created_at,
-                ),
-            )
-
-        # -------------------------------------------------------------
-        # 8. payments (references cases) - payment_date/created_at
-        #    spread across every month
-        # -------------------------------------------------------------
-        for i in range(ROWS):
-            payment_date = random_dt_in_month(*pick_month(i))
-            cur.execute(
-                """
-                INSERT INTO public.payments
-                    (case_id, loan_number, amount, payment_date, payment_mode,
-                     pg_transaction_id, payment_status, reconciled, payment_source,
-                     created_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                    random.choice(case_ids),
-                    gen_loan_number(random.randint(0, ROWS - 1)),
-                    round(random.uniform(500, 20000), 2),
-                    payment_date,
-                    random.choice(PAYMENT_MODES),
-                    str(fake.uuid4()),
-                    random.choice(PAYMENT_STATUS),
-                    random.choice([True, False]),
-                    random.choice(PAYMENT_SOURCE),
-                    payment_date,
-                ),
-            )
-
-        # -------------------------------------------------------------
-        # 9. ptps (references cases, agents) - ptp_date/created_at
-        #    spread across every month, no NULLs
-        # -------------------------------------------------------------
-        for i in range(ROWS):
-            month_year, month_num = pick_month(i)
-            ptp_date = random_date_in_month(month_year, month_num)
-            honoured = random.choice([True, False])
-            actual_payment_date = (
-                ptp_date if honoured else ptp_date + timedelta(days=random.randint(1, 10))
-            )
-            created_at = min(
-                datetime.combine(ptp_date, time(random.randint(0, 23), random.randint(0, 59))),
-                datetime.now(),
-            )
-            cur.execute(
-                """
-                INSERT INTO public.ptps
-                    (case_id, agent_id, ptp_date, ptp_amount, honoured,
-                     actual_payment_date, created_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                    random.choice(case_ids),
-                    random.choice(agent_ids),
-                    ptp_date,
-                    round(random.uniform(500, 20000), 2),
-                    honoured,
-                    actual_payment_date,
-                    created_at,
-                ),
-            )
-
-        # -------------------------------------------------------------
-        # 10. audit_logs (entity_id is bigint -> use real case/agent ids)
-        #     created_at spread across every month
-        # -------------------------------------------------------------
-        uuid_pool = [("case", cid) for cid in case_ids] + [("agent", aid) for aid in agent_ids]
-        for i in range(ROWS):
-            entity_type, entity_id = random.choice(uuid_pool)
-            old_value, new_value = gen_audit_values(entity_type, agent_ids)
-            created_at = random_dt_in_month(*pick_month(i))
-            cur.execute(
-                """
-                INSERT INTO public.audit_logs
-                    (entity_type, entity_id, action, old_value, new_value,
-                     user_name, ip_address, created_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                    entity_type,
-                    entity_id,
-                    random.choice(AUDIT_ACTIONS),
-                    psycopg2.extras.Json(old_value),
-                    psycopg2.extras.Json(new_value),
-                    fake.user_name(),
-                    fake.ipv4(),
-                    created_at,
-                ),
-            )
-
-        # -------------------------------------------------------------
-        # 11. pre_emi_cases (references strategies) - pre_emi_date /
+        # 4. pre_emi_cases (references strategies) - pre_emi_date /
         #     mifin_extraction_date / created_at / updated_at spread
         #     across every month, past through current
+        #
+        #     NOTE: moved ahead of communications/payments/allocations/
+        #     ptps because this schema has NO generic `cases` table --
+        #     case_id in those tables must come from one of
+        #     pre_emi_cases / dpd_cases / bounce_cases instead.
         # -------------------------------------------------------------
         pre_emi_ids = []
         for i in range(ROWS):
@@ -651,7 +471,7 @@ def main():
                     fake.name(),
                     fake.msisdn()[:10],
                     fake.msisdn()[:10],
-                    fake.unique.email(),
+                    gen_unique_email(),
                     random.choice(PRODUCT_NAMES),
                     round(random.uniform(1000, 20000), 2),
                     pre_emi_date,
@@ -667,7 +487,7 @@ def main():
             pre_emi_ids.append(cur.fetchone()[0])
 
         # -------------------------------------------------------------
-        # 12. dpd_cases (references strategies) - disbursal_date in the
+        # 5. dpd_cases (references strategies) - disbursal_date in the
         #     past, last_payment_date/next_emi_date derived from it,
         #     mifin_extraction_date/created_at/updated_at spread across
         #     every month, past through current
@@ -709,7 +529,7 @@ def main():
                     fake.name(),
                     fake.msisdn()[:10],
                     fake.msisdn()[:10],
-                    fake.unique.email(),
+                    gen_unique_email(),
                     state,
                     branch,
                     random.choice(PRODUCT_NAMES),
@@ -737,7 +557,7 @@ def main():
             dpd_case_ids.append(cur.fetchone()[0])
 
         # -------------------------------------------------------------
-        # 13. bounce_cases (references strategies) - disbursal_date in
+        # 6. bounce_cases (references strategies) - disbursal_date in
         #     the past, bounce_date/last_payment_date/next_emi_date
         #     derived from it, mifin_extraction_date/created_at/
         #     updated_at spread across every month, past through current
@@ -781,7 +601,7 @@ def main():
                     fake.name(),
                     fake.msisdn()[:10],
                     fake.msisdn()[:10],
-                    fake.unique.email(),
+                    gen_unique_email(),
                     state,
                     branch,
                     random.choice(PRODUCT_NAMES),
@@ -811,6 +631,231 @@ def main():
                 ),
             )
             bounce_case_ids.append(cur.fetchone()[0])
+
+        # Combined pool of every real case id across the three case tables.
+        # communications / payments / allocations / ptps just need SOME
+        # valid case id (their case_id column has no FK any more), so we
+        # draw from this shared pool rather than a non-existent `cases`
+        # table.
+        all_case_ids = pre_emi_ids + dpd_case_ids + bounce_case_ids
+
+        # -------------------------------------------------------------
+        # 7. strategy_steps (references strategies) - created_at spread
+        #    across every month, updated_at after created_at
+        # -------------------------------------------------------------
+        for i in range(ROWS):
+            created_at = random_dt_in_month(*pick_month(i))
+            updated_at = min(
+                created_at + timedelta(hours=random.randint(0, 240)), datetime.now()
+            )
+            cur.execute(
+                """
+                INSERT INTO public.strategy_steps
+                    (step_number, step_name, trigger_delay_value, channel,
+                     template_code, retry_count, retry_delay_hours,
+                     payment_check_before_step, condition_expression,
+                     escalation_trigger, escalation_target, status,
+                     created_by, created_at, updated_by, updated_at,
+                     strategy_id, is_active)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    random.randint(1, 5),
+                    fake.word().title() + " Step",
+                    random.randint(1, 72),
+                    random.choice(CHANNELS),
+                    f"TPL{random.randint(1, 20):03d}",
+                    random.randint(0, 3),
+                    random.randint(1, 48),
+                    random.choice([True, False]),
+                    "dpd > 30",
+                    random.choice([True, False]),
+                    random.choice(["SUPERVISOR", "LEGAL_TEAM", "OPS_TEAM"]),
+                    random.choice(["ACTIVE", "INACTIVE"]),
+                    random.randint(1, 5),
+                    created_at,
+                    random.randint(1, 5),
+                    updated_at,
+                    random.choice(strategy_ids),
+                    random.choice([True, False]),
+                ),
+            )
+
+        # -------------------------------------------------------------
+        # 8. strategy_approval_log (references strategies) - performed_at
+        #    (NOT NULL) spread across every month, past through current
+        # -------------------------------------------------------------
+        for i in range(ROWS):
+            performed_at = random_dt_in_month(*pick_month(i))
+            cur.execute(
+                """
+                INSERT INTO public.strategy_approval_log
+                    (strategy_id, from_status, to_status, action, actor_id,
+                     actor_role, remarks, performed_at, ip_address)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    random.choice(strategy_ids),
+                    random.choice(APPROVAL_STATUSES),
+                    random.choice(APPROVAL_STATUSES),
+                    random.choice(APPROVAL_ACTIONS),
+                    random.randint(1, 10),
+                    random.choice(ACTOR_ROLES),
+                    fake.sentence(),
+                    performed_at,
+                    fake.ipv4(),
+                ),
+            )
+
+        # -------------------------------------------------------------
+        # 9. allocations (references case ids + agents) - allocated_at
+        #    spread across every month
+        # -------------------------------------------------------------
+        for i in range(ROWS):
+            allocated_at = random_dt_in_month(*pick_month(i))
+            deallocated_at = min(
+                allocated_at + timedelta(days=random.randint(1, 30)), datetime.now()
+            )
+            cur.execute(
+                """
+                INSERT INTO public.allocations
+                    (case_id, allocated_to, role, allocated_at, deallocated_at,
+                     reason, allocation_status)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    random.choice(all_case_ids),
+                    random.choice(agent_ids),
+                    random.choice(ALLOC_ROLES),
+                    allocated_at,
+                    deallocated_at,
+                    fake.sentence(),
+                    random.choice(ALLOC_STATUS),
+                ),
+            )
+
+        # -------------------------------------------------------------
+        # 10. communications (references case ids) - sent_at/created_at
+        #    spread across every month
+        # -------------------------------------------------------------
+        for i in range(ROWS):
+            sent_at = random_dt_in_month(*pick_month(i))
+            delivered_at = min(
+                sent_at + timedelta(minutes=random.randint(1, 60)), datetime.now()
+            )
+            read_at = min(
+                delivered_at + timedelta(minutes=random.randint(1, 120)), datetime.now()
+            )
+            created_at = sent_at
+            cur.execute(
+                """
+                INSERT INTO public.communications
+                    (case_id, channel, template_name, status, sent_at,
+                     delivered_at, read_at, response_status, retry_count, created_at)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    random.choice(all_case_ids),
+                    random.choice(CHANNELS),
+                    f"template_{random.randint(1, 15)}",
+                    random.choice(COMM_STATUS),
+                    sent_at,
+                    delivered_at,
+                    read_at,
+                    random.choice(RESPONSE_STATUS),
+                    random.randint(0, 3),
+                    created_at,
+                ),
+            )
+
+        # -------------------------------------------------------------
+        # 11. payments (references case ids) - payment_date/created_at
+        #     spread across every month
+        # -------------------------------------------------------------
+        for i in range(ROWS):
+            payment_date = random_dt_in_month(*pick_month(i))
+            cur.execute(
+                """
+                INSERT INTO public.payments
+                    (case_id, loan_number, amount, payment_date, payment_mode,
+                     pg_transaction_id, payment_status, reconciled, payment_source,
+                     created_at)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    random.choice(all_case_ids),
+                    f"LN{RUN_TOKEN}{random.randint(0, ROWS - 1):04d}",
+                    round(random.uniform(500, 20000), 2),
+                    payment_date,
+                    random.choice(PAYMENT_MODES),
+                    str(fake.uuid4()),
+                    random.choice(PAYMENT_STATUS),
+                    random.choice([True, False]),
+                    random.choice(PAYMENT_SOURCE),
+                    payment_date,
+                ),
+            )
+
+        # -------------------------------------------------------------
+        # 12. ptps (references case ids + agents) - ptp_date/created_at
+        #     spread across every month, no NULLs
+        # -------------------------------------------------------------
+        for i in range(ROWS):
+            month_year, month_num = pick_month(i)
+            ptp_date = random_date_in_month(month_year, month_num)
+            honoured = random.choice([True, False])
+            actual_payment_date = (
+                ptp_date if honoured else ptp_date + timedelta(days=random.randint(1, 10))
+            )
+            created_at = min(
+                datetime.combine(ptp_date, time(random.randint(0, 23), random.randint(0, 59))),
+                datetime.now(),
+            )
+            cur.execute(
+                """
+                INSERT INTO public.ptps
+                    (case_id, agent_id, ptp_date, ptp_amount, honoured,
+                     actual_payment_date, created_at)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    random.choice(all_case_ids),
+                    random.choice(agent_ids),
+                    ptp_date,
+                    round(random.uniform(500, 20000), 2),
+                    honoured,
+                    actual_payment_date,
+                    created_at,
+                ),
+            )
+
+        # -------------------------------------------------------------
+        # 13. audit_logs (entity_id is bigint -> use real case/agent ids)
+        #     created_at spread across every month
+        # -------------------------------------------------------------
+        entity_pool = [("case", cid) for cid in all_case_ids] + [("agent", aid) for aid in agent_ids]
+        for i in range(ROWS):
+            entity_type, entity_id = random.choice(entity_pool)
+            old_value, new_value = gen_audit_values(entity_type, agent_ids)
+            created_at = random_dt_in_month(*pick_month(i))
+            cur.execute(
+                """
+                INSERT INTO public.audit_logs
+                    (entity_type, entity_id, action, old_value, new_value,
+                     user_name, ip_address, created_at)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    entity_type,
+                    entity_id,
+                    random.choice(AUDIT_ACTIONS),
+                    psycopg2.extras.Json(old_value),
+                    psycopg2.extras.Json(new_value),
+                    fake.user_name(),
+                    fake.ipv4(),
+                    created_at,
+                ),
+            )
 
         # -------------------------------------------------------------
         # 14. strategy_execution_log (references strategies, and one of
@@ -858,7 +903,10 @@ def main():
             f"all buckets, and all {len(MONTHS)} months from "
             f"{MONTHS[0][1]}/{MONTHS[0][0]} through the current month "
             f"{MONTHS[-1][1]}/{MONTHS[-1][0]}), including pre_emi_cases, "
-            f"dpd_cases, bounce_cases, and strategy_execution_log."
+            f"dpd_cases, bounce_cases, and strategy_execution_log. "
+            f"communications/payments/allocations/ptps drew case_id from "
+            f"a combined pool of {len(all_case_ids)} ids across all three "
+            f"case tables (no generic `cases` table in this schema)."
         )
 
     except Exception as e:
