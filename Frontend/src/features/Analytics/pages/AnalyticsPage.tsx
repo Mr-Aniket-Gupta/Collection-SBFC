@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { AlertTriangle, Clock3, ShieldAlert, Target, TrendingUp } from 'lucide-react'
-import { PageHeader, KPICard } from '@/Components/Analytics'
+import { PageHeader, KPICard } from '@/Components'
 import { PerformanceRadar } from '../charts/PerformanceRadar'
 import { StrategyEffectiveness } from '../charts/StrategyEffectiveness'
 import { HourlyCallDistribution } from '../charts/HourlyCallDistribution'
