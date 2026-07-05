@@ -143,11 +143,12 @@ export const ReportsPage: React.FC = () => {
     sessionStorage.setItem(CUSTOM_TO_STORAGE_KEY, customToDate)
   }, [customToDate])
 
-  useEffect(() => {
-    if (params.tableKey) {
-      setActiveTab('Detailed Reports')
-    }
-  }, [params.tableKey])
+  // Always start with Overview section - removed automatic tab switch on tableKey
+  // useEffect(() => {
+  //   if (params.tableKey) {
+  //     setActiveTab('Detailed Reports')
+  //   }
+  // }, [params.tableKey])
 
   useEffect(() => {
     sessionStorage.setItem(BRANCH_FILTER_STORAGE_KEY, branchFilter)
