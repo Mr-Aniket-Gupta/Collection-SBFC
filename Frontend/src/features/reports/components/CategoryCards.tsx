@@ -2,8 +2,7 @@ import React from 'react'
 import { RotateCw } from 'lucide-react'
 import type { ReportTableKey } from '../hooks/useReports'
 import type { MisCardMetric } from '../utils/misCardMetrics'
-import { DateRangeFilter } from '@/Components'
-import { ReportSelectFilter } from './ReportSelectFilter'
+import FiltersPanel from '@/Components/Filters/FiltersPanel'
 import type { DateRangeOption } from '../types'
 
 export interface CategoryCardConfig {
@@ -70,34 +69,22 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <DateRangeFilter
-          value={dateRange}
+        <FiltersPanel
+          selectedDateFilter={dateRange}
           customFromDate={customFromDate}
           customToDate={customToDate}
-          onChange={onDateRangeChange}
+          branchFilter={branchFilter}
+          zoneFilter={zoneFilter}
+          stateFilter={stateFilter}
+          branchOptions={branchOptions}
+          zoneOptions={zoneOptions}
+          stateOptions={stateOptions}
+          onDateFilterChange={onDateRangeChange}
           onCustomFromDateChange={onCustomFromDateChange}
           onCustomToDateChange={onCustomToDateChange}
-        />
-        <ReportSelectFilter
-          label="Branch"
-          value={branchFilter}
-          options={branchOptions}
-          allLabel="All Branches"
-          onChange={onBranchFilterChange}
-        />
-        <ReportSelectFilter
-          label="Zone"
-          value={zoneFilter}
-          options={zoneOptions}
-          allLabel="All Zones"
-          onChange={onZoneFilterChange}
-        />
-        <ReportSelectFilter
-          label="State"
-          value={stateFilter}
-          options={stateOptions}
-          allLabel="All States"
-          onChange={onStateFilterChange}
+          onBranchFilterChange={onBranchFilterChange}
+          onZoneFilterChange={onZoneFilterChange}
+          onStateFilterChange={onStateFilterChange}
         />
         <button
           type="button"

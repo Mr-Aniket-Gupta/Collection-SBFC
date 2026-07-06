@@ -11,11 +11,14 @@ import {
 } from './reportFilterEngine'
 import { flattenRows, prettyTitle } from './tableUtils'
 
-export async function fetchReportTableBundle(limit: number): Promise<ReportTableBundle> {
+export async function fetchReportTableBundle(
+  limit: number,
+  keys: ReportTableKey[] = REPORT_TABLE_KEYS,
+): Promise<ReportTableBundle> {
   const bundle = EMPTY_BUNDLE()
 
   await Promise.all(
-    REPORT_TABLE_KEYS.map(async (tableKey) => {
+    keys.map(async (tableKey) => {
       const res = await reportsService.fetchTable(tableKey, 1, limit)
       bundle[tableKey] = flattenRows(res.items)
     }),

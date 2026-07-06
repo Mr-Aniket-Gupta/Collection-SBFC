@@ -2,12 +2,16 @@ using backend.Modules.Analytics.DTOs;
 using backend.Modules.Analytics.Requests;
 using backend.Database;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace backend.Modules.Analytics.Repositories;
 
 public sealed class AnalyticsRepository
 {
     private readonly IDbConnectionFactory _dbConnectionFactory;
+
+    private const string BranchFilter = "AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))";
+    private const string ZoneFilter = "AND (@zone IS NULL OR lower(trim((SELECT zone_code FROM branches b WHERE lower(trim(b.name)) = lower(trim(c.branch_name)) LIMIT 1))) = lower(trim(@zone)))";
 
     private sealed record AnalyticsKpiSnapshot(
         decimal ClosedOutstandingPrincipal,
@@ -26,29 +30,52 @@ public sealed class AnalyticsRepository
 
     public async Task<AnalyticsDashboardDto> GetDashboardAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
-        var kpiCards = await GetKpiCardsAsync(request, cancellationToken);
-        var radar = await GetRadarAsync(request, cancellationToken);
-        var strategy = await GetStrategyPerformanceAsync(request, cancellationToken);
-        var communication = await GetCommunicationPerformanceAsync(request, cancellationToken);
-        var channelPerformance = await GetChannelPerformanceAsync(request, cancellationToken);
-        var bucketDistribution = await GetBucketDistributionAsync(request, cancellationToken);
-        var branchContributors = await GetBranchContributorsAsync(request, cancellationToken);
-        var agentContributors = await GetAgentContributorsAsync(request, cancellationToken);
-        return new AnalyticsDashboardDto(kpiCards, radar, strategy, communication, channelPerformance, bucketDistribution, branchContributors, agentContributors);
+        // Run independent queries in parallel to reduce overall latency.
+        var kpiTask = GetKpiCardsAsync(request, cancellationToken);
+        var radarTask = GetRadarAsync(request, cancellationToken);
+        var strategyTask = GetStrategyPerformanceAsync(request, cancellationToken);
+        var communicationTask = GetCommunicationPerformanceAsync(request, cancellationToken);
+        var channelTask = GetChannelPerformanceAsync(request, cancellationToken);
+        var bucketTask = GetBucketDistributionAsync(request, cancellationToken);
+        var branchTask = GetBranchContributorsAsync(request, cancellationToken);
+        var agentTask = GetAgentContributorsAsync(request, cancellationToken);
+
+        await Task.WhenAll(kpiTask, radarTask, strategyTask, communicationTask, channelTask, bucketTask, branchTask, agentTask);
+
+        return new AnalyticsDashboardDto(
+            await kpiTask,
+            await radarTask,
+            await strategyTask,
+            await communicationTask,
+            await channelTask,
+            await bucketTask,
+            await branchTask,
+            await agentTask);
     }
 
     public async Task<IReadOnlyList<KpiCardDto>> GetKpiCardsAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
+            WITH filtered_cases AS (
+                SELECT c.dpd_case_id, c.strategy_id, c.outstanding_principal, c.total_outstanding, c.loan_status, c.created_at
+                FROM dpd_cases c
+                LEFT JOIN branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
+                WHERE (@state IS NULL OR c.state = @state)
+                  AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))))
+                  AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)))
+                  AND (@start_date IS NULL OR c.created_at >= @start_date)
+                  AND (@end_date IS NULL OR c.created_at < @end_date + interval '1 day')
+            )
             SELECT
-                COALESCE((SELECT SUM(outstanding_principal) FROM dpd_cases WHERE LOWER(loan_status) IN ('closed', 'settled', 'resolved') AND (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS closed_outstanding_principal,
-                COALESCE((SELECT SUM(outstanding_principal) FROM dpd_cases WHERE (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS total_outstanding_principal,
-                COALESCE((SELECT SUM(total_outstanding) FROM dpd_cases WHERE LOWER(loan_status) IN ('closed', 'settled', 'resolved') AND (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS closed_outstanding_total,
-                COALESCE((SELECT SUM(total_outstanding) FROM dpd_cases WHERE (@state IS NULL OR state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))  AND (@start_date IS NULL OR created_at::date >= @start_date) AND (@end_date IS NULL OR created_at::date <= @end_date)), 0) AS total_outstanding,
-                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id WHERE (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))  AND (@start_date IS NULL OR comm.created_at::date >= @start_date) AND (@end_date IS NULL OR comm.created_at::date <= @end_date)), 0) AS total_communications,
-                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id WHERE LOWER(comm.status) = 'delivered' AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))  AND (@start_date IS NULL OR comm.created_at::date >= @start_date) AND (@end_date IS NULL OR comm.created_at::date <= @end_date)), 0) AS total_delivered,
-                COALESCE((SELECT COUNT(*)::numeric FROM ptps p INNER JOIN dpd_cases c ON c.strategy_id = p.strategy_id WHERE (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))  AND (@start_date IS NULL OR p.created_at::date >= @start_date) AND (@end_date IS NULL OR p.created_at::date <= @end_date)), 0) AS total_ptps,
-                COALESCE((SELECT COUNT(p.ptp_id)::numeric FROM ptps p INNER JOIN dpd_cases c ON c.strategy_id = p.strategy_id WHERE p.honoured = true AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))  AND (@start_date IS NULL OR p.created_at::date >= @start_date) AND (@end_date IS NULL OR p.created_at::date <= @end_date)), 0) AS honoured_ptps
+                COALESCE(SUM(outstanding_principal) FILTER (WHERE LOWER(loan_status) IN ('closed', 'settled', 'resolved')), 0) AS closed_outstanding_principal,
+                COALESCE(SUM(outstanding_principal), 0) AS total_outstanding_principal,
+                COALESCE(SUM(total_outstanding) FILTER (WHERE LOWER(loan_status) IN ('closed', 'settled', 'resolved')), 0) AS closed_outstanding_total,
+                COALESCE(SUM(total_outstanding), 0) AS total_outstanding,
+                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN filtered_cases fc ON fc.strategy_id = comm.strategy_id AND (@start_date IS NULL OR comm.created_at >= @start_date) AND (@end_date IS NULL OR comm.created_at < @end_date + interval '1 day')), 0) AS total_communications,
+                COALESCE((SELECT COUNT(*)::numeric FROM communications comm INNER JOIN filtered_cases fc ON fc.strategy_id = comm.strategy_id AND LOWER(comm.status) = 'delivered' AND (@start_date IS NULL OR comm.created_at >= @start_date) AND (@end_date IS NULL OR comm.created_at < @end_date + interval '1 day')), 0) AS total_delivered,
+                COALESCE((SELECT COUNT(*)::numeric FROM ptps p INNER JOIN filtered_cases fc ON fc.strategy_id = p.strategy_id AND (@start_date IS NULL OR p.created_at >= @start_date) AND (@end_date IS NULL OR p.created_at < @end_date + interval '1 day')), 0) AS total_ptps,
+                COALESCE((SELECT COUNT(p.ptp_id)::numeric FROM ptps p INNER JOIN filtered_cases fc ON fc.strategy_id = p.strategy_id AND p.honoured = true AND (@start_date IS NULL OR p.created_at >= @start_date) AND (@end_date IS NULL OR p.created_at < @end_date + interval '1 day')), 0) AS honoured_ptps
+            FROM filtered_cases;
             """;
 
         var current = await ReadKpiSnapshotAsync(sql, request.StartDate, request.EndDate, request, cancellationToken);
@@ -77,10 +104,7 @@ public sealed class AnalyticsRepository
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
-        command.AddDateRange(startDate, endDate);
-        command.AddNullableText("@state", request.State);
-        command.AddNullableText("@branch_name", request.Branch);
-        command.AddNullableText("@zone", request.Zone);
+        ConfigureCommand(command, request, startDate, endDate);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
         return new AnalyticsKpiSnapshot(
@@ -124,106 +148,106 @@ public sealed class AnalyticsRepository
         return "neutral";
     }
 
+    private static void ConfigureCommand(NpgsqlCommand command, AnalyticsQueryRequest request, DateOnly? startDate = null, DateOnly? endDate = null, int? limit = null)
+    {
+        command.AddNullableText("@state", request.State);
+        command.AddNullableText("@branch_name", request.Branch);
+        command.AddNullableText("@zone", request.Zone);
+        command.AddDateRange(startDate ?? request.StartDate, endDate ?? request.EndDate);
+
+        if (limit.HasValue)
+        {
+            command.Parameters.AddWithValue("@limit", NpgsqlDbType.Integer, limit.Value);
+        }
+    }
+
     public async Task<IReadOnlyList<RadarDataPointDto>> GetRadarAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
+            WITH filtered_cases AS (
+                SELECT c.strategy_id, c.total_outstanding, c.loan_status, c.created_at
+                FROM dpd_cases c
+                LEFT JOIN branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
+                WHERE (@state IS NULL OR c.state = @state)
+                  AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))))
+                  AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)))
+                  AND (@start_date IS NULL OR c.created_at >= @start_date)
+                  AND (@end_date IS NULL OR c.created_at < @end_date + interval '1 day')
+            )
             SELECT
-                -- 1. Contact Rate: Delivered ÷ Sent × 100
+                -- 1. Contact Rate
                 COALESCE((
                     SELECT ROUND((COUNT(*) FILTER (WHERE LOWER(comm.status) = 'delivered')::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
                     FROM communications comm
-                    INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id
-                    WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-                      
-                      AND (@start_date IS NULL OR comm.created_at::date >= @start_date)
-                      AND (@end_date IS NULL OR comm.created_at::date <= @end_date)
+                    INNER JOIN filtered_cases fc ON fc.strategy_id = comm.strategy_id
+                    WHERE (@start_date IS NULL OR comm.created_at >= @start_date)
+                      AND (@end_date IS NULL OR comm.created_at < @end_date + interval '1 day')
                 ), 0) AS contact_rate,
 
-                -- 2. Response Rate: Responded ÷ Delivered × 100
+                -- 2. Response Rate
                 COALESCE((
                     SELECT ROUND((COUNT(*) FILTER (WHERE comm.response_status IS NOT NULL AND comm.response_status <> '')::numeric / NULLIF(COUNT(*) FILTER (WHERE LOWER(comm.status) = 'delivered'), 0)) * 100, 1)
                     FROM communications comm
-                    INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id
-                    WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-                      
-                      AND (@start_date IS NULL OR comm.created_at::date >= @start_date)
-                      AND (@end_date IS NULL OR comm.created_at::date <= @end_date)
+                    INNER JOIN filtered_cases fc ON fc.strategy_id = comm.strategy_id
+                    WHERE (@start_date IS NULL OR comm.created_at >= @start_date)
+                      AND (@end_date IS NULL OR comm.created_at < @end_date + interval '1 day')
                 ), 0) AS response_rate,
 
-                -- 3. PTP Success Rate: Kept PTP ÷ Total PTP × 100
+                -- 3. PTP Success Rate
                 COALESCE((
                     SELECT ROUND((COUNT(*) FILTER (WHERE p.honoured = true)::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
                     FROM ptps p
-                    INNER JOIN dpd_cases c ON c.strategy_id = p.strategy_id
-                    WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-                      
-                      AND (@start_date IS NULL OR p.created_at::date >= @start_date)
-                      AND (@end_date IS NULL OR p.created_at::date <= @end_date)
+                    INNER JOIN filtered_cases fc ON fc.strategy_id = p.strategy_id
+                    WHERE (@start_date IS NULL OR p.created_at >= @start_date)
+                      AND (@end_date IS NULL OR p.created_at < @end_date + interval '1 day')
                 ), 0) AS ptp_success_rate,
 
-                -- 4. Collection Rate: Recovered Amount ÷ Outstanding Amount × 100
+                -- 4. Collection Rate
                 COALESCE((
-                    SELECT ROUND((SUM(pay.amount) FILTER (WHERE LOWER(pay.payment_status) = 'success')::numeric / NULLIF(SUM(c.total_outstanding), 0)) * 100, 1)
+                    SELECT ROUND((SUM(pay.amount) FILTER (WHERE LOWER(pay.payment_status) = 'success')::numeric / NULLIF(SUM(fc.total_outstanding), 0)) * 100, 1)
                     FROM payments pay
-                    INNER JOIN dpd_cases c ON c.strategy_id = pay.strategy_id
-                    WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-                      
-                      AND (@start_date IS NULL OR pay.created_at::date >= @start_date)
-                      AND (@end_date IS NULL OR pay.created_at::date <= @end_date)
+                    INNER JOIN filtered_cases fc ON fc.strategy_id = pay.strategy_id
+                    WHERE (@start_date IS NULL OR pay.created_at >= @start_date)
+                      AND (@end_date IS NULL OR pay.created_at < @end_date + interval '1 day')
                 ), 0) AS collection_rate,
 
-                -- 5. Payment Success Rate: Successful Payments ÷ Total Payments × 100
+                -- 5. Payment Success Rate
                 COALESCE((
                     SELECT ROUND((COUNT(*) FILTER (WHERE LOWER(pay.payment_status) = 'success')::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
                     FROM payments pay
-                    INNER JOIN dpd_cases c ON c.strategy_id = pay.strategy_id
-                    WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-                      
-                      AND (@start_date IS NULL OR pay.created_at::date >= @start_date)
-                      AND (@end_date IS NULL OR pay.created_at::date <= @end_date)
+                    INNER JOIN filtered_cases fc ON fc.strategy_id = pay.strategy_id
+                    WHERE (@start_date IS NULL OR pay.created_at >= @start_date)
+                      AND (@end_date IS NULL OR pay.created_at < @end_date + interval '1 day')
                 ), 0) AS payment_success_rate,
 
-                -- 6. Case Closure Rate: Closed Cases ÷ Total Cases × 100
+                -- 6. Case Closure Rate
                 COALESCE((
-                    SELECT ROUND((COUNT(*) FILTER (WHERE LOWER(c.loan_status) IN ('resolved', 'settled', 'closed'))::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
-                    FROM dpd_cases c
-                    WHERE (@state IS NULL OR c.state = @state)
-                      AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-                      
-                      AND (@start_date IS NULL OR c.created_at::date >= @start_date)
-                      AND (@end_date IS NULL OR c.created_at::date <= @end_date)
+                    SELECT ROUND((COUNT(*) FILTER (WHERE LOWER(fc.loan_status) IN ('resolved', 'settled', 'closed'))::numeric / NULLIF(COUNT(*), 0)) * 100, 1)
+                    FROM filtered_cases fc
                 ), 0) AS case_closure_rate
             """;
 
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
-        command.AddDateRange(request.StartDate, request.EndDate);
-        command.AddNullableText("@state", request.State);
-        command.AddNullableText("@branch_name", request.Branch);
-        command.AddNullableText("@zone", request.Zone);
+        ConfigureCommand(command, request);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
 
-        return
-        [
-            new("Contact Rate", reader.GetDecimal(0), 100),
-            new("Response Rate", reader.GetDecimal(1), 100),
-            new("PTP Success Rate", reader.GetDecimal(2), 100),
-            new("Collection Rate", reader.GetDecimal(3), 100),
-            new("Payment Success Rate", reader.GetDecimal(4), 100),
-            new("Case Closure Rate", reader.GetDecimal(5), 100)
-        ];
+        return new[]
+        {
+            new RadarDataPointDto("Contact Rate", reader.GetDecimal(0), 100),
+            new RadarDataPointDto("Response Rate", reader.GetDecimal(1), 100),
+            new RadarDataPointDto("PTP Success Rate", reader.GetDecimal(2), 100),
+            new RadarDataPointDto("Collection Rate", reader.GetDecimal(3), 100),
+            new RadarDataPointDto("Payment Success Rate", reader.GetDecimal(4), 100),
+            new RadarDataPointDto("Case Closure Rate", reader.GetDecimal(5), 100)
+        };
     }
 
     public async Task<IReadOnlyList<StrategyRowDto>> GetStrategyPerformanceAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
-            const string sql = """
+        const string sql = """
             SELECT 
                 COALESCE(s.strategy_name, 'Unknown') AS name,
                 CASE 
@@ -232,7 +256,11 @@ public sealed class AnalyticsRepository
                 END AS percentage,
                 COALESCE(s.dpd_range_to, 0)::numeric AS target
             FROM strategies s
-            LEFT JOIN dpd_cases c ON c.strategy_id = s.strategy_id AND (@state IS NULL OR c.state = @state) AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
+            LEFT JOIN dpd_cases c ON c.strategy_id = s.strategy_id
+            LEFT JOIN branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
+            WHERE (@state IS NULL OR c.state = @state OR c.dpd_case_id IS NULL)
+                AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))) OR c.dpd_case_id IS NULL)
+                AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)) OR c.dpd_case_id IS NULL)
             GROUP BY s.strategy_id, s.strategy_name, s.dpd_range_to, s.priority
             ORDER BY percentage DESC, s.priority ASC NULLS LAST, s.strategy_name ASC
             LIMIT @limit;
@@ -241,13 +269,10 @@ public sealed class AnalyticsRepository
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@limit", request.Limit);
-        command.AddNullableText("@state", request.State);
-        command.AddNullableText("@branch_name", request.Branch);
-        command.AddNullableText("@zone", request.Zone);
+        ConfigureCommand(command, request, limit: request.Limit);
         var result = new List<StrategyRowDto>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var index = 0;
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             result.Add(new StrategyRowDto(reader.GetString(0), reader.GetDecimal(1), reader.GetDecimal(2), index++ % 2 == 0 ? "#000182" : "#CE9B01"));
@@ -260,25 +285,22 @@ public sealed class AnalyticsRepository
         const string sql = """
                         SELECT TO_CHAR(date_trunc('hour', comm.created_at), 'HH24:00') AS hour, COUNT(*)::int AS calls, COUNT(*) FILTER (WHERE LOWER(comm.status) = 'delivered')::int AS responses
                         FROM communications comm
-                    INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id
-                        WHERE (@start_date IS NULL OR comm.created_at::date >= @start_date)
-                            AND (@end_date IS NULL OR comm.created_at::date <= @end_date)
+                        INNER JOIN dpd_cases c ON c.strategy_id = comm.strategy_id
+                        LEFT JOIN branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
+                        WHERE (@start_date IS NULL OR comm.created_at >= @start_date)
+                            AND (@end_date IS NULL OR comm.created_at < @end_date + interval '1 day')
                             AND (@state IS NULL OR c.state = @state)
-                            AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-                            
+                            AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))))
+                            AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)))
                         GROUP BY date_trunc('hour', comm.created_at)
                         ORDER BY date_trunc('hour', comm.created_at)
-            LIMIT @limit;
+                        LIMIT @limit;
             """;
 
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
-        command.AddDateRange(request.StartDate, request.EndDate);
-        command.AddNullableText("@state", request.State);
-        command.AddNullableText("@branch_name", request.Branch);
-        command.AddNullableText("@zone", request.Zone);
-        command.Parameters.AddWithValue("@limit", request.Limit);
+        ConfigureCommand(command, request, limit: request.Limit);
         var result = new List<HourlyCallDataDto>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -296,8 +318,8 @@ public sealed class AnalyticsRepository
                     strategy_id, 
                     COALESCE(SUM(amount) FILTER (WHERE LOWER(payment_status) = 'success'), 0) AS recovered_amount
                 FROM payments
-                WHERE (@start_date IS NULL OR created_at::date >= @start_date)
-                  AND (@end_date IS NULL OR created_at::date <= @end_date)
+                WHERE (@start_date IS NULL OR created_at >= @start_date)
+                  AND (@end_date IS NULL OR created_at < @end_date + interval '1 day')
                 GROUP BY strategy_id
             )
             SELECT 
@@ -305,9 +327,10 @@ public sealed class AnalyticsRepository
                 COALESCE(ROUND((SUM(cp.recovered_amount)::numeric / NULLIF(SUM(c.total_outstanding), 0)) * 100, 1), 0) AS value
             FROM dpd_cases c
             LEFT JOIN CasePayments cp ON cp.strategy_id = c.strategy_id
+            LEFT JOIN branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
             WHERE (@state IS NULL OR c.state = @state)
-              AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-              
+              AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))))
+              AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)))
             GROUP BY c.product_name
             ORDER BY value DESC
             LIMIT @limit;
@@ -323,11 +346,12 @@ public sealed class AnalyticsRepository
                 COALESCE(c.bucket, 'Unknown') AS name,
                 COUNT(*)::numeric AS value
             FROM dpd_cases c
-            WHERE (@start_date IS NULL OR c.created_at::date >= @start_date)
-              AND (@end_date IS NULL OR c.created_at::date <= @end_date)
+            LEFT JOIN branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
+            WHERE (@start_date IS NULL OR c.created_at >= @start_date)
+              AND (@end_date IS NULL OR c.created_at < @end_date + interval '1 day')
               AND (@state IS NULL OR c.state = @state)
-              AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-              
+              AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))))
+              AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)))
             GROUP BY c.bucket
             ORDER BY value DESC
             LIMIT @limit;
@@ -344,11 +368,12 @@ public sealed class AnalyticsRepository
                 COALESCE(SUM(c.total_outstanding), 0)::numeric AS value,
                 COALESCE(SUM(c.total_outstanding), 0)::numeric AS target
             FROM dpd_cases c
+            LEFT JOIN branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
             WHERE (@state IS NULL OR c.state = @state)
-              AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-              
-              AND (@start_date IS NULL OR c.created_at::date >= @start_date)
-              AND (@end_date IS NULL OR c.created_at::date <= @end_date)
+              AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))))
+              AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)))
+              AND (@start_date IS NULL OR c.created_at >= @start_date)
+              AND (@end_date IS NULL OR c.created_at < @end_date + interval '1 day')
             GROUP BY c.branch_name
             ORDER BY value DESC
             LIMIT @limit;
@@ -357,11 +382,7 @@ public sealed class AnalyticsRepository
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
-        command.AddDateRange(request.StartDate, request.EndDate);
-        command.AddNullableText("@state", request.State);
-        command.AddNullableText("@branch_name", request.Branch);
-        command.AddNullableText("@zone", request.Zone);
-        command.Parameters.AddWithValue("@limit", request.Limit);
+        ConfigureCommand(command, request, limit: request.Limit);
         var result = new List<PerformanceDto>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -382,10 +403,12 @@ public sealed class AnalyticsRepository
         FROM dpd_cases c
         LEFT JOIN ptps p ON p.strategy_id = c.strategy_id
         LEFT JOIN agents a ON a.agent_id = p.agent_id
+        LEFT JOIN branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
         WHERE (@state IS NULL OR c.state = @state)
-          AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)),'branch',''))) = lower(trim(replace(lower(trim(@branch_name)),'branch',''))))
-          AND (@start_date IS NULL OR c.created_at::date >= @start_date)
-          AND (@end_date IS NULL OR c.created_at::date <= @end_date)
+          AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))))
+          AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)))
+          AND (@start_date IS NULL OR c.created_at >= @start_date)
+          AND (@end_date IS NULL OR c.created_at < @end_date + interval '1 day')
         GROUP BY a.agent_name
         ORDER BY resolved_cases DESC, allocated_cases DESC
         LIMIT @limit;
@@ -394,11 +417,7 @@ public sealed class AnalyticsRepository
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
-        command.AddDateRange(request.StartDate, request.EndDate);
-        command.AddNullableText("@state", request.State);
-        command.AddNullableText("@branch_name", request.Branch);
-        command.AddNullableText("@zone", request.Zone);
-        command.Parameters.AddWithValue("@limit", request.Limit);
+        ConfigureCommand(command, request, limit: request.Limit);
         var result = new List<AgentPerformanceDto>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -413,11 +432,7 @@ public sealed class AnalyticsRepository
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
         await using var command = new NpgsqlCommand(sql, connection);
-        command.AddDateRange(request.StartDate, request.EndDate);
-        command.AddNullableText("@state", request.State);
-        command.AddNullableText("@branch_name", request.Branch);
-        command.AddNullableText("@zone", request.Zone);
-        command.Parameters.AddWithValue("@limit", request.Limit);
+        ConfigureCommand(command, request, limit: request.Limit);
         var result = new List<ProductDistributionDto>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         var index = 0;
@@ -428,6 +443,8 @@ public sealed class AnalyticsRepository
         return result;
     }
 }
+
+
 
 
 

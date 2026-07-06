@@ -20,7 +20,7 @@ public sealed class AnalyticsController : ApiControllerBase
     [HttpGet("dashboard")]
     public Task<IActionResult> GetDashboard([FromQuery] AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
-        Logger.LogInformation("Analytics request received: DateFilter={DateFilter} CustomFromDate={CustomFromDate} CustomToDate={CustomToDate} Branch={Branch} Zone={Zone} State={State}", request.DateFilter, request.CustomFromDate, request.CustomToDate, request.Branch, request.Zone, request.State);
+        Logger.LogInformation("Analytics request received: DateFilter={DateFilter} CustomFromDate={CustomFromDate} CustomToDate={CustomToDate} Branch={Branch} State={State}", request.DateFilter, request.CustomFromDate, request.CustomToDate, request.Branch, request.State);
         return ExecuteAsync("ANALYTICS-DASHBOARD", "Analytics dashboard fetched successfully.",
             () => _repository.GetDashboardAsync(request, cancellationToken),
             "Unable to process analytics request.", "Analytics");

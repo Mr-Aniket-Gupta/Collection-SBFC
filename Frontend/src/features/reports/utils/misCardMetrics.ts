@@ -43,18 +43,6 @@ const uniqueCaseIds = (rows: DcspTableRow[]): Set<string> => {
 
 const percentOf = (part: number, total: number): number => (total > 0 ? (part / total) * 100 : 0)
 
-const MIS_TABLE_KEYS = ['payments', 'strategies', 'communications', 'pre-emi-cases', 'dpd-cases', 'bounce-cases'] as const
-type MisTableKey = (typeof MIS_TABLE_KEYS)[number]
-
-interface LegacyMisTableRows {
-  payments: DcspTableRow[]
-  strategies: DcspTableRow[]
-  communications: DcspTableRow[]
-  preEmiCases: DcspTableRow[]
-  dpdCases: DcspTableRow[]
-  bounceCases: DcspTableRow[]
-}
-
 /** Builds display metrics for the 7 top MIS category cards. */
 export function buildMisCardMetrics(
   cardTitles: Record<string, string>,
@@ -144,43 +132,4 @@ export function buildMisCardMetrics(
   return metrics
 }
 
-/** @deprecated Use groupTableRowsFromBundle with ReportTableBundle instead. */
-export function groupUniqueTableRows(
-  reports: Array<{ category: string; source: DcspTableRow }>,
-  categoryTableMap: Map<string, string>,
-): LegacyMisTableRows {
-  const grouped: LegacyMisTableRows = { payments: [], strategies: [], communications: [], preEmiCases: [], dpdCases: [], bounceCases: [] }
-  const seenByTable: Record<MisTableKey, Set<string>> = {
-    payments: new Set(),
-    strategies: new Set(),
-    communications: new Set(),
-    'pre-emi-cases': new Set(),
-    'dpd-cases': new Set(),
-    'bounce-cases': new Set(),
-  }
-  const idKeys: Record<MisTableKey, string> = {
-    payments: 'payment_id',
-    strategies: 'strategy_id',
-    communications: 'communication_id',
-    'pre-emi-cases': 'pre_emi_case_id',
-    'dpd-cases': 'dpd_case_id',
-    'bounce-cases': 'bounce_case_id',
-  }
 
-  reports.forEach((report) => {
-    const tableKey = categoryTableMap.get(report.category)
-    if (!tableKey || !MIS_TABLE_KEYS.includes(tableKey as MisTableKey)) return
-    const table = tableKey as MisTableKey
-
-    const id = safeToString(report.source[idKeys[table]] ?? report.source.strategy_id ?? report.source.case_id ?? report.source.id).trim()
-    if (!id || seenByTable[table].has(id)) return
-
-    seenByTable[table].add(id)
-    if (table === 'pre-emi-cases') grouped.preEmiCases.push(report.source)
-    else if (table === 'dpd-cases') grouped.dpdCases.push(report.source)
-    else if (table === 'bounce-cases') grouped.bounceCases.push(report.source)
-    else grouped[table].push(report.source)
-  })
-
-  return grouped
-}

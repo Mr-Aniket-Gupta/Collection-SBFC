@@ -44,29 +44,35 @@ public sealed class DcspQueryRepository
         var offset = (page - 1) * limit;
         var selectList = string.Join(", ", columns.Select(c => $"{c}"));
 
-        var countSql = $"SELECT COUNT(*)::int FROM {tableName};";
-        var listSql = $"SELECT {selectList} FROM {tableName} ORDER BY {columns[0]} DESC LIMIT @limit OFFSET @offset;";
+        var combinedSql = $"SELECT COUNT(*)::int FROM {tableName}; SELECT {selectList} FROM {tableName} ORDER BY {columns[0]} DESC LIMIT @limit OFFSET @offset;";
 
         await using var connection = _dbConnectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
-        await using var countCommand = new NpgsqlCommand(countSql, connection);
-        var total = Convert.ToInt32(await countCommand.ExecuteScalarAsync(cancellationToken));
+        await using var command = new NpgsqlCommand(combinedSql, connection);
+        command.Parameters.AddWithValue("@limit", NpgsqlDbType.Integer, limit);
+        command.Parameters.AddWithValue("@offset", NpgsqlDbType.Integer, offset);
 
-        await using var listCommand = new NpgsqlCommand(listSql, connection);
-        listCommand.Parameters.AddWithValue("@limit", NpgsqlDbType.Integer, limit);
-        listCommand.Parameters.AddWithValue("@offset", NpgsqlDbType.Integer, offset);
-
+        var total = 0;
         var items = new List<TableRowDto>();
-        await using var reader = await listCommand.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
         {
-            var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            for (var i = 0; i < columns.Length; i++)
+            total = reader.GetInt32(0);
+        }
+
+        if (await reader.NextResultAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
             {
-                values[columns[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                for (var i = 0; i < columns.Length; i++)
+                {
+                    values[columns[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                }
+                items.Add(new TableRowDto(values));
             }
-            items.Add(new TableRowDto(values));
         }
 
         return new PagedResult<TableRowDto>(items, total, page, limit);

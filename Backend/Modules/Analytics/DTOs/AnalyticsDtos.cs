@@ -20,10 +20,6 @@ public sealed record HourlyCallDataDto(string Hour, int Calls, int Responses);
 
 public sealed record ProductDistributionDto(string Name, decimal Value, string Color);
 
-public sealed record BounceReasonDto(string Reason, int Count, decimal Percentage, string Color);
-
-public sealed record TrendPointDto(string Period, decimal Value);
-
 public sealed record PerformanceDto(string Name, decimal Value, decimal Target);
 
 public sealed record AgentPerformanceDto(string AgentName, int AllocatedCases, int ResolvedCases, decimal RecoveredAmount);

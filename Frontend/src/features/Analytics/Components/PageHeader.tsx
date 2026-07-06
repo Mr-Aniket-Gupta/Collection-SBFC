@@ -3,8 +3,7 @@
 import React from 'react'
 import { RotateCw } from 'lucide-react'
 import type { DateRangeOption } from '@/features/reports/types'
-import { DateRangeFilter } from '@/Components/DateRangeFilter'
-import { ReportSelectFilter } from '@/features/reports/components/ReportSelectFilter'
+import FiltersPanel from '@/Components/Filters/FiltersPanel'
 
 interface PageHeaderProps {
   title: string
@@ -13,8 +12,8 @@ interface PageHeaderProps {
   customFromDate?: string
   customToDate?: string
   branchFilter?: string
-  zoneFilter?: string
   stateFilter?: string
+  zoneFilter?: string
   branchOptions?: string[]
   zoneOptions?: string[]
   stateOptions?: string[]
@@ -48,7 +47,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   onStateFilterChange,
   onRefresh,
   isRefreshing = false,
-  
 }) => {
   return (
     <div className="surface-card rounded-xl px-5 py-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
@@ -60,44 +58,23 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-2">
-        <DateRangeFilter
-          value={selectedDateFilter}
+        <FiltersPanel
+          selectedDateFilter={selectedDateFilter}
           customFromDate={customFromDate}
           customToDate={customToDate}
-          onChange={onDateFilterChange}
-          onCustomFromDateChange={onCustomFromDateChange ?? (() => {})}
-          onCustomToDateChange={onCustomToDateChange ?? (() => {})}
+          branchFilter={branchFilter}
+          zoneFilter={zoneFilter}
+          stateFilter={stateFilter}
+          branchOptions={branchOptions}
+          zoneOptions={zoneOptions}
+          stateOptions={stateOptions}
+          onDateFilterChange={onDateFilterChange}
+          onCustomFromDateChange={onCustomFromDateChange}
+          onCustomToDateChange={onCustomToDateChange}
+          onBranchFilterChange={onBranchFilterChange}
+          onZoneFilterChange={onZoneFilterChange}
+          onStateFilterChange={onStateFilterChange}
         />
-        
-        {onBranchFilterChange && (
-          <ReportSelectFilter
-            label="Branch"
-            value={branchFilter}
-            options={branchOptions}
-            allLabel="All Branches"
-            onChange={onBranchFilterChange}
-          />
-        )}
-        
-        {onZoneFilterChange && (
-          <ReportSelectFilter
-            label="Zone"
-            value={zoneFilter}
-            options={zoneOptions}
-            allLabel="All Zones"
-            onChange={onZoneFilterChange}
-          />
-        )}
-
-        {onStateFilterChange && (
-          <ReportSelectFilter
-            label="State"
-            value={stateFilter}
-            options={stateOptions}
-            allLabel="All States"
-            onChange={onStateFilterChange}
-          />
-        )}
 
         {/* Refresh Button */}
         <button

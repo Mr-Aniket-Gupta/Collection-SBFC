@@ -32,6 +32,7 @@ import {
   buildRecoveryDistributionData,
 } from '@/features/reports/utils/chartBuilders'
 import { DEFAULT_DATE_RANGE, formatDateRangeLabel, getDefaultCustomFromDate, getDefaultCustomToDate } from '@/Components/dateFilter'
+import { extractBranchOptions, extractZoneOptions, extractStateOptions } from '@/features/reports/utils/reportFilterEngine'
 import { printElement, shareElementAsImage } from '@/features/reports/utils/captureUtils'
 import { downloadMultiSheetWorkbook, shareCsvFile, toExportRows } from '@/features/reports/utils/excelExport'
 import { buildMisCardMetrics, groupTableRowsFromBundle } from '@/features/reports/utils/misCardMetrics'
@@ -164,31 +165,13 @@ export const ReportsPage: React.FC = () => {
 
   const { data: rawTableBundle, isFetching: isLibraryLoading, isError: isLibraryError, refetch: refetchLibrary } = useQuery({
     queryKey: ['reportTableBundle', REPORT_LIBRARY_FETCH_LIMIT],
-    queryFn: () => fetchReportTableBundle(REPORT_LIBRARY_FETCH_LIMIT),
+    queryFn: () => fetchReportTableBundle(REPORT_LIBRARY_FETCH_LIMIT, ['branches', 'dpd-cases', 'strategies', 'pre-emi-cases', 'bounce-cases', 'payments', 'communications']),
   })
 
   const tableBundle = rawTableBundle ?? EMPTY_BUNDLE()
 
 
-  const branchOptions = useMemo(() => {
-    const normalize = (s?: string) => (s ?? '').toString().trim().replace(/\s+/g, ' ')
-
-    const buildFromRows = (rows: any[] | undefined) => {
-      const seen = new Map<string, string>()
-      ;(rows ?? []).forEach((row) => {
-        const raw = getBranchName(row)
-        const name = normalize(raw)
-        if (name) seen.set(name, name)
-      })
-      return Array.from(seen.values()).sort((a, b) => a.localeCompare(b))
-    }
-
-    const branchesFromTable = buildFromRows(tableBundle.branches)
-    if (branchesFromTable.length > 0) return branchesFromTable
-
-    return buildFromRows(tableBundle['dpd-cases'])
-  }, [tableBundle])
-
+  const branchOptions = useMemo(() => extractBranchOptions(tableBundle ?? ({} as any)), [tableBundle])
   useEffect(() => {
     // Debug: log received bundle to help diagnose missing branches/states
     // Remove this after debugging
@@ -198,23 +181,21 @@ export const ReportsPage: React.FC = () => {
     console.debug('ReportsPage: derived branchOptions', branchOptions)
   }, [rawTableBundle, branchOptions])
 
-  const zoneOptions = useMemo(() => ['East', 'West', 'North', 'South'], [])
+  const zoneOptions = useMemo(() => extractZoneOptions(tableBundle ?? ({} as any)), [tableBundle])
 
-  const stateOptions = useMemo(() => {
-    const normalize = (value: string) => value.toLowerCase().trim()
-    const values = new Set<string>()
-    tableBundle['dpd-cases'].forEach((row) => {
+  const stateOptions = useMemo(() => extractStateOptions(tableBundle ?? ({} as any)).filter(s => {
+    if (!branchFilter && !zoneFilter) return true
+    const normalize = (v?: string) => (v ?? '').toString().trim().toLowerCase()
+    return tableBundle?.['dpd-cases']?.some((row: any) => {
       const rowState = safeToString(row.state).trim()
-      const rowZone = safeToString(row.zone).trim()
       const rowBranch = getBranchName(row)
-
-      if (zoneFilter && normalize(rowZone) !== normalize(zoneFilter)) return
-      if (branchFilter && normalize(rowBranch) !== normalize(branchFilter)) return
-
-      if (rowState) values.add(rowState)
+      const rowZone = safeToString(row.zone || row.zone_code).trim()
+      if (!rowState) return false
+      if (branchFilter && normalize(rowBranch) !== normalize(branchFilter)) return false
+      if (zoneFilter && normalize(rowZone) !== normalize(zoneFilter)) return false
+      return normalize(rowState) === normalize(s)
     })
-    return Array.from(values).sort((a, b) => a.localeCompare(b))
-  }, [tableBundle, zoneFilter, branchFilter])
+  }), [tableBundle, branchFilter, zoneFilter])
 
   // Automatically reset filters if the selected value is no longer in the filtered options list
   useMemo(() => {
