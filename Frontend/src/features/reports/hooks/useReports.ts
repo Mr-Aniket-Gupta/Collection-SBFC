@@ -69,8 +69,20 @@ export const useReports = (initialTable?: string | null) => {
   const rows = useMemo(() => flattenRows(data?.items ?? []), [data])
 
   const tableColumns = useMemo(() => {
-    const first = rows[0] as DcspTableRow | undefined
-    return first ? Object.keys(first) : []
+    const seen = new Set<string>()
+    const ordered: string[] = []
+
+    rows.forEach((row) => {
+      if (!row || typeof row !== 'object') return
+      Object.keys(row).forEach((key) => {
+        if (!seen.has(key)) {
+          seen.add(key)
+          ordered.push(key)
+        }
+      })
+    })
+
+    return ordered
   }, [rows])
 
   const reset = useCallback(() => {

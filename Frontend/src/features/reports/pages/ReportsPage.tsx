@@ -45,8 +45,6 @@ import {
 import { buildReportsFromBundle, fetchReportTableBundle } from '@/features/reports/utils/reportDataUtils'
 import { makeReportRow, matchesSearch } from '@/features/reports/utils/reportHelpers'
 import {
-  CASES_KEY_TO_LABEL,
-  CASES_COLUMN_ORDER,
   flattenRows,
   isPlainObject,
   looksLikeJsonString,
@@ -256,14 +254,7 @@ export const ReportsPage: React.FC = () => {
     return ordered.length > 0 ? ordered : rawTableColumns
   }, [rows, rawTableColumns])
 
-  const CASES_TABLE_KEYS: ReportTableKey[] = ['pre-emi-cases', 'dpd-cases', 'bounce-cases']
-
-  const effectiveTableColumns = useMemo(() => {
-    if (!CASES_TABLE_KEYS.includes(activeTable)) return tableColumns
-    const ordered = CASES_COLUMN_ORDER.filter((key) => tableColumns.includes(key))
-    const extras = tableColumns.filter((key) => !CASES_COLUMN_ORDER.includes(key))
-    return [...ordered, ...extras]
-  }, [activeTable, tableColumns])
+  const effectiveTableColumns = useMemo(() => tableColumns, [tableColumns])
 
   const currentTableReports = useMemo(
     () => rows.map((row, i) => makeReportRow(row, prettyTitle(activeTable), i)),
@@ -766,7 +757,7 @@ export const ReportsPage: React.FC = () => {
                 <thead className="bg-[var(--color-ice)]">
                   <tr>
                     {effectiveTableColumns.length > 0 ? effectiveTableColumns.map((col) => (
-                      <th key={col} className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-navy)]">{CASES_KEY_TO_LABEL[col] ?? col}</th>
+                      <th key={col} className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--color-navy)]">{col}</th>
                     )) : <th className="px-4 py-3 text-[10px] font-bold uppercase text-[var(--color-navy)]">No columns</th>}
                   </tr>
                 </thead>
