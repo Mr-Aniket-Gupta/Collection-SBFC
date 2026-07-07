@@ -1,25 +1,25 @@
-name: Backend API Health Test
+name: Backend Smoke Test
 
 on:
   push:
     branches:
       - main
     paths:
-      - "Backend/**"
+      - "backend/**"
 
   pull_request:
     branches:
       - main
     paths:
-      - "Backend/**"
+      - "backend/**"
 
 jobs:
-  api-health-test:
+  swagger-test:
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: Backend
+        working-directory: backend
 
     steps:
       - name: Checkout Repository
@@ -38,54 +38,19 @@ jobs:
 
       - name: Start API
         run: |
-          nohup dotnet run --urls=http://localhost:5166 > api.log 2>&1 &
-          echo "API starting..."
+          dotnet run --configuration Release &
+          echo "Waiting for API to start..."
+          sleep 20
 
-      - name: Wait for API to Start
+      - name: Test Swagger Endpoint
         run: |
-          echo "Waiting for API..."
-
-          for i in {1..30}
-          do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5166/api/health || true)
-
-            if [ "$STATUS" = "200" ]; then
-              echo "API is running."
-              exit 0
-            fi
-
-            sleep 2
-          done
-
-          echo "API failed to start."
-          cat api.log
-          exit 1
-
-      - name: Test Health Endpoint
-        run: |
-          STATUS=$(curl -s -o response.json -w "%{http_code}" http://localhost:5166/api/health)
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:5166/swagger/index.html)
 
           echo "HTTP Status: $STATUS"
-          echo ""
-          echo "Response:"
-          cat response.json
-          echo ""
 
-          if [ "$STATUS" != "200" ]; then
-            echo "Health endpoint failed."
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Swagger is not accessible."
             exit 1
           fi
 
-      - name: Show API Log
-        if: always()
-        run: |
-          echo "========== API LOG =========="
-          cat api.log || true
-          echo "============================="
-
-      - name: Upload API Log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-log
-          path: Backend/api.log
+          echo "Swagger is running successfully."
