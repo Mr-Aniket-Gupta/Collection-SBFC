@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - "backend/**"
+      - "Backend/**"
 
   pull_request:
     branches:
       - main
     paths:
-      - "backend/**"
+      - "Backend/**"
 
 jobs:
   api-test:
@@ -19,7 +19,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: backend
+        working-directory: Backend
 
     steps:
       - name: Checkout Repository
