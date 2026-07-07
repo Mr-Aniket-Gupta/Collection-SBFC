@@ -1,38 +1,42 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using backend.Database;
 
-namespace YourProject.Controllers
+namespace backend.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class HealthController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class HealthController : ControllerBase
+    private readonly IDbConnectionFactory _connectionFactory;
+
+    public HealthController(IDbConnectionFactory connectionFactory)
     {
-        private readonly AppDbContext _context;
+        _connectionFactory = connectionFactory;
+    }
 
-        public HealthController(AppDbContext context)
+    [HttpGet]
+    public async Task<IActionResult> Get()
+    {
+        try
         {
-            _context = context;
-        }
+            using var connection = _connectionFactory.CreateConnection();
 
-        [HttpGet]
-        public async Task<IActionResult> GetHealth()
-        {
-            bool dbConnected = await _context.Database.CanConnectAsync();
-
-            if (!dbConnected)
-            {
-                return StatusCode(500, new
-                {
-                    status = "Unhealthy",
-                    database = "Disconnected"
-                });
-            }
+            await connection.OpenAsync();
 
             return Ok(new
             {
                 status = "Healthy",
                 database = "Connected",
                 serverTime = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                status = "Unhealthy",
+                database = "Disconnected",
+                error = ex.Message
             });
         }
     }

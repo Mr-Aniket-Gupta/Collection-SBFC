@@ -1,0 +1,67 @@
+name: Backend API Test
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+
+jobs:
+  api-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore Packages
+        run: dotnet restore
+
+      - name: Build Project
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Start API
+        run: |
+          dotnet run --urls=http://localhost:5166 > api.log 2>&1 &
+          echo "API Started"
+
+      - name: Wait for API
+        run: |
+          echo "Waiting for API..."
+          sleep 20
+
+      - name: Test Health Endpoint
+        run: |
+          STATUS=$(curl -o response.json -s -w "%{http_code}" http://localhost:5166/api/health)
+
+          echo "HTTP Status: $STATUS"
+          echo "Response:"
+          cat response.json
+
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Health API failed!"
+            exit 1
+          fi
+
+      - name: Upload API Log (Only if Failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-log
+          path: backend/api.log
