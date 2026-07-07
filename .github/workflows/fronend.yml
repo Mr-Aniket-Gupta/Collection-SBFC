@@ -3,10 +3,10 @@ name: Frontend CI
 on:
   push:
     paths:
-      - "frontend/**"
+      - "Frontend/**"
   pull_request:
     paths:
-      - "frontend/**"
+      - "Frontend/**"
 
 jobs:
   build:
