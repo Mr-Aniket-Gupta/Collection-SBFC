@@ -14,30 +14,14 @@ public class HealthController : ControllerBase
         _connectionFactory = connectionFactory;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Get()
+    [HttpGet("health")]
+public IActionResult Health()
+{
+    return Ok(new
     {
-        try
-        {
-            using var connection = _connectionFactory.CreateConnection();
-
-            await connection.OpenAsync();
-
-            return Ok(new
-            {
-                status = "Healthy",
-                database = "Connected",
-                serverTime = DateTime.UtcNow
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new
-            {
-                status = "Unhealthy",
-                database = "Disconnected",
-                error = ex.Message
-            });
-        }
-    }
+        status = "Healthy",
+        message = "API is running",
+        serverTime = DateTime.UtcNow
+    });
+}
 }
