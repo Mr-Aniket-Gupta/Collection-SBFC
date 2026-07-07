@@ -33,7 +33,7 @@ export function useAnalytics() {
     placeholderData: (prev) => prev,
   })
 
-  const normalize = (s?: string) => (s ?? '').toString().trim().replace(/\s+/g, ' ')
+  // const normalize = (s?: string) => (s ?? '').toString().trim().replace(/\s+/g, ' ')
   const branchMapRef = useRef<Map<string, string>>(new Map())
 
   const branchOptions = useMemo(() => extractBranchOptions(tableBundle ?? EMPTY_BUNDLE()), [tableBundle])

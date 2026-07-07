@@ -1,17 +1,13 @@
 """
-Collections Recovery Prediction - Model Training Script
-==========================================================
-Predicts whether a strategy_execution on a case will end in successful
-payment recovery (target=1) or not (target=0).
+Collections Recovery Prediction - Model Training Script (v2)
+==============================================================
+UPGRADES FROM v1:
+  1. Multi-class target (5 classes) instead of binary yes/no
+  2. Rolling / Time-Series validation instead of plain random split
+  3. Optuna-based hyperparameter tuning (Bayesian optimization)
+  4. Continuous learning support (incremental retrain on new data)
 
-Pipeline:
-  1. Pull joined data from Postgres
-  2. Engineer features
-  3. Train/test split + preprocessing
-  4. Train XGBoost classifier
-  5. Evaluate (accuracy, precision, recall, F1, ROC-AUC)
-  6. SHAP feature importance
-  7. Save model + preprocessing pipeline for serving (FastAPI step next)
+pip install optuna   # if not already installed
 """
 
 import os
@@ -19,26 +15,27 @@ import joblib
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use("Agg")  # headless - just save PNG files, no display window
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score,
-    f1_score, roc_auc_score, classification_report, confusion_matrix,
-    ConfusionMatrixDisplay, RocCurveDisplay, PrecisionRecallDisplay
+    accuracy_score, precision_score, recall_score, f1_score,
+    classification_report, confusion_matrix, ConfusionMatrixDisplay,
+    log_loss,
 )
 from xgboost import XGBClassifier
 import shap
+import optuna
 
 CHARTS_DIR = "model_artifacts/charts"
 
 # ---------------------------------------------------------------------------
-# 1. CONFIG - set these via environment variables in production
+# 1. CONFIG
 # ---------------------------------------------------------------------------
 DB_CONFIG = {
     "host": os.getenv("PG_HOST", "localhost"),
@@ -49,6 +46,17 @@ DB_CONFIG = {
 }
 MODEL_OUTPUT_PATH = "model_artifacts/recovery_model.pkl"
 PIPELINE_OUTPUT_PATH = "model_artifacts/preprocessing_pipeline.pkl"
+LABEL_ENCODER_PATH = "model_artifacts/label_encoder.pkl"
+
+# 5 target classes, in a meaningful order (used later for plots/reports)
+CLASS_LABELS = [
+    "Write Off",
+    "High Risk",
+    "Likely Recoverable",
+    "Partially Recovered",
+    "Fully Recovered",
+]
+
 
 # ---------------------------------------------------------------------------
 # 2. LOAD DATA FROM POSTGRES
@@ -60,8 +68,8 @@ def load_data() -> pd.DataFrame:
     )
     engine = create_engine(conn_str)
 
-    # NOTE: adjust join keys (branch_name <-> branches.code/name) to match
-    # your actual production schema before running.
+    # NOTE: added p.amount (recovered amount) - needed to build the
+    # 5-class target below. Adjust column name to match your real schema.
     query = """
         SELECT
             sel.execution_id,
@@ -92,7 +100,8 @@ def load_data() -> pd.DataFrame:
             c.status AS last_comm_status,
             c.response_status,
             c.retry_count,
-            p.payment_status
+            p.payment_status,
+            p.amount
         FROM strategy_execution_log sel
         JOIN dpd_cases d          ON d.strategy_id = sel.strategy_id
         LEFT JOIN branches b      ON b.code = d.branch_name
@@ -109,49 +118,61 @@ def load_data() -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# 3. FEATURE ENGINEERING
+# 3. FEATURE ENGINEERING + MULTI-CLASS TARGET
 # ---------------------------------------------------------------------------
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    # convert Date into proper format
     df["assigned_at"] = pd.to_datetime(df["assigned_at"])
     df["completed_at"] = pd.to_datetime(df["completed_at"])
     df["last_payment_date"] = pd.to_datetime(df["last_payment_date"], errors="coerce")
 
-    # Duration of strategy execution (hours)
     df["execution_duration_hrs"] = (
         (df["completed_at"] - df["assigned_at"]).dt.total_seconds() / 3600
     )
-
-    # Recency of last payment (days), missing -> large number (never paid)
     df["days_since_last_payment"] = (
         (df["assigned_at"] - df["last_payment_date"]).dt.days
     )
     df["days_since_last_payment"] = df["days_since_last_payment"].fillna(9999)
 
-    # Agent load ratio
     df["agent_load_ratio"] = df["current_load"] / df["max_capacity"].replace(0, np.nan)
     df["agent_load_ratio"] = df["agent_load_ratio"].fillna(0)
 
-    # Outstanding to loan amount ratio
     df["outstanding_ratio"] = df["outstanding_principal"] / df["loan_amount"].replace(0, np.nan)
     df["outstanding_ratio"] = df["outstanding_ratio"].fillna(0)
 
-    # Communication engagement flag
     df["did_respond"] = (df["response_status"] == "RESPONDED").astype(int)
 
-    # ---- TARGET ----
-    # 1 = strategy execution led to a successful payment
-    df["target"] = (
-        (df["status"] == "COMPLETED") & (df["payment_status"] == "SUCCESS")
-    ).astype(int)
+    # ------------------------------------------------------------------
+    # MULTI-CLASS TARGET (5 classes)
+    # recovered_ratio = how much of the outstanding amount was paid back
+    # ------------------------------------------------------------------
+    df["amount"] = df["amount"].fillna(0)
+    df["recovered_ratio"] = (
+        df["amount"] / df["outstanding_principal"].replace(0, np.nan)
+    ).fillna(0).clip(0, 1)
+
+    def classify(row):
+        # Money actually recovered on this execution
+        if row["payment_status"] == "SUCCESS" and row["recovered_ratio"] >= 0.95:
+            return "Fully Recovered"
+        if row["payment_status"] == "SUCCESS" and row["recovered_ratio"] > 0:
+            return "Partially Recovered"
+
+        # No recovery yet -> bucket by risk signals
+        if row["dpd"] >= 180 and row["did_respond"] == 0:
+            return "Write Off"          # very old + unresponsive = practically dead
+        if row["dpd"] >= 90 or (row["did_respond"] == 0 and row["retry_count"] >= 3):
+            return "High Risk"          # old / tried a lot, no response
+        return "Likely Recoverable"     # early-stage, still has a decent chance
+
+    df["target_class"] = df.apply(classify, axis=1)
 
     return df
 
 
 # ---------------------------------------------------------------------------
-# 4. TRAIN MODEL
+# 4. FEATURES
 # ---------------------------------------------------------------------------
 NUMERIC_FEATURES = [
     "dpd", "outstanding_principal", "loan_amount", "emi_amount",
@@ -180,147 +201,241 @@ def build_pipeline() -> ColumnTransformer:
     ])
 
 
-def train_and_evaluate(df: pd.DataFrame):
-    X = df[NUMERIC_FEATURES + CATEGORICAL_FEATURES]
-    y = df["target"]
+# ---------------------------------------------------------------------------
+# 5. ROLLING / TIME-SERIES VALIDATION
+# ---------------------------------------------------------------------------
+def time_based_split(df: pd.DataFrame, n_splits: int = 5):
+    """
+    Instead of a random train/test split, we sort by time and always
+    train on the PAST and validate on the NEXT chunk (rolling window).
+    This mimics real production: model only ever sees history, never future.
+    """
+    df_sorted = df.sort_values("assigned_at").reset_index(drop=True)
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    return df_sorted, tscv
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+
+# ---------------------------------------------------------------------------
+# 6. OPTUNA HYPERPARAMETER TUNING (Bayesian Optimization)
+# ---------------------------------------------------------------------------
+def tune_hyperparameters(X, y, tscv, n_trials: int = 30) -> dict:
+    """
+    Optuna searches the hyperparameter space intelligently (Bayesian /
+    TPE sampler) instead of trying every combination (Grid Search) or
+    random guesses (Random Search) - gets to a good answer in fewer tries.
+
+    NOTE: Grid Search / Random Search alternatives (commented below) can
+    be swapped in if you specifically need them for comparison:
+        from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+    """
+
+    def objective(trial):
+        params = {
+            "n_estimators": trial.suggest_int("n_estimators", 100, 500, step=50),
+            "max_depth": trial.suggest_int("max_depth", 3, 10),
+            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+            "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
+            "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
+            "objective": "multi:softprob",
+            "num_class": len(CLASS_LABELS),
+            "eval_metric": "mlogloss",
+            "random_state": 42,
+        }
+
+        fold_scores = []
+        for train_idx, val_idx in tscv.split(X):
+            X_tr, X_val = X[train_idx], X[val_idx]
+            y_tr, y_val = y[train_idx], y[val_idx]
+
+            model = XGBClassifier(**params)
+            model.fit(X_tr, y_tr)
+            proba = model.predict_proba(X_val)
+            fold_scores.append(log_loss(y_val, proba, labels=list(range(len(CLASS_LABELS)))))
+
+        return np.mean(fold_scores)  # lower log-loss = better
+
+    study = optuna.create_study(direction="minimize")
+    study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
+
+    print(f"\nBest trial log-loss: {study.best_value:.4f}")
+    print(f"Best params: {study.best_params}")
+    return study.best_params
+
+
+# ---------------------------------------------------------------------------
+# 7. TRAIN + EVALUATE (with rolling validation)
+# ---------------------------------------------------------------------------
+def train_and_evaluate(df: pd.DataFrame):
+    df_sorted, tscv = time_based_split(df, n_splits=5)
+
+    X_raw = df_sorted[NUMERIC_FEATURES + CATEGORICAL_FEATURES]
+    label_encoder = LabelEncoder()
+    label_encoder.fit(CLASS_LABELS)
+    y = label_encoder.transform(df_sorted["target_class"])
 
     preprocessor = build_pipeline()
-    X_train_proc = preprocessor.fit_transform(X_train)
-    X_test_proc = preprocessor.transform(X_test)
+    X_proc = preprocessor.fit_transform(X_raw)
 
-    model = XGBClassifier(
-        n_estimators=300,
-        max_depth=5,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        eval_metric="logloss",
+    # --- Hyperparameter tuning using rolling folds ---
+    print("Tuning hyperparameters with Optuna (rolling validation)...")
+    best_params = tune_hyperparameters(X_proc, y, tscv, n_trials=3)
+
+    # --- Final rolling validation report using best params ---
+    fold_metrics = []
+    last_train_idx, last_val_idx = None, None
+    for fold, (train_idx, val_idx) in enumerate(tscv.split(X_proc), start=1):
+        model = XGBClassifier(
+            **best_params,
+            objective="multi:softprob",
+            num_class=len(CLASS_LABELS),
+            eval_metric="mlogloss",
+            random_state=42,
+        )
+        model.fit(X_proc[train_idx], y[train_idx])
+        preds = model.predict(X_proc[val_idx])
+
+        acc = accuracy_score(y[val_idx], preds)
+        f1 = f1_score(y[val_idx], preds, average="macro")
+        fold_metrics.append({"fold": fold, "accuracy": acc, "f1_macro": f1})
+        print(f"Fold {fold}: accuracy={acc:.4f}, macro-F1={f1:.4f}")
+        last_train_idx, last_val_idx = train_idx, val_idx
+
+    # --- Train the FINAL model on all data up to the last fold ---
+    final_model = XGBClassifier(
+        **best_params,
+        objective="multi:softprob",
+        num_class=len(CLASS_LABELS),
+        eval_metric="mlogloss",
         random_state=42,
     )
+    final_model.fit(X_proc[last_train_idx], y[last_train_idx])
 
-    # 5-fold cross validation on training data first
-    cv_scores = cross_val_score(model, X_train_proc, y_train, cv=5, scoring="roc_auc")
-    print(f"CV ROC-AUC (5-fold): {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+    y_pred = final_model.predict(X_proc[last_val_idx])
+    print("\n--- Final holdout (last time fold) performance ---")
+    print(classification_report(
+        y[last_val_idx], y_pred, target_names=label_encoder.classes_
+    ))
 
-    model.fit(X_train_proc, y_train)
-
-    y_pred = model.predict(X_test_proc)
-    y_proba = model.predict_proba(X_test_proc)[:, 1]
-
-    print("\n--- Test set performance ---")
-    print(f"Accuracy : {accuracy_score(y_test, y_pred):.4f}")
-    print(f"Precision: {precision_score(y_test, y_pred):.4f}")
-    print(f"Recall   : {recall_score(y_test, y_pred):.4f}")
-    print(f"F1 score : {f1_score(y_test, y_pred):.4f}")
-    print(f"ROC-AUC  : {roc_auc_score(y_test, y_proba):.4f}")
-    print("\nClassification report:\n", classification_report(y_test, y_pred))
-    print("Confusion matrix:\n", confusion_matrix(y_test, y_pred))
-
-    return model, preprocessor, X_test_proc, y_test
+    return (final_model, preprocessor, label_encoder,
+            X_proc[last_val_idx], y[last_val_idx], fold_metrics)
 
 
 # ---------------------------------------------------------------------------
-# 4b. MATPLOTLIB VISUALIZATIONS
+# 8. CHARTS
 # ---------------------------------------------------------------------------
-def plot_evaluation_charts(model, X_test_proc, y_test):
+def plot_confusion_matrix(y_true, y_pred, label_encoder):
     os.makedirs(CHARTS_DIR, exist_ok=True)
-    y_pred = model.predict(X_test_proc)
-    y_proba = model.predict_proba(X_test_proc)[:, 1]
-
-    # 1. Confusion matrix
-    fig, ax = plt.subplots(figsize=(5, 5))
+    fig, ax = plt.subplots(figsize=(7, 7))
     ConfusionMatrixDisplay.from_predictions(
-        y_test, y_pred, display_labels=["Not recovered", "Recovered"],
-        cmap="Blues", ax=ax
+        y_true, y_pred, display_labels=label_encoder.classes_,
+        cmap="Blues", ax=ax, xticks_rotation=45,
     )
-    ax.set_title("Confusion matrix")
+    ax.set_title("Confusion matrix (5 classes)")
     fig.tight_layout()
-    fig.savefig(f"{CHARTS_DIR}/confusion_matrix.png", dpi=150)
+    fig.savefig(f"{CHARTS_DIR}/confusion_matrix_multiclass.png", dpi=150)
     plt.close(fig)
-
-    # 2. ROC curve
-    fig, ax = plt.subplots(figsize=(5, 5))
-    RocCurveDisplay.from_predictions(y_test, y_proba, ax=ax)
-    ax.plot([0, 1], [0, 1], linestyle="--", color="gray")
-    ax.set_title("ROC curve")
-    fig.tight_layout()
-    fig.savefig(f"{CHARTS_DIR}/roc_curve.png", dpi=150)
-    plt.close(fig)
-
-    # 3. Precision-Recall curve (useful when classes are imbalanced)
-    fig, ax = plt.subplots(figsize=(5, 5))
-    PrecisionRecallDisplay.from_predictions(y_test, y_proba, ax=ax)
-    ax.set_title("Precision-recall curve")
-    fig.tight_layout()
-    fig.savefig(f"{CHARTS_DIR}/precision_recall_curve.png", dpi=150)
-    plt.close(fig)
-
-    # 4. Metrics summary bar chart
-    metrics = {
-        "Accuracy": accuracy_score(y_test, y_pred),
-        "Precision": precision_score(y_test, y_pred),
-        "Recall": recall_score(y_test, y_pred),
-        "F1 score": f1_score(y_test, y_pred),
-        "ROC-AUC": roc_auc_score(y_test, y_proba),
-    }
-    fig, ax = plt.subplots(figsize=(7, 4))
-    bars = ax.bar(metrics.keys(), metrics.values(), color="#1D9E75")
-    ax.set_ylim(0, 1)
-    ax.set_title("Model performance summary")
-    for bar, val in zip(bars, metrics.values()):
-        ax.text(bar.get_x() + bar.get_width() / 2, val + 0.02, f"{val:.2f}",
-                ha="center", fontsize=10)
-    fig.tight_layout()
-    fig.savefig(f"{CHARTS_DIR}/metrics_summary.png", dpi=150)
-    plt.close(fig)
-
-    print(f"\nSaved 4 charts to {CHARTS_DIR}/")
-    return metrics
+    print(f"Saved {CHARTS_DIR}/confusion_matrix_multiclass.png")
 
 
-def plot_feature_importance(importance_df, top_n=15):
+def plot_rolling_fold_scores(fold_metrics):
     os.makedirs(CHARTS_DIR, exist_ok=True)
-    top = importance_df.head(top_n).iloc[::-1]  # reverse for horizontal bar
+    folds = [m["fold"] for m in fold_metrics]
+    acc = [m["accuracy"] for m in fold_metrics]
+    f1 = [m["f1_macro"] for m in fold_metrics]
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.barh(top["feature"], top["mean_abs_shap"], color="#534AB7")
-    ax.set_xlabel("Mean |SHAP value| (impact on prediction)")
-    ax.set_title(f"Top {top_n} features driving recovery prediction")
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.plot(folds, acc, marker="o", label="Accuracy")
+    ax.plot(folds, f1, marker="s", label="Macro F1")
+    ax.set_xlabel("Rolling fold (time order)")
+    ax.set_ylim(0, 1)
+    ax.set_title("Model stability across time (rolling validation)")
+    ax.legend()
     fig.tight_layout()
-    fig.savefig(f"{CHARTS_DIR}/feature_importance.png", dpi=150)
+    fig.savefig(f"{CHARTS_DIR}/rolling_validation_scores.png", dpi=150)
     plt.close(fig)
-    print(f"Saved feature importance chart to {CHARTS_DIR}/feature_importance.png")
+    print(f"Saved {CHARTS_DIR}/rolling_validation_scores.png")
 
 
-# ---------------------------------------------------------------------------
-# 5. SHAP FEATURE IMPORTANCE (explainability)
-# ---------------------------------------------------------------------------
-def explain_model(model, preprocessor, X_test_proc):
+def explain_model(model, preprocessor, X_val, label_encoder):
     explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_test_proc)
+    shap_values = explainer.shap_values(X_val)
 
     feature_names = (
         NUMERIC_FEATURES
         + list(preprocessor.named_transformers_["cat"]
                .named_steps["onehot"].get_feature_names_out(CATEGORICAL_FEATURES))
     )
-    mean_abs_shap = np.abs(shap_values).mean(axis=0)
+    n_features = len(feature_names)
+    n_classes = len(CLASS_LABELS)
+
+    # SHAP's return shape for multi-class varies by version:
+    #   - old versions: a LIST of n_classes arrays, each (n_samples, n_features)
+    #   - newer versions: a single 3D array, either
+    #       (n_classes, n_samples, n_features)  OR
+    #       (n_samples, n_features, n_classes)
+    # Handle all three so this doesn't break again on a version upgrade.
+    if isinstance(shap_values, list):
+        mean_abs_shap = np.mean([np.abs(sv).mean(axis=0) for sv in shap_values], axis=0)
+    else:
+        arr = np.array(shap_values)
+        if arr.ndim == 3 and arr.shape[0] == n_classes and arr.shape[2] == n_features:
+            mean_abs_shap = np.abs(arr).mean(axis=(0, 1))       # (classes, samples, features)
+        elif arr.ndim == 3 and arr.shape[-1] == n_classes and arr.shape[1] == n_features:
+            mean_abs_shap = np.abs(arr).mean(axis=(0, 2))       # (samples, features, classes)
+        elif arr.ndim == 2 and arr.shape[1] == n_features:
+            mean_abs_shap = np.abs(arr).mean(axis=0)            # single-output shape
+        else:
+            raise ValueError(
+                f"Unexpected SHAP output shape {arr.shape} - expected one axis "
+                f"of size {n_features} (features) and one of size {n_classes} (classes)."
+            )
+
     importance = pd.DataFrame({
         "feature": feature_names,
         "mean_abs_shap": mean_abs_shap,
     }).sort_values("mean_abs_shap", ascending=False)
 
-    print("\n--- Top 15 features by SHAP importance ---")
+    print("\n--- Top 15 features (avg across all 5 classes) ---")
     print(importance.head(15).to_string(index=False))
     return importance
 
 
 # ---------------------------------------------------------------------------
-# 6. MAIN
+# 9. CONTINUOUS LEARNING (incremental retrain on new data)
+# ---------------------------------------------------------------------------
+def continuous_retrain(new_df: pd.DataFrame):
+    """
+    Call this periodically (e.g. weekly cron job) with ONLY the new
+    executions collected since the last training run. Instead of
+    retraining from scratch on the full history, XGBoost can 'warm start'
+    from the existing model - much faster and keeps past learning.
+    """
+    if not os.path.exists(MODEL_OUTPUT_PATH):
+        raise FileNotFoundError("No existing model found - run full training first.")
+
+    old_model = joblib.load(MODEL_OUTPUT_PATH)
+    preprocessor = joblib.load(PIPELINE_OUTPUT_PATH)
+    label_encoder = joblib.load(LABEL_ENCODER_PATH)
+
+    new_df = engineer_features(new_df)
+    X_new = preprocessor.transform(new_df[NUMERIC_FEATURES + CATEGORICAL_FEATURES])
+    y_new = label_encoder.transform(new_df["target_class"])
+
+    updated_model = XGBClassifier(
+        **old_model.get_params()
+    )
+    # xgb_model=old_model.get_booster() continues training from the
+    # existing trees instead of starting from zero
+    updated_model.fit(X_new, y_new, xgb_model=old_model.get_booster())
+
+    joblib.dump(updated_model, MODEL_OUTPUT_PATH)
+    print(f"Model updated incrementally with {len(new_df)} new rows and re-saved.")
+    return updated_model
+
+
+# ---------------------------------------------------------------------------
+# 10. MAIN
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     os.makedirs("model_artifacts", exist_ok=True)
@@ -329,25 +444,27 @@ if __name__ == "__main__":
     raw_df = load_data()
     print(f"Loaded {len(raw_df):,} rows")
 
-    print("Engineering features...")
+    print("Engineering features + building 5-class target...")
     df = engineer_features(raw_df)
-    print(f"Target distribution:\n{df['target'].value_counts(normalize=True)}")
+    print(f"Class distribution:\n{df['target_class'].value_counts(normalize=True)}")
 
-    print("Training model...")
-    model, preprocessor, X_test_proc, y_test = train_and_evaluate(df)
+    print("Training model (rolling validation + Optuna tuning)...")
+    (model, preprocessor, label_encoder,
+     X_val, y_val, fold_metrics) = train_and_evaluate(df)
 
-    print("\nDrawing evaluation charts...")
-    metrics = plot_evaluation_charts(model, X_test_proc, y_test)
+    y_pred_val = model.predict(X_val)
+    plot_confusion_matrix(y_val, y_pred_val, label_encoder)
+    plot_rolling_fold_scores(fold_metrics)
 
-    importance = explain_model(model, preprocessor, X_test_proc)
-    plot_feature_importance(importance)
-
-    print("\n========== FINAL ACCURACY SUMMARY ==========")
-    for name, val in metrics.items():
-        print(f"{name:10s}: {val:.2%}")
-    print("=============================================")
+    importance = explain_model(model, preprocessor, X_val, label_encoder)
 
     joblib.dump(model, MODEL_OUTPUT_PATH)
     joblib.dump(preprocessor, PIPELINE_OUTPUT_PATH)
+    joblib.dump(label_encoder, LABEL_ENCODER_PATH)
     print(f"\nSaved model to {MODEL_OUTPUT_PATH}")
     print(f"Saved preprocessing pipeline to {PIPELINE_OUTPUT_PATH}")
+    print(f"Saved label encoder to {LABEL_ENCODER_PATH}")
+
+    # Example of continuous learning usage later:
+    # new_data = load_data()   # filtered to only new executions
+    # continuous_retrain(new_data)
