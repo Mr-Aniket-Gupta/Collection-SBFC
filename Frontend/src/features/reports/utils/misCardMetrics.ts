@@ -15,31 +15,14 @@ export interface MisCardMetric {
   subtitle: string
 }
 
-/**
- * Description of what this function does: Normalizes value into an uppercase trimmed string.
- * Inputs: value: unknown
- * Outputs: string
- * Dependencies: safeToString
- */
+
 const norm = (value: unknown): string => safeToString(value).trim().toUpperCase()
 
-/**
- * Description of what this function does: Safe parses double/number from unknown value.
- * Inputs: value: unknown
- * Outputs: number
- * Dependencies: none
- */
 const parseAmount = (value: unknown): number => {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-/**
- * Description of what this function does: Returns a list of rows deduplicated by a given primary ID key.
- * Inputs: rows: DcspTableRow[], idKey: string
- * Outputs: DcspTableRow[]
- * Dependencies: safeToString
- */
 const uniqueRows = (rows: DcspTableRow[] = [], idKey: string): DcspTableRow[] => {
   const seen = new Set<string>()
   return rows.filter((row) => {
@@ -50,35 +33,18 @@ const uniqueRows = (rows: DcspTableRow[] = [], idKey: string): DcspTableRow[] =>
   })
 }
 
-/**
- * Description of what this function does: Extracts a set of unique case IDs.
- * Inputs: rows: DcspTableRow[]
- * Outputs: Set<string>
- * Dependencies: safeToString
- */
-const uniqueCaseIds = (rows: DcspTableRow[]): Set<string> => {
-  const ids = new Set<string>()
-  rows.forEach((row) => {
-    const caseId = safeToString(row.strategy_id || row.case_id).trim()
-    if (caseId) ids.add(caseId)
-  })
-  return ids
-}
+// const uniqueCaseIds = (rows: DcspTableRow[]): Set<string> => {
+//   const ids = new Set<string>()
+//   rows.forEach((row) => {
+//     const caseId = safeToString(row.strategy_id || row.case_id).trim()
+//     if (caseId) ids.add(caseId)
+//   })
+//   return ids
+// }
 
-/**
- * Description of what this function does: Calculates percentage of a part over a total.
- * Inputs: part: number, total: number
- * Outputs: number
- * Dependencies: none
- */
 const percentOf = (part: number, total: number): number => (total > 0 ? (part / total) * 100 : 0)
 
-/**
- * Description of what this function does: Builds display metrics for the top MIS category cards.
- * Inputs: cardTitles: Record<string, string>, rows: MisTableRows
- * Outputs: Map<string, MisCardMetric>
- * Dependencies: uniqueRows, parseAmount, formatCurrencyINR, uniqueCaseIds, formatPercent, percentOf, norm
- */
+
 export function buildMisCardMetrics(
   cardTitles: Record<string, string>,
   rows: MisTableRows,

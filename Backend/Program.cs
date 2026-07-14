@@ -3,7 +3,7 @@ using backend.Modules.Analytics.Config;
 using backend.Modules.Reports.Config;
 using System.Text.Json;
 using Prometheus;
-using backend.Extensions;
+// using backend.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,10 +51,10 @@ app.UseHttpsRedirection();
 app.UseCors("Frontend");
 
 // rate limiting
-app.UseSlidingWindowRateLimiter();
+// app.UseSlidingWindowRateLimiter();
 
 // register before endpoints
-app.UseHttpMetrics();
+// app.UseHttpMetrics();
 
 // routes
 app.MapControllers();

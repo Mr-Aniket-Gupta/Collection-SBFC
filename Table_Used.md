@@ -78,6 +78,20 @@ CREATE TABLE IF NOT EXISTS col_db.communication_logs
     CONSTRAINT communication_logs_pkey PRIMARY KEY (communication_id)
 );
 
+CREATE TABLE IF NOT EXISTS col_db.channel_master
+(
+    channel_code character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    channel_name character varying(150) COLLATE pg_catalog."default" NOT NULL,
+    is_active boolean DEFAULT true,
+    CONSTRAINT channel_master_pkey PRIMARY KEY (channel_code)
+);
+
+ALTER TABLE IF EXISTS col_db.communication_logs
+    ADD CONSTRAINT communication_logs_channel_fkey
+    FOREIGN KEY (channel)
+    REFERENCES col_db.channel_master (channel_code)
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION;
 
 CREATE TABLE IF NOT EXISTS col_db.ptps
 (

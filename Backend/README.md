@@ -158,6 +158,7 @@ Error responses include an `errors` array. HTTP 4xx/5xx status codes are set app
 - SQL queries always use `col_db.` schema prefix to avoid `42P01` relation-not-found errors.
 - The `agents` table is removed. Agent data is resolved from `auth.users` via `ptps.agent_id`.
 - `communication_logs` uses `created_on` and `status_updated_on` (not `created_at`).
+- Reports and analytics responses now resolve communication display labels through `col_db.channel_master` using `channel_code` → `channel_name`, while keeping the raw `channel` code available internally for filtering and joins.
 
 ---
 

@@ -47,15 +47,9 @@ const monthSortKey = (date: Date): number => Date.UTC(date.getFullYear(), date.g
  * Outputs: COMMUNICATION_CHANNELS value or null
  * Dependencies: none
  */
-export function normalizeCommunicationChannel(raw: string): (typeof COMMUNICATION_CHANNELS)[number] | null {
-  const value = raw.toLowerCase()
-  if (!value) return null
-  if (value.includes('whatsapp') || value.includes('wa')) return 'WhatsApp Messages'
-  if (value.includes('sms')) return 'SMS'
-  if (value.includes('email') || value.includes('mail')) return 'Email'
-  if (value.includes('field') || value.includes('visit')) return 'Field visit'
-  if (value.includes('ai') || value.includes('ivr') || value.includes('call')) return 'AI Call'
-  return null
+export function normalizeCommunicationChannel(raw: string): string | null {
+  const value = raw.trim()
+  return value || null
 }
 
 /**
@@ -116,27 +110,26 @@ const parsePaymentAmount = (row: Record<string, unknown>): number => {
  */
 export function buildChannelConversionData(reports: ReportLibraryRow[]): ChannelConversionData[] {
   const counts = new Map<string, number>()
-  COMMUNICATION_CHANNELS.forEach((channel) => counts.set(channel, 0))
 
   reports.forEach(({ source }) => {
     if (!isCommunicationLogsRow(source)) return
-    const channel = normalizeCommunicationChannel(safeToString(source.channel))
+    const channel = normalizeCommunicationChannel(safeToString(source.channel_name || source.channel))
     if (!channel) return
     counts.set(channel, (counts.get(channel) ?? 0) + 1)
   })
 
-  return COMMUNICATION_CHANNELS.map((channel) => {
-    const total = counts.get(channel) ?? 0
-    // response_status removed in communication_logs schema — use status column only.
-    const responded = reports.filter(({ source }) => {
-      if (!isCommunicationLogsRow(source)) return false
-      if (normalizeCommunicationChannel(safeToString(source.channel)) !== channel) return false
-      const status = safeToString(source.status).toLowerCase()
-      return status.includes('deliver') || status.includes('read') || status.includes('respond')
-    }).length
+  return Array.from(counts.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([channel, total]) => {
+      const responded = reports.filter(({ source }) => {
+        if (!isCommunicationLogsRow(source)) return false
+        if (normalizeCommunicationChannel(safeToString(source.channel_name || source.channel)) !== channel) return false
+        const status = safeToString(source.status).toLowerCase()
+        return status.includes('deliver') || status.includes('read') || status.includes('respond')
+      }).length
 
-    return { channel, sent: total, responded }
-  })
+      return { channel, sent: total, responded }
+    })
 }
 
 /**

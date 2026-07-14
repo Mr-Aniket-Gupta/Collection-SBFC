@@ -28,12 +28,6 @@ public sealed class AnalyticsRepository
         _dbConnectionFactory = dbConnectionFactory;
     }
 
-    /**
-     * Description of what this function does: Orchestrates parallel fetching of all dashboard metrics.
-     * Inputs: request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<AnalyticsDashboardDto>
-     * Dependencies: GetKpiCardsAsync, GetRadarAsync, GetStrategyPerformanceAsync, GetStrategyGapAsync, GetCommunicationPerformanceAsync, GetCommunicationEfficiencyAsync, GetChannelPerformanceAsync, GetBucketDistributionAsync, GetBranchContributorsAsync, GetAgentContributorsAsync
-     */
     public async Task<AnalyticsDashboardDto> GetDashboardAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         // Run independent queries in parallel to reduce overall latency.
@@ -63,12 +57,6 @@ public sealed class AnalyticsRepository
             await agentTask);
     }
 
-    /**
-     * Description of what this function does: Computes KPI summary cards comparing current vs previous period.
-     * Inputs: request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<IReadOnlyList<KpiCardDto>>
-     * Dependencies: ReadKpiSnapshotAsync, ReadPreviousKpiSnapshotAsync, BuildTrendText, BuildTrendDirection
-     */
     public async Task<IReadOnlyList<KpiCardDto>> GetKpiCardsAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -130,12 +118,6 @@ public sealed class AnalyticsRepository
         ];
     }
 
-    /**
-     * Description of what this function does: Executes a DB query to build a KPI Snapshot object.
-     * Inputs: sql: string, startDate: DateOnly?, endDate: DateOnly?, request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<AnalyticsKpiSnapshot>
-     * Dependencies: IDbConnectionFactory, ConfigureCommand
-     */
     private async Task<AnalyticsKpiSnapshot> ReadKpiSnapshotAsync(string sql, DateOnly? startDate, DateOnly? endDate, AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         await using var connection = _dbConnectionFactory.CreateConnection();
@@ -155,12 +137,6 @@ public sealed class AnalyticsRepository
             reader.GetDecimal(7));
     }
 
-    /**
-     * Description of what this function does: Fetches KPI values for the previous equivalent time span.
-     * Inputs: sql: string, request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<AnalyticsKpiSnapshot>
-     * Dependencies: ReadKpiSnapshotAsync
-     */
     private async Task<AnalyticsKpiSnapshot> ReadPreviousKpiSnapshotAsync(string sql, AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         if (request.StartDate is null || request.EndDate is null)
@@ -174,12 +150,7 @@ public sealed class AnalyticsRepository
         return await ReadKpiSnapshotAsync(sql, previousStart, previousEnd, request, cancellationToken);
     }
 
-    /**
-     * Description of what this function does: Constructs display text representing percentage period-over-period differences.
-     * Inputs: current: decimal, previous: decimal
-     * Outputs: string?
-     * Dependencies: none
-     */
+
     private static string? BuildTrendText(decimal current, decimal previous)
     {
         if (previous == 0) return null;
@@ -189,12 +160,7 @@ public sealed class AnalyticsRepository
         return $"{sign}{rounded:N1}% vs previous period";
     }
 
-    /**
-     * Description of what this function does: Determines the direction keyword (up/down/neutral) representing period differences.
-     * Inputs: current: decimal, previous: decimal
-     * Outputs: string? (up, down, neutral)
-     * Dependencies: none
-     */
+
     private static string? BuildTrendDirection(decimal current, decimal previous)
     {
         if (previous == 0) return "neutral";
@@ -203,12 +169,6 @@ public sealed class AnalyticsRepository
         return "neutral";
     }
 
-    /**
-     * Description of what this function does: Attaches nullable filter params to database command objects.
-     * Inputs: command: NpgsqlCommand, request: AnalyticsQueryRequest, startDate?: DateOnly?, endDate?: DateOnly?, limit?: int?
-     * Outputs: void
-     * Dependencies: none
-     */
     private static void ConfigureCommand(NpgsqlCommand command, AnalyticsQueryRequest request, DateOnly? startDate = null, DateOnly? endDate = null, int? limit = null)
     {
         command.AddNullableText("@state", request.State);
@@ -222,12 +182,7 @@ public sealed class AnalyticsRepository
         }
     }
 
-    /**
-     * Description of what this function does: Returns contact, response, PTP, case-closure and collection rates.
-     * Inputs: request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<IReadOnlyList<RadarDataPointDto>>
-     * Dependencies: ConfigureCommand, IDbConnectionFactory
-     */
+
     public async Task<IReadOnlyList<RadarDataPointDto>> GetRadarAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -552,12 +507,7 @@ public sealed class AnalyticsRepository
         return result;
     }
 
-    /**
-     * Description of what this function does: Computes recovery percentage split by case loan product.
-     * Inputs: request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<IReadOnlyList<ProductDistributionDto>>
-     * Dependencies: ReadDistributionAsync
-     */
+
     public async Task<IReadOnlyList<ProductDistributionDto>> GetChannelPerformanceAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -571,15 +521,19 @@ public sealed class AnalyticsRepository
                 GROUP BY strategy_id
             )
             SELECT
-                COALESCE(c.product_name, 'Unknown') AS name,
+                COALESCE(cm.channel_name, comm.channel, 'Unknown') AS name,
                 COALESCE(ROUND((SUM(cp.recovered_amount)::numeric / NULLIF(SUM(c.total_outstanding), 0)) * 100, 1), 0) AS value
             FROM col_db.dpd_cases c
+            LEFT JOIN col_db.communication_logs comm ON comm.strategy_id = c.strategy_id
+            LEFT JOIN col_db.channel_master cm ON cm.channel_code = comm.channel
             LEFT JOIN CasePayments cp ON cp.strategy_id = c.strategy_id
             LEFT JOIN col_db.branches b ON lower(trim(b.name)) = lower(trim(c.branch_name))
             WHERE (@state IS NULL OR c.state = @state)
               AND (@branch_name IS NULL OR lower(trim(replace(lower(trim(c.branch_name)), 'branch', ''))) = lower(trim(replace(lower(trim(@branch_name)), 'branch', ''))))
               AND (@zone IS NULL OR lower(trim(b.zone_code)) = lower(trim(@zone)))
-            GROUP BY c.product_name
+              AND (@start_date IS NULL OR comm.created_on >= @start_date)
+              AND (@end_date IS NULL OR comm.created_on < @end_date + interval '1 day')
+            GROUP BY COALESCE(cm.channel_name, comm.channel, 'Unknown')
             ORDER BY value DESC
             LIMIT @limit;
             """;
@@ -587,12 +541,6 @@ public sealed class AnalyticsRepository
         return await ReadDistributionAsync(sql, request, cancellationToken);
     }
 
-    /**
-     * Description of what this function does: Computes counts of outstanding cases grouped by DPD bucket range.
-     * Inputs: request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<IReadOnlyList<ProductDistributionDto>>
-     * Dependencies: ReadDistributionAsync
-     */
     public async Task<IReadOnlyList<ProductDistributionDto>> GetBucketDistributionAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -614,12 +562,6 @@ public sealed class AnalyticsRepository
         return await ReadDistributionAsync(sql, request, cancellationToken);
     }
 
-    /**
-     * Description of what this function does: Computes branch-wise totals of case outstanding amounts.
-     * Inputs: request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<IReadOnlyList<PerformanceDto>>
-     * Dependencies: ConfigureCommand, IDbConnectionFactory
-     */
     public async Task<IReadOnlyList<PerformanceDto>> GetBranchContributorsAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         const string sql = """
@@ -652,12 +594,6 @@ public sealed class AnalyticsRepository
         return result;
     }
 
-    /**
-     * Description of what this function does: Computes recovery performance stats grouped by active agent contributors.
-     * Inputs: request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<IReadOnlyList<AgentPerformanceDto>>
-     * Dependencies: ConfigureCommand, IDbConnectionFactory
-     */
     public async Task<IReadOnlyList<AgentPerformanceDto>> GetAgentContributorsAsync(AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         // agents table removed in new schema.
@@ -695,12 +631,6 @@ public sealed class AnalyticsRepository
         return result;
     }
 
-    /**
-     * Description of what this function does: Executes SQL query to load distribution data.
-     * Inputs: sql: string, request: AnalyticsQueryRequest, cancellationToken: CancellationToken
-     * Outputs: Task<IReadOnlyList<ProductDistributionDto>>
-     * Dependencies: ConfigureCommand, IDbConnectionFactory
-     */
     private async Task<IReadOnlyList<ProductDistributionDto>> ReadDistributionAsync(string sql, AnalyticsQueryRequest request, CancellationToken cancellationToken)
     {
         await using var connection = _dbConnectionFactory.CreateConnection();
