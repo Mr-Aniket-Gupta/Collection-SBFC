@@ -22,13 +22,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
 
       - name: Install Packages
-        run: npm install
+        run: npm ci
 
       - name: Build Project
         run: npm run build

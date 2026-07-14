@@ -16,7 +16,6 @@ export function useAnalytics() {
   const [branchFilter, setBranchFilter] = useState<string>('')
   const [zoneFilter, setZoneFilter] = useState<string>('')
   const [stateFilter, setStateFilter] = useState<string>('')
-  // const [zoneFilter, setZoneFilter] = useState<string>('')
 
   const dateFilterOptions: DateRangeOption[] = [
     'This Month',
@@ -33,7 +32,6 @@ export function useAnalytics() {
     placeholderData: (prev) => prev,
   })
 
-  // const normalize = (s?: string) => (s ?? '').toString().trim().replace(/\s+/g, ' ')
   const branchMapRef = useRef<Map<string, string>>(new Map())
 
   const branchOptions = useMemo(() => extractBranchOptions(tableBundle ?? EMPTY_BUNDLE()), [tableBundle])
@@ -55,7 +53,6 @@ export function useAnalytics() {
     })
   }), [tableBundle, branchFilter, zoneFilter])
 
-  // Automatically reset filters if the selected value is no longer in the filtered options list
   useEffect(() => {
     if (branchFilter && !branchOptions.includes(branchFilter)) {
       setBranchFilter('')
@@ -67,12 +64,6 @@ export function useAnalytics() {
       setZoneFilter('')
     }
   }, [zoneOptions, zoneFilter])
-
-  // useEffect(() => {
-  //   if (zoneFilter && !zoneOptions.includes(zoneFilter)) {
-  //     setZoneFilter('')
-  //   }
-  // }, [zoneOptions, zoneFilter])
 
   useEffect(() => {
     if (stateFilter && !stateOptions.includes(stateFilter)) {
@@ -92,11 +83,23 @@ export function useAnalytics() {
     placeholderData: (prev) => prev,
   })
 
+  /**
+   * Description of what this function does: Triggers refetching of dashboard and resets filters.
+   * Inputs: none
+   * Outputs: void
+   * Dependencies: resetFilters, refetch
+   */
   const handleRefresh = () => {
     resetFilters()
     refetch()
   }
 
+  /**
+   * Description of what this function does: Resets all filter selections to their default states.
+   * Inputs: none
+   * Outputs: void
+   * Dependencies: none
+   */
   const resetFilters = () => {
     setSelectedDateFilter('Last 6 Months')
     setCustomFromDate(getDefaultCustomFromDate())

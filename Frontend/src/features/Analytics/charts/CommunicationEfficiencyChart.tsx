@@ -10,10 +10,10 @@ import {
   Legend,
 } from 'recharts'
 import { ChartCard } from '@/Components'
-import type { HourlyCallData } from '../types/analytics.types'
+import type { HourlyCommunicationEfficiency } from '../types/analytics.types'
 
 interface CommunicationEfficiencyChartProps {
-  data: HourlyCallData[]
+  data: HourlyCommunicationEfficiency[]
 }
 
 const TOOLTIP_STYLE = {
@@ -28,9 +28,9 @@ const TOOLTIP_STYLE = {
 export const CommunicationEfficiencyChart: React.FC<CommunicationEfficiencyChartProps> = ({ data }) => {
   const chartData = data.map((row) => ({
     hour: row.hour,
-    deliveryRate: row.calls ? Number(((row.responses / row.calls) * 100).toFixed(1)) : 0,
-    delivered: row.responses,
-    sent: row.calls,
+    deliveryRate: Number(row.deliveryRate),
+    delivered: row.delivered,
+    sent: row.sent,
   }))
 
   return (

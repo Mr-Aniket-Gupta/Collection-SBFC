@@ -19,6 +19,13 @@ export interface HourlyCallData {
   responses: number
 }
 
+export interface HourlyCommunicationEfficiency {
+  hour: string
+  sent: number
+  delivered: number
+  deliveryRate: number
+}
+
 export interface ProductDistribution {
   name: string
   value: number
@@ -51,7 +58,9 @@ export interface AnalyticsDashboardPayload {
   kpiCards: KPICard[]
   performanceRadar: RadarDataPoint[]
   strategyPerformance: StrategyRow[]
+  strategyGap: StrategyRow[]
   communicationPerformance: HourlyCallData[]
+  communicationEfficiency: HourlyCommunicationEfficiency[]
   channelPerformance: ProductDistribution[]
   bucketDistribution: ProductDistribution[]
   branchContributors: Array<{ name: string; value: number; target: number }>

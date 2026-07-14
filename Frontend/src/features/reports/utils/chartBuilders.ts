@@ -8,22 +8,45 @@ import type {
   ReportLibraryRow,
   TrendSeriesData,
 } from '../types'
-import { isCommunicationRow, isPaymentRow, isStrategyRow, isCaseRow } from './rowDetectors'
+import { isCommunicationLogsRow, isPaymentRow, isStrategyRow, isCaseRow } from './rowDetectors'
 import { extractRowDate } from '../../../Components/dateFilter'
 import { safeToString, getBranchName } from './tableUtils'
 
 export const COMMUNICATION_CHANNELS = ['SMS', 'WhatsApp Messages', 'Email', 'AI Call', 'Field visit'] as const
 export const DPD_BUCKETS = ['0-30', '31-60', '61-90', '90+'] as const
 
+/**
+ * Description of what this function does: Truncates a string label with an ellipsis if it exceeds the maximum length.
+ * Inputs: label: string, max?: number
+ * Outputs: string
+ * Dependencies: none
+ */
 const truncateLabel = (label: string, max = 16): string =>
   label.length > max ? `${label.slice(0, max - 1)}…` : label
 
+/**
+ * Description of what this function does: Formats a date object to a short Month-Year string key.
+ * Inputs: date: Date
+ * Outputs: string
+ * Dependencies: none
+ */
 const monthKey = (date: Date): string =>
   date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
 
+/**
+ * Description of what this function does: Returns a timestamp representing the start of the month for sorting.
+ * Inputs: date: Date
+ * Outputs: number
+ * Dependencies: none
+ */
 const monthSortKey = (date: Date): number => Date.UTC(date.getFullYear(), date.getMonth(), 1)
 
-/** Maps raw channel text to standard communication channel labels. */
+/**
+ * Description of what this function does: Maps raw channel text to standard communication channel labels.
+ * Inputs: raw: string
+ * Outputs: COMMUNICATION_CHANNELS value or null
+ * Dependencies: none
+ */
 export function normalizeCommunicationChannel(raw: string): (typeof COMMUNICATION_CHANNELS)[number] | null {
   const value = raw.toLowerCase()
   if (!value) return null
@@ -35,7 +58,12 @@ export function normalizeCommunicationChannel(raw: string): (typeof COMMUNICATIO
   return null
 }
 
-/** Maps the strategy bucket column to the standard bucket ranges, with legacy fallbacks. */
+/**
+ * Description of what this function does: Maps the strategy bucket column to the standard bucket ranges, with legacy fallbacks.
+ * Inputs: row: Record<string, unknown>
+ * Outputs: DPD_BUCKETS value
+ * Dependencies: safeToString
+ */
 export function normalizeDpdBucket(row: Record<string, unknown>): (typeof DPD_BUCKETS)[number] {
   const dpd = Number(row.dpd)
   if (!Number.isNaN(dpd)) {
@@ -61,20 +89,37 @@ export function normalizeDpdBucket(row: Record<string, unknown>): (typeof DPD_BU
   return '0-30'
 }
 
+/**
+ * Description of what this function does: Normalizes a status value by converting to uppercase and trimming.
+ * Inputs: value: unknown
+ * Outputs: string
+ * Dependencies: safeToString
+ */
 const normStatus = (value: unknown): string => safeToString(value).trim().toUpperCase()
 
+/**
+ * Description of what this function does: Parses payment amount from payment row safely.
+ * Inputs: row: Record<string, unknown>
+ * Outputs: number
+ * Dependencies: none
+ */
 const parsePaymentAmount = (row: Record<string, unknown>): number => {
   const amount = Number(row.payment_amount ?? row.amount ?? 0)
   return Number.isFinite(amount) ? Math.max(amount, 0) : 0
 }
 
-/** Channel Conversion Rate — counts by SMS, WhatsApp, Email, AI Call, Field visit. */
+/**
+ * Description of what this function does: Channel Conversion Rate — counts sent and responded by SMS, WhatsApp, Email, AI Call, Field visit.
+ * Inputs: reports: ReportLibraryRow[]
+ * Outputs: ChannelConversionData[]
+ * Dependencies: isCommunicationLogsRow, normalizeCommunicationChannel, safeToString
+ */
 export function buildChannelConversionData(reports: ReportLibraryRow[]): ChannelConversionData[] {
   const counts = new Map<string, number>()
   COMMUNICATION_CHANNELS.forEach((channel) => counts.set(channel, 0))
 
   reports.forEach(({ source }) => {
-    if (!isCommunicationRow(source)) return
+    if (!isCommunicationLogsRow(source)) return
     const channel = normalizeCommunicationChannel(safeToString(source.channel))
     if (!channel) return
     counts.set(channel, (counts.get(channel) ?? 0) + 1)
@@ -82,10 +127,11 @@ export function buildChannelConversionData(reports: ReportLibraryRow[]): Channel
 
   return COMMUNICATION_CHANNELS.map((channel) => {
     const total = counts.get(channel) ?? 0
+    // response_status removed in communication_logs schema — use status column only.
     const responded = reports.filter(({ source }) => {
-      if (!isCommunicationRow(source)) return false
+      if (!isCommunicationLogsRow(source)) return false
       if (normalizeCommunicationChannel(safeToString(source.channel)) !== channel) return false
-      const status = safeToString(source.response_status || source.status).toLowerCase()
+      const status = safeToString(source.status).toLowerCase()
       return status.includes('deliver') || status.includes('read') || status.includes('respond')
     }).length
 
@@ -93,7 +139,12 @@ export function buildChannelConversionData(reports: ReportLibraryRow[]): Channel
   })
 }
 
-/** Bucket-wise Trend — strategy buckets (0-30, 31-60, 61-90, 90+) grouped by month. */
+/**
+ * Description of what this function does: Bucket-wise Trend — strategy buckets (0-30, 31-60, 61-90, 90+) grouped by month.
+ * Inputs: reports: ReportLibraryRow[]
+ * Outputs: BucketWiseTrendData[]
+ * Dependencies: isStrategyRow, extractRowDate, monthKey, normalizeDpdBucket, truncateLabel
+ */
 export function buildBucketWiseTrendData(reports: ReportLibraryRow[]): BucketWiseTrendData[] {
   const summary = new Map<string, BucketWiseTrendData>()
 
@@ -117,7 +168,12 @@ export function buildBucketWiseTrendData(reports: ReportLibraryRow[]): BucketWis
   return Array.from(summary.values())
 }
 
-/** Collection Trend — monthly payment amounts by payment_status (SUCCESS, FAILED, PENDING). */
+/**
+ * Description of what this function does: Collection Trend — monthly payment amounts by payment_status (SUCCESS, FAILED, PENDING).
+ * Inputs: reports: ReportLibraryRow[]
+ * Outputs: CollectionTrendData[]
+ * Dependencies: isPaymentRow, extractRowDate, monthKey, parsePaymentAmount, normStatus, truncateLabel
+ */
 export function buildCollectionTrendData(reports: ReportLibraryRow[]): CollectionTrendData[] {
   const summary = new Map<string, { success: number; failed: number; pending: number }>()
 
@@ -151,7 +207,12 @@ export function buildCollectionTrendData(reports: ReportLibraryRow[]): Collectio
     }))
 }
 
-/** Recovery Distribution — payment mode split from payments table. */
+/**
+ * Description of what this function does: Recovery Distribution — payment mode split from payments table.
+ * Inputs: reports: ReportLibraryRow[]
+ * Outputs: RecoveryDistributionData[]
+ * Dependencies: isPaymentRow, safeToString, parsePaymentAmount, truncateLabel
+ */
 export function buildRecoveryDistributionData(reports: ReportLibraryRow[]): RecoveryDistributionData[] {
   const summary = new Map<string, { count: number; amount: number }>()
 
@@ -178,7 +239,12 @@ export function buildRecoveryDistributionData(reports: ReportLibraryRow[]): Reco
     }))
 }
 
-/** Trends tab — monthly payment volume with amount and status split from payments table. */
+/**
+ * Description of what this function does: Trends tab — monthly payment volume with amount and status split from payments table.
+ * Inputs: reports: ReportLibraryRow[]
+ * Outputs: PaymentVolumeTrendData[]
+ * Dependencies: isPaymentRow, extractRowDate, monthKey, monthSortKey, parsePaymentAmount, normStatus, truncateLabel
+ */
 export function buildPaymentVolumeTrend(reports: ReportLibraryRow[]): PaymentVolumeTrendData[] {
   const summary = new Map<string, PaymentVolumeTrendData & { sortKey: number }>()
   reports.forEach(({ source }) => {
@@ -213,7 +279,12 @@ export function buildPaymentVolumeTrend(reports: ReportLibraryRow[]): PaymentVol
     }))
 }
 
-/** Trends tab — top branches by active cases. */
+/**
+ * Description of what this function does: Trends tab — top branches by active cases.
+ * Inputs: reports: ReportLibraryRow[]
+ * Outputs: TrendSeriesData[]
+ * Dependencies: isCaseRow, getBranchName, safeToString, truncateLabel
+ */
 export function buildBranchCaseTrend(reports: ReportLibraryRow[]): TrendSeriesData[] {
   const summary = new Map<string, number>()
   reports.forEach(({ source }) => {
@@ -230,7 +301,12 @@ export function buildBranchCaseTrend(reports: ReportLibraryRow[]): TrendSeriesDa
     .map(([label, value]) => ({ label: truncateLabel(label, 16), value }))
 }
 
-/** Funnel tab — communication delivery funnel from communications table. */
+/**
+ * Description of what this function does: Funnel tab — communication delivery funnel from communication_logs table.
+ * Inputs: reports: ReportLibraryRow[]
+ * Outputs: FunnelStageData[]
+ * Dependencies: isCommunicationLogsRow, safeToString
+ */
 export function buildCommunicationFunnel(reports: ReportLibraryRow[]): FunnelStageData[] {
   const stages = [
     { stage: 'Sent', match: () => true },
@@ -240,12 +316,13 @@ export function buildCommunicationFunnel(reports: ReportLibraryRow[]): FunnelSta
     { stage: 'Converted', match: (status: string) => status.includes('convert') || status.includes('paid') || status.includes('ptp') },
   ]
 
-  const commRows = reports.filter(({ source }) => isCommunicationRow(source))
+  const commRows = reports.filter(({ source }) => isCommunicationLogsRow(source))
   const total = commRows.length || 1
 
   return stages.map(({ stage, match }) => {
     const count = commRows.filter(({ source }) => {
-      const status = safeToString(source.response_status || source.status).toLowerCase()
+      // response_status removed in communication_logs schema — derive from status only.
+      const status = safeToString(source.status).toLowerCase()
       return match(status)
     }).length
 

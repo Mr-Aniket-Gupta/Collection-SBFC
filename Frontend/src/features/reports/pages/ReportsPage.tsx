@@ -32,7 +32,6 @@ import {
   buildRecoveryDistributionData,
 } from '@/features/reports/utils/chartBuilders'
 import { DEFAULT_DATE_RANGE, formatDateRangeLabel, getDefaultCustomFromDate, getDefaultCustomToDate } from '@/Components/dateFilter'
-import { extractBranchOptions, extractZoneOptions, extractStateOptions } from '@/features/reports/utils/reportFilterEngine'
 import { printElement, shareElementAsImage } from '@/features/reports/utils/captureUtils'
 import { downloadMultiSheetWorkbook, shareCsvFile, toExportRows } from '@/features/reports/utils/excelExport'
 import { buildMisCardMetrics, groupTableRowsFromBundle } from '@/features/reports/utils/misCardMetrics'
@@ -73,6 +72,12 @@ const DATE_RANGE_OPTIONS: DateRangeOption[] = [
   'Custom Range',
 ]
 
+/**
+ * Description of what this function does: Reads the user's stored date range choice from sessionStorage.
+ * Inputs: none
+ * Outputs: DateRangeOption
+ * Dependencies: DATE_STORAGE_KEY, DATE_RANGE_OPTIONS
+ */
 const readStoredDateRange = (): DateRangeOption => {
   const stored = sessionStorage.getItem(DATE_STORAGE_KEY)
   return DATE_RANGE_OPTIONS.includes(stored as DateRangeOption)
@@ -80,12 +85,24 @@ const readStoredDateRange = (): DateRangeOption => {
     : DEFAULT_DATE_RANGE
 }
 
+/**
+ * Description of what this function does: Reads stored custom from date from sessionStorage.
+ * Inputs: none
+ * Outputs: string (YYYY-MM-DD)
+ * Dependencies: CUSTOM_FROM_STORAGE_KEY, getDefaultCustomFromDate
+ */
 const readStoredCustomFromDate = (): string => {
   const stored = sessionStorage.getItem(CUSTOM_FROM_STORAGE_KEY)
   if (stored && !Number.isNaN(new Date(stored).getTime())) return stored
   return getDefaultCustomFromDate()
 }
 
+/**
+ * Description of what this function does: Reads stored custom to date from sessionStorage.
+ * Inputs: none
+ * Outputs: string (YYYY-MM-DD)
+ * Dependencies: CUSTOM_TO_STORAGE_KEY, getDefaultCustomToDate
+ */
 const readStoredCustomToDate = (): string => {
   const stored = sessionStorage.getItem(CUSTOM_TO_STORAGE_KEY)
   if (stored && !Number.isNaN(new Date(stored).getTime())) return stored
@@ -94,17 +111,23 @@ const readStoredCustomToDate = (): string => {
 
 const CATEGORY_CARDS: CategoryCardConfig[] = [
   { id: 'recovery', title: 'Recovery MIS', tableKey: 'payments', icon: <Wallet className="h-5 w-5 text-[var(--color-navy)]" />, accent: 'bg-[var(--color-navy)]', iconBg: 'bg-[var(--color-ice)]' },
-  { id: 'bucket', title: 'Bucket-wise MIS', tableKey: 'strategies', icon: <Target className="h-5 w-5 text-[var(--color-gold)]" />, accent: 'bg-[var(--color-gold)]', iconBg: 'bg-[rgba(206,155,1,0.12)]' },
+  { id: 'payment', title: 'Payment MIS', tableKey: 'payments', icon: <Wallet className="h-5 w-5 text-[#0F766E]" />, accent: 'bg-[#0F766E]', iconBg: 'bg-[#ECFEF5]' },
+  { id: 'bucket', title: 'Bucket-wise MIS', tableKey: 'dpd-cases', icon: <Target className="h-5 w-5 text-[var(--color-gold)]" />, accent: 'bg-[var(--color-gold)]', iconBg: 'bg-[rgba(206,155,1,0.12)]' },
   { id: 'digital', title: 'Digital Recovery', tableKey: 'payments', icon: <Smartphone className="h-5 w-5 text-[#8D6B19]" />, accent: 'bg-[#8D6B19]', iconBg: 'bg-[#FDF9F0]' },
-  { id: 'payment', title: 'Payment MIS', tableKey: 'payments', icon: <Wallet className="h-5 w-5 text-[#2C3E50]" />, accent: 'bg-[#2C3E50]', iconBg: 'bg-[#F4F6F7]' },
   { id: 'strategy', title: 'Strategy Reports', tableKey: 'strategies', icon: <Share2 className="h-5 w-5 text-[#5B2C6F]" />, accent: 'bg-[#5B2C6F]', iconBg: 'bg-[#F4ECF7]' },
-  { id: 'comm', title: 'Communication Reports', tableKey: 'communications', icon: <Search className="h-5 w-5 text-[#D35400]" />, accent: 'bg-[#D35400]', iconBg: 'bg-[#FDEDEC]' },
+  { id: 'comm', title: 'Communication Reports', tableKey: 'communication_logs', icon: <Search className="h-5 w-5 text-[#D35400]" />, accent: 'bg-[#D35400]', iconBg: 'bg-[#FDEDEC]' },
   { id: 'dpdCases', title: 'DPD Cases', tableKey: 'dpd-cases', icon: <TrendingUp className="h-5 w-5 text-[#117A65]" />, accent: 'bg-[#117A65]', iconBg: 'bg-[#E8F8F5]' },
-  { id: 'bounceAnalysis', title: 'Bounce Analysis', tableKey: 'payments', icon: <ArrowUpDown className="h-5 w-5 text-[#B03A2E]" />, accent: 'bg-[#B03A2E]', iconBg: 'bg-[#FDECEA]' },
+  { id: 'bounceAnalysis', title: 'Bounce Analysis', tableKey: 'bounce-cases', icon: <ArrowUpDown className="h-5 w-5 text-[#B03A2E]" />, accent: 'bg-[#B03A2E]', iconBg: 'bg-[#FDECEA]' },
 ]
 
 const TABS = ['Overview', 'Detailed Reports'] as const
 
+/**
+ * Description of what this function does: Renders the complete Reports page.
+ * Inputs: none
+ * Outputs: ReactElement
+ * Dependencies: useReports, CategoryCards, FiltersPanel, useQuery
+ */
 export const ReportsPage: React.FC = () => {
   const params = useParams()
   const navigate = useNavigate()
@@ -163,61 +186,73 @@ export const ReportsPage: React.FC = () => {
 
   const { data: rawTableBundle, isFetching: isLibraryLoading, isError: isLibraryError, refetch: refetchLibrary } = useQuery({
     queryKey: ['reportTableBundle', REPORT_LIBRARY_FETCH_LIMIT],
-    queryFn: () => fetchReportTableBundle(REPORT_LIBRARY_FETCH_LIMIT, ['branches', 'dpd-cases', 'strategies', 'pre-emi-cases', 'bounce-cases', 'payments', 'communications']),
+    queryFn: () => fetchReportTableBundle(REPORT_LIBRARY_FETCH_LIMIT, ['branches', 'dpd-cases', 'strategies', 'strategy-execution-log', 'bounce-cases', 'payments', 'communication_logs', 'ptps', 'agents']),
   })
 
   const tableBundle = rawTableBundle ?? EMPTY_BUNDLE()
-
-
-  const branchOptions = useMemo(() => extractBranchOptions(tableBundle ?? ({} as any)), [tableBundle])
-  useEffect(() => {
-    // Debug: log received bundle to help diagnose missing branches/states
-    // Remove this after debugging
-    // eslint-disable-next-line no-console
-    console.debug('ReportsPage: rawTableBundle', rawTableBundle)
-    // eslint-disable-next-line no-console
-    console.debug('ReportsPage: derived branchOptions', branchOptions)
-  }, [rawTableBundle, branchOptions])
-
-  const zoneOptions = useMemo(() => extractZoneOptions(tableBundle ?? ({} as any)), [tableBundle])
-
-  const stateOptions = useMemo(() => extractStateOptions(tableBundle ?? ({} as any)).filter(s => {
-    if (!branchFilter && !zoneFilter) return true
-    const normalize = (v?: string) => (v ?? '').toString().trim().toLowerCase()
-    return tableBundle?.['dpd-cases']?.some((row: any) => {
-      const rowState = safeToString(row.state).trim()
-      const rowBranch = getBranchName(row)
-      const rowZone = safeToString(row.zone || row.zone_code).trim()
-      if (!rowState) return false
-      if (branchFilter && normalize(rowBranch) !== normalize(branchFilter)) return false
-      if (zoneFilter && normalize(rowZone) !== normalize(zoneFilter)) return false
-      return normalize(rowState) === normalize(s)
-    })
-  }), [tableBundle, branchFilter, zoneFilter])
-
-  // Automatically reset filters if the selected value is no longer in the filtered options list
-  useMemo(() => {
-    if (branchFilter && !branchOptions.includes(branchFilter)) {
-      setBranchFilter('')
-    }
-  }, [branchOptions, branchFilter])
-
-  useMemo(() => {
-    if (zoneFilter && !zoneOptions.includes(zoneFilter)) {
-      setZoneFilter('')
-    }
-  }, [zoneOptions, zoneFilter])
-
-  useMemo(() => {
-    if (stateFilter && !stateOptions.includes(stateFilter)) {
-      setStateFilter('')
-    }
-  }, [stateOptions, stateFilter])
+  const normalizeFilterValue = (value?: string) => (value ?? '').toString().trim().toLowerCase()
 
   const dateFilteredBundle = useMemo(
     () => filterBundleByDateRange(tableBundle, dateRange, customFromDate, customToDate),
     [tableBundle, dateRange, customFromDate, customToDate],
   )
+
+  const branchOptions = useMemo(() => {
+    const values = new Set<string>()
+    dateFilteredBundle.branches.forEach((row: any) => {
+      const branch = getBranchName(row)
+      const rowZone = safeToString(row.zone_code || row.zone).trim()
+      const rowState = safeToString(row.state || row.region_code).trim()
+      if (zoneFilter && rowZone && normalizeFilterValue(rowZone) !== normalizeFilterValue(zoneFilter)) return
+      if (stateFilter && rowState && normalizeFilterValue(rowState) !== normalizeFilterValue(stateFilter)) return
+      if (branch) values.add(branch)
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [dateFilteredBundle, zoneFilter, stateFilter])
+
+  const zoneOptions = useMemo(() => {
+    const values = new Set<string>()
+    dateFilteredBundle.branches.forEach((row: any) => {
+      const branch = getBranchName(row)
+      const rowZone = safeToString(row.zone_code || row.zone).trim()
+      const rowState = safeToString(row.state || row.region_code).trim()
+      if (branchFilter && branch && normalizeFilterValue(branch) !== normalizeFilterValue(branchFilter)) return
+      if (stateFilter && rowState && normalizeFilterValue(rowState) !== normalizeFilterValue(stateFilter)) return
+      if (rowZone) values.add(rowZone)
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [dateFilteredBundle, branchFilter, stateFilter])
+
+  const stateOptions = useMemo(() => {
+    const values = new Set<string>()
+    dateFilteredBundle.branches.forEach((row: any) => {
+      const branch = getBranchName(row)
+      const rowZone = safeToString(row.zone_code || row.zone).trim()
+      const rowState = safeToString(row.state || row.region_code).trim()
+      if (branchFilter && branch && normalizeFilterValue(branch) !== normalizeFilterValue(branchFilter)) return
+      if (zoneFilter && rowZone && normalizeFilterValue(rowZone) !== normalizeFilterValue(zoneFilter)) return
+      if (rowState) values.add(rowState)
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [dateFilteredBundle, branchFilter, zoneFilter])
+
+  useEffect(() => {
+    if (branchFilter && !branchOptions.includes(branchFilter)) {
+      setBranchFilter('')
+    }
+  }, [branchFilter, branchOptions])
+
+  useEffect(() => {
+    if (zoneFilter && !zoneOptions.includes(zoneFilter)) {
+      setZoneFilter('')
+    }
+  }, [zoneFilter, zoneOptions])
+
+  useEffect(() => {
+    if (stateFilter && !stateOptions.includes(stateFilter)) {
+      setStateFilter('')
+    }
+  }, [stateFilter, stateOptions])
 
   const locationFilteredBundle = useMemo(
     () => filterBundleByBranchZone(dateFilteredBundle, branchFilter, zoneFilter, stateFilter),
@@ -298,9 +333,9 @@ export const ReportsPage: React.FC = () => {
     () => buildMisCardMetrics(
       {
         recovery: 'Recovery MIS',
+        payment: 'Payment MIS',
         bucket: 'Bucket-wise MIS',
         digital: 'Digital Recovery',
-        payment: 'Payment MIS',
         strategy: 'Strategy Reports',
         comm: 'Communication Reports',
         bounce: 'Bounce Analysis',
@@ -325,6 +360,12 @@ export const ReportsPage: React.FC = () => {
   const branchCaseTrend = useMemo(() => buildBranchCaseTrend(chartReports), [chartReports])
   const communicationFunnel = useMemo(() => buildCommunicationFunnel(chartReports), [chartReports])
 
+  /**
+   * Description of what this function does: Resets all filter state back to defaults.
+   * Inputs: none
+   * Outputs: void
+   * Dependencies: setDateRange, setCustomFromDate, setCustomToDate, setBranchFilter, setZoneFilter, setStateFilter, setSearch, setSelectedCategory, setStatusFilter, setSortOrder, setPage
+   */
   const resetAllFilters = () => {
     setDateRange(DEFAULT_DATE_RANGE)
     setCustomFromDate(getDefaultCustomFromDate())
@@ -339,6 +380,12 @@ export const ReportsPage: React.FC = () => {
     setPage(1)
   }
 
+  /**
+   * Description of what this function does: Navigates to a specific report table and updates active table state.
+   * Inputs: table: ReportTableKey
+   * Outputs: void
+   * Dependencies: navigate, setActiveTable, setPage, setSelectedCategory
+   */
   const selectReportTable = (table: ReportTableKey) => {
     setSelectedCategory('')
     navigate(`/reports/${table}`)
@@ -346,6 +393,12 @@ export const ReportsPage: React.FC = () => {
     setPage(1)
   }
 
+  /**
+   * Description of what this function does: Toggles a category card filter on/off in the overview view.
+   * Inputs: cat: CategoryCardConfig
+   * Outputs: void
+   * Dependencies: setSelectedCategory, setStatusFilter, setPage
+   */
   const selectCategory = (cat: CategoryCardConfig) => {
     const same = selectedCategory === cat.title
     setSelectedCategory(same ? '' : cat.title)
@@ -355,6 +408,12 @@ export const ReportsPage: React.FC = () => {
     // Keep the user on the current tab (usually Overview) and apply the filter in-place.
   }
 
+  /**
+   * Description of what this function does: Clears all filters from state and sessionStorage and re-fetches all data.
+   * Inputs: none
+   * Outputs: Promise<void>
+   * Dependencies: resetAllFilters, refetchLibrary, refetch, toast
+   */
   const refreshPageContent = async () => {
     resetAllFilters()
     sessionStorage.setItem(DATE_STORAGE_KEY, DEFAULT_DATE_RANGE)
@@ -369,6 +428,12 @@ export const ReportsPage: React.FC = () => {
 
   const dateRangeLabel = formatDateRangeLabel(dateRange, customFromDate, customToDate)
 
+  /**
+   * Description of what this function does: Returns the DOM element and title to use for the current print/share action.
+   * Inputs: none
+   * Outputs: { element: HTMLElement; title: string } | null
+   * Dependencies: activeTab, overviewAnalyticsRef, detailedReportsRef, dateRangeLabel, activeTable
+   */
   const getPrintTarget = (): { element: HTMLElement; title: string } | null => {
     if (activeTab === 'Overview' && overviewAnalyticsRef.current) {
       return { element: overviewAnalyticsRef.current, title: `Reports Overview — ${dateRangeLabel}` }
@@ -379,6 +444,12 @@ export const ReportsPage: React.FC = () => {
     return null
   }
 
+  /**
+   * Description of what this function does: Builds a plain-text summary of active filters and page metadata for sharing.
+   * Inputs: none
+   * Outputs: string
+   * Dependencies: activeTab, activeTable, dateRangeLabel, branchFilter, zoneFilter, stateFilter, selectedCategory, page, totalPages, filteredRows
+   */
   const buildShareText = () => {
     if (activeTab === 'Detailed Reports') {
       return [
@@ -403,12 +474,24 @@ export const ReportsPage: React.FC = () => {
     ].join('\n')
   }
 
+  /**
+   * Description of what this function does: Resets all filters and refreshes the active detailed table data.
+   * Inputs: none
+   * Outputs: Promise<void>
+   * Dependencies: resetAllFilters, refetch, toast
+   */
   const resetDetailedFilters = async () => {
     resetAllFilters()
     await refetch()
     toast.success('Filters reset & table refreshed')
   }
 
+  /**
+   * Description of what this function does: Constructs a single-sheet Excel export for the active detailed table.
+   * Inputs: none
+   * Outputs: Array<{ name: string; rows: Record<string, string>[] }>
+   * Dependencies: activeTable, filteredSourceRows, toExportRows
+   */
   const buildDetailedExcelSheets = () => [{
     name: prettyTitle(activeTable).slice(0, 31),
     rows: [
@@ -417,6 +500,12 @@ export const ReportsPage: React.FC = () => {
     ],
   }]
 
+  /**
+   * Description of what this function does: Constructs a multi-sheet Excel export covering all available report tables.
+   * Inputs: none
+   * Outputs: Array<{ name: string; rows: Record<string, string>[] }>
+   * Dependencies: syncBundle, dateRangeLabel, branchFilter, zoneFilter, stateFilter, selectedCategory, filteredRows, toExportRows
+   */
   const buildExportSheets = () => {
     type ExportSheet = {
       name: string
@@ -436,21 +525,17 @@ export const ReportsPage: React.FC = () => {
       },
     ].filter((sheet) => sheet.rows.length > 0)
 
+    // agents removed — table no longer exists in the new schema.
     const tableKeys: ReportTableKey[] = [
       'strategies',
-      'strategy-approval-log',
-      'strategy-steps',
       'strategy-execution-log',
-      'agents',
-      'pre-emi-cases',
       'dpd-cases',
       'bounce-cases',
       'payments',
-      'communications',
-      'allocations',
+      'communication_logs',
       'ptps',
-      'audit-logs',
       'branches',
+      'agents',
     ]
 
     tableKeys.forEach((key) => {
@@ -466,6 +551,12 @@ export const ReportsPage: React.FC = () => {
     return sheets
   }
 
+  /**
+   * Description of what this function does: Handles print action; downloads Excel on Detailed tab, opens print dialog on Overview.
+   * Inputs: none (React event handler)
+   * Outputs: Promise<void>
+   * Dependencies: activeTab, downloadMultiSheetWorkbook, buildDetailedExcelSheets, getPrintTarget, printElement, toast
+   */
   const handlePrint = async () => {
     if (activeTab === 'Detailed Reports') {
       try {
@@ -489,6 +580,12 @@ export const ReportsPage: React.FC = () => {
     toast.success('Print dialog opened')
   }
 
+  /**
+   * Description of what this function does: Handles share option selection by sharing CSV or screenshot depending on active tab.
+   * Inputs: option: ShareOption
+   * Outputs: Promise<void>
+   * Dependencies: activeTab, shareCsvFile, shareElementAsImage, buildDetailedExcelSheets, buildShareText, getPrintTarget, toast
+   */
   const handleShareSelect = async (option: ShareOption) => {
     setShareProcessing(true)
     try {
@@ -517,6 +614,12 @@ export const ReportsPage: React.FC = () => {
     }
   }
 
+  /**
+   * Description of what this function does: Triggers Excel download for the current tab (detailed or overview).
+   * Inputs: none (React event handler)
+   * Outputs: Promise<void>
+   * Dependencies: activeTab, downloadMultiSheetWorkbook, buildDetailedExcelSheets, buildExportSheets, toast
+   */
   const handleExport = async () => {
     try {
       if (activeTab === 'Detailed Reports') {
@@ -530,15 +633,20 @@ export const ReportsPage: React.FC = () => {
     }
   }
 
+  /**
+   * Description of what this function does: Renders the four summary KPI cards at the top of the Overview tab.
+   * Inputs: none
+   * Outputs: JSX.Element
+   * Dependencies: syncBundle, branchOptions, zoneOptions, safeToString
+   */
   const renderKpis = () => (
     <div className="reports-kpi-grid">
       {[
-        { label: 'TOTAL RECORDS', value: ((syncBundle['pre-emi-cases']?.length || 0) + (syncBundle['dpd-cases']?.length || 0) + (syncBundle['bounce-cases']?.length || 0)).toLocaleString('en-IN'), diff: 'Total Cases in Bundle', dir: 'up' as const, icon: <Wallet className="h-5 w-5 text-[var(--color-navy)]" /> },
+        { label: 'TOTAL RECORDS', value: ((syncBundle['dpd-cases']?.length || 0) + (syncBundle['bounce-cases']?.length || 0)).toLocaleString('en-IN'), diff: 'Total Cases in Bundle', dir: 'up' as const, icon: <Wallet className="h-5 w-5 text-[var(--color-navy)]" /> },
         { label: 'TOTAL BRANCH', value: branchOptions.length.toLocaleString('en-IN'), diff: 'Available Branches', dir: 'up' as const, icon: <Smartphone className="h-5 w-5 text-[var(--color-navy)]" /> },
         { label: 'TOTAL ZONE', value: zoneOptions.length.toLocaleString('en-IN'), diff: 'Available Zones', dir: 'up' as const, icon: <Target className="h-5 w-5 text-[var(--color-navy)]" /> },
         {
           label: 'ACTIVE CASES', value: (
-            (syncBundle['pre-emi-cases'] || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'pending_strategy').length +
             (syncBundle['dpd-cases'] || []).filter((c: any) => safeToString(c.loan_status).toLowerCase() === 'active').length +
             (syncBundle['bounce-cases'] || []).filter((c: any) => safeToString(c.status).toLowerCase() === 'pending_strategy' || safeToString(c.status).toLowerCase() === 'pending').length
           ).toLocaleString('en-IN'), diff: 'Cases with active status', dir: 'up' as const, icon: <CheckCircle className="h-5 w-5 text-[var(--color-navy)]" />
@@ -559,6 +667,12 @@ export const ReportsPage: React.FC = () => {
     </div>
   )
 
+  /**
+   * Description of what this function does: Renders the tab switcher and Print/Share/Export action buttons toolbar.
+   * Inputs: none
+   * Outputs: JSX.Element
+   * Dependencies: TABS, activeTab, handlePrint, handleExport, setShareOpen
+   */
   const renderTabsAndActions = () => (
     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
       <div className="hide-scrollbar flex gap-1 overflow-x-auto rounded-xl border border-[rgba(5,0,88,0.08)] bg-[#F8FAFC] p-1">
@@ -591,6 +705,12 @@ export const ReportsPage: React.FC = () => {
     </div>
   )
 
+  /**
+   * Description of what this function does: Renders the payment volume trend and branch/communication chart pair.
+   * Inputs: none
+   * Outputs: JSX.Element
+   * Dependencies: paymentVolumeTrend, branchCaseTrend, communicationFunnel chart components
+   */
   const renderTrends = () => (
     <>
       <div className="w-full">
@@ -670,24 +790,7 @@ export const ReportsPage: React.FC = () => {
             <div className="mb-6">
               <h4 className="mb-2 text-[12px] font-bold uppercase text-[var(--color-ink-muted)]">📋 Cases</h4>
               <div className="flex flex-wrap gap-2">
-                {['pre-emi-cases', 'dpd-cases', 'bounce-cases'].map((table) => (
-                  <button
-                    key={table}
-                    type="button"
-                    onClick={() => selectReportTable(table as ReportTableKey)}
-                    className={`rounded-lg border px-4 py-2 text-left transition-all ${activeTable === table ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-md' : 'border-[rgba(5,0,88,0.12)] bg-white text-[var(--color-navy)] hover:bg-[var(--color-ice)]'}`}
-                  >
-                    <div className="text-[12px] font-bold">{prettyTitle(table)}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* LOGS GROUP */}
-            <div className="mb-6">
-              <h4 className="mb-2 text-[12px] font-bold uppercase text-[var(--color-ink-muted)]">📝 Logs</h4>
-              <div className="flex flex-wrap gap-2">
-                {['audit-logs', 'strategy-approval-log'].map((table) => (
+                {['dpd-cases', 'bounce-cases'].map((table) => (
                   <button
                     key={table}
                     type="button"
@@ -704,7 +807,7 @@ export const ReportsPage: React.FC = () => {
             <div>
               <h4 className="mb-2 text-[12px] font-bold uppercase text-[var(--color-ink-muted)]">📊 Other Tables</h4>
               <div className="flex flex-wrap gap-2">
-                {reportTables.filter(t => !['pre-emi-cases', 'dpd-cases', 'bounce-cases', 'audit-logs', 'strategy-approval-log'].includes(t)).map((table) => (
+                {reportTables.filter(t => !['dpd-cases', 'bounce-cases', 'communication_logs'].includes(t)).map((table) => (
                   <button
                     key={table}
                     type="button"

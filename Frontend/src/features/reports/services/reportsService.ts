@@ -1,32 +1,35 @@
 // This service handles all API calls related to report tables. 
 // It requests paginated data from the appropriate backend endpoint and returns the processed response for use in the UI.
 
-
 import { fetchWithFallback, unwrap } from '@/lib/apiClient'
 import type { DcspPagedResult, DcspTableRow } from '../types'
 
-/** Maps URL-friendly table keys to their backend endpoint segment. */
+/** Maps URL-friendly table keys to their backend endpoint segment.
+ *  Note: 'communication_logs' endpoint is backed by col_db.communication_logs in the new schema.
+ *  agents endpoint removed — agents table no longer exists in the schema.
+ */
 const ENDPOINTS = {
   strategies: 'strategies',
-  'strategy-approval-log': 'strategy-approval-log',
-  'strategy-steps': 'strategy-steps',
   'strategy-execution-log': 'strategy-execution-log',
-  agents: 'agents',
-  'pre-emi-cases': 'pre-emi-cases',
   'dpd-cases': 'dpd-cases',
   'bounce-cases': 'bounce-cases',
   // cases: 'cases',
   payments: 'payments',
-  communications: 'communications',
-  allocations: 'allocations',
+  communication_logs: 'communication_logs',
   ptps: 'ptps',
-  'audit-logs': 'audit-logs',
   branches: 'branches',
+  agents: 'agents',
 } as const
 
 export type ReportEndpointKey = keyof typeof ENDPOINTS
 
 export const reportsService = {
+  /**
+   * Description of what this function does: Requests paginated items for a given table from reports controller.
+   * Inputs: tableKey: ReportEndpointKey, page?: number, limit?: number
+   * Outputs: Promise<DcspPagedResult<DcspTableRow>>
+   * Dependencies: fetchWithFallback, unwrap
+   */
   async fetchTable(
     tableKey: ReportEndpointKey,
     page = 1,

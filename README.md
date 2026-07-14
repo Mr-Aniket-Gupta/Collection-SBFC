@@ -1,22 +1,26 @@
-# SBFC Dashboard
+# SBFC Digital Collection Strategy Platform
 
-This repository contains a full-stack dashboard for SBFC with:
+Full-stack enterprise dashboard for managing digital loan collection operations.
 
-- `Frontend` - React + TypeScript + Vite
-- `Backend` - ASP.NET Core Web API + PostgreSQL
+- **Frontend** — React + TypeScript + Vite
+- **Backend** — ASP.NET Core Web API (.NET 8)
+- **Database** — PostgreSQL (schemas: `auth`, `col_db`)
 
-The app is centered around two products:
+The app has two main feature areas:
 
-- `Analytics` - executive summary, KPI cards, performance charts, contributor views
-- `Reports` - table explorer, filters, charts, exports, and detailed drilldowns
+- **Analytics** — executive KPI cards, performance radar, strategy charts, agent/branch contributors
+- **Reports** — paginated table explorer, date/branch/zone/state filters, multi-sheet Excel export, and chart drilldowns
 
 ## Project Structure
 
 ```text
 SBFC/
-  Backend/
-  Frontend/
-  Data/
+  Backend/          ← ASP.NET Core Web API
+  Frontend/         ← React + TypeScript + Vite
+  Data/             ← ML / ETL scripts (excluded from app)
+  .github/          ← CI/CD workflows and agent instructions
+  CONNECTION.md     ← KPI, chart, filter and API mapping reference
+  README.md         ← This file
 ```
 
 ## Architecture
@@ -63,20 +67,13 @@ src/
     DashboardLayout.tsx
     Header/
     Sidebar/
-  Components/
-    ChartCard.tsx
-    ChartDataModal.tsx
-    Analytics/
-      KPICard.tsx
-      PageHeader.tsx
-      ProgressBar.tsx
   features/
     Analytics/
       pages/AnalyticsPage.tsx
       hooks/useAnalytics.ts
       services/analyticsService.ts
       types/analytics.types.ts
-      charts/
+      components/
         PerformanceRadar.tsx
         StrategyEffectiveness.tsx
         StrategyGapChart.tsx
@@ -90,7 +87,7 @@ src/
       hooks/useReports.ts
       services/reportsService.ts
       utils/
-      charts/
+      components/
 ```
 
 ## Frontend Pages
@@ -137,69 +134,54 @@ What it supports:
 
 ## Analytics Data Logic
 
-All analytics values are filter-aware and are computed from the current request filters:
+All analytics values are filter-aware and computed server-side with the selected filters applied:
 
-- `DateFilter`
-- `CustomFromDate`
-- `CustomToDate`
+- `DateFilter` / `CustomFromDate` / `CustomToDate`
 - `State`
-- `Branch`
-- `Zone`
+- `Branch` (matched against `col_db.branches.name`)
+- `Zone` (matched against `col_db.branches.zone_code`)
 
-### KPI formulas
+### KPI Formulas
 
-The KPI values come from these tables:
-
-- `cases`
-- `communications`
-- `ptps`
+All values are drawn from schema-qualified tables.
 
 #### Total Outstanding Principal
 
-- Table: `cases`
+- Table: `col_db.dpd_cases`
 - Column: `outstanding_principal`
-- Current value: `SUM(outstanding_principal)` for closed cases
-- Comparison value: `SUM(outstanding_principal)` for all filtered cases
+- Value: `SUM(outstanding_principal)` for cases where `loan_status IN ('closed','settled','resolved')`
+- Subtitle: total `SUM(outstanding_principal)` across all filtered cases
 
 #### Total Outstanding
 
-- Table: `cases`
-- Column: `outstanding_total`
-- Current value: `SUM(outstanding_total)` for closed cases
-- Comparison value: `SUM(outstanding_total)` for all filtered cases
+- Table: `col_db.dpd_cases`
+- Column: `total_outstanding`
+- Value: `SUM(total_outstanding)` for closed/settled/resolved cases
+- Subtitle: total `SUM(total_outstanding)` across all filtered cases
 
 #### Total Delivered
 
-- Table: `communications`
+- Table: `col_db.communication_logs`
 - Column: `status`
-- Current value: `COUNT(*) WHERE status = 'delivered'`
-- Comparison value: total communication rows in the filtered period
+- Value: `COUNT(*) WHERE status = 'delivered'`
+- Subtitle: total communication rows in the filtered period
 
 #### PTPs Honoured
 
-- Table: `ptps`
+- Table: `col_db.ptps`
 - Column: `honoured`
-- Current value: `COUNT(*) WHERE honoured = true`
-- Comparison value: total PTP rows in the filtered period
+- Value: `COUNT(*) WHERE honoured = true`
+- Subtitle: total PTP rows in the filtered period
 
-### Trend logic
+### Trend Logic
 
-Each KPI trend compares:
-
-- current filtered period
-- previous period of the same length
-
-Formula:
+Each KPI compares the current filtered period against the previous period of the same length:
 
 ```text
 trend % = ((current - previous) / previous) * 100
 ```
 
-Trend direction:
-
-- `up` if current > previous
-- `down` if current < previous
-- `neutral` if equal
+Trend direction: `up` if current > previous, `down` if current < previous, `neutral` if equal.
 
 ## API Endpoint Table
 
@@ -210,134 +192,109 @@ Trend direction:
 | `GET` | `/api/analytics/radar` | Radar metrics | `GetRadarAsync` |
 | `GET` | `/api/analytics/strategy-performance` | Strategy performance list | `GetStrategyPerformanceAsync` |
 | `GET` | `/api/analytics/communication-performance` | Hourly communication stats | `GetCommunicationPerformanceAsync` |
-| `GET` | `/api/analytics/channel-performance` | Journey/recovery efficiency split | `GetChannelPerformanceAsync` |
+| `GET` | `/api/analytics/channel-performance` | Product recovery split | `GetChannelPerformanceAsync` |
 | `GET` | `/api/analytics/bucket-distribution` | DPD bucket distribution | `GetBucketDistributionAsync` |
-| `GET` | `/api/reports/{tableKey}` | Report table data | Reports module |
+| `GET` | `/api/reports/payments` | Payment records | `ReportsController.GetPayments` |
+| `GET` | `/api/reports/communication_logs` | Communication logs | `ReportsController.GetCommunicationLogs` |
+| `GET` | `/api/reports/strategies` | Strategies | `ReportsController.GetStrategies` |
+| `GET` | `/api/reports/dpd-cases` | DPD cases | `ReportsController.GetDpdCases` |
+| `GET` | `/api/reports/bounce-cases` | Bounce cases | `ReportsController.GetBounceCases` |
+| `GET` | `/api/reports/pre-emi-cases` | Pre-EMI cases | `ReportsController.GetPreEmiCases` |
+| `GET` | `/api/reports/ptps` | PTPs | `ReportsController.GetPtps` |
+| `GET` | `/api/reports/branches` | Branch master data | `ReportsController.GetBranches` |
 
 ## Analytics Charts
 
 ### Performance Radar
 
-File:
-
-- [`Frontend/src/features/Analytics/charts/PerformanceRadar.tsx`](Frontend/src/features/Analytics/charts/PerformanceRadar.tsx)
+File: [`Frontend/src/features/Analytics/components/PerformanceRadar.tsx`](Frontend/src/features/Analytics/components/PerformanceRadar.tsx)
 
 Logic:
-
-- `Contact Rate = delivered communications / total communications * 100`
-- `Response Rate = responded / delivered communications * 100`
+- `Contact Rate = delivered / total communications * 100`
 - `PTP Success Rate = honoured PTPs / total PTPs * 100`
-- `Collection Rate = recovered payment amount / outstanding amount * 100`
+- `Collection Rate = successful payment amount / outstanding amount * 100`
 - `Payment Success Rate = successful payments / total payments * 100`
 - `Case Closure Rate = closed cases / total cases * 100`
 
 ### Strategy Effectiveness
 
-File:
-
-- [`Frontend/src/features/Analytics/charts/StrategyEffectiveness.tsx`](Frontend/src/features/Analytics/charts/StrategyEffectiveness.tsx)
+File: [`Frontend/src/features/Analytics/components/StrategyEffectiveness.tsx`](Frontend/src/features/Analytics/components/StrategyEffectiveness.tsx)
 
 Logic:
-
-- Data source: `strategies` joined with `cases`
+- Data source: `col_db.strategies` joined with `col_db.dpd_cases`
 - Formula: `closed cases for strategy / total cases for strategy * 100`
 
 ### Strategy Gap Chart
 
-File:
-
-- [`Frontend/src/features/Analytics/charts/StrategyGapChart.tsx`](Frontend/src/features/Analytics/charts/StrategyGapChart.tsx)
+File: [`Frontend/src/features/Analytics/components/StrategyGapChart.tsx`](Frontend/src/features/Analytics/components/StrategyGapChart.tsx)
 
 Logic:
-
 - Uses `strategyPerformance`
 - `achieved = percentage`
-- `target = target`
+- `target = dpd_range_to` (used as proxy target)
 - `gap = max(target - achieved, 0)`
 
 ### Hourly Call Distribution
 
-File:
-
-- [`Frontend/src/features/Analytics/charts/HourlyCallDistribution.tsx`](Frontend/src/features/Analytics/charts/HourlyCallDistribution.tsx)
+File: [`Frontend/src/features/Analytics/components/HourlyCallDistribution.tsx`](Frontend/src/features/Analytics/components/HourlyCallDistribution.tsx)
 
 Logic:
-
-- Table: `communications`
-- Group by hour from `created_at`
-- `calls = COUNT(*)`
-- `responses = COUNT(*) WHERE status = 'delivered'`
+- Table: `col_db.communication_logs`
+- Grouped by hour of `created_on`
+- `calls = COUNT(*)`, `responses = COUNT(*) WHERE status = 'delivered'`
 
 ### Communication Efficiency
 
-File:
-
-- [`Frontend/src/features/Analytics/charts/CommunicationEfficiencyChart.tsx`](Frontend/src/features/Analytics/charts/CommunicationEfficiencyChart.tsx)
+File: [`Frontend/src/features/Analytics/components/CommunicationEfficiencyChart.tsx`](Frontend/src/features/Analytics/components/CommunicationEfficiencyChart.tsx)
 
 Logic:
-
-- Uses the hourly communication dataset
+- Uses hourly communication dataset
 - `deliveryRate = responses / calls * 100`
 
 ### Branch Contribution Chart
 
-File:
-
-- [`Frontend/src/features/Analytics/charts/BranchContributionChart.tsx`](Frontend/src/features/Analytics/charts/BranchContributionChart.tsx)
+File: [`Frontend/src/features/Analytics/components/BranchContributionChart.tsx`](Frontend/src/features/Analytics/components/BranchContributionChart.tsx)
 
 Logic:
-
-- Table: `cases`
-- Group by `branch`
-- Measure: `SUM(outstanding_total)`
+- Table: `col_db.dpd_cases`
+- Grouped by `branch_name`
+- Measure: `SUM(total_outstanding)`
 
 ### Agent Contribution Treemap
 
-File:
-
-- [`Frontend/src/features/Analytics/charts/AgentContributionChart.tsx`](Frontend/src/features/Analytics/charts/AgentContributionChart.tsx)
+File: [`Frontend/src/features/Analytics/components/AgentContributionChart.tsx`](Frontend/src/features/Analytics/components/AgentContributionChart.tsx)
 
 Logic:
-
-- Tables: `cases` + `agents`
-- `allocatedCases = COUNT(cases)`
-- `resolvedCases = COUNT(cases WHERE status IN ('closed','settled','resolved'))`
-- `recoveredAmount = SUM(outstanding_total)` for resolved cases
-- Treemap size uses `allocatedCases`
-- Color reflects resolution strength
+- Tables: `col_db.dpd_cases` + `col_db.ptps` + `auth.users`
+- Agent identity resolved via `ptps.agent_id → auth.users.agent_id`
+- `allocatedCases = COUNT(dpd_cases)`
+- `resolvedCases = COUNT(cases WHERE loan_status IN ('closed','settled','resolved'))`
+- `recoveredAmount = SUM(total_outstanding)` for resolved cases
 
 ### Portfolio Risk Distribution
 
-File:
-
-- [`Frontend/src/features/Analytics/charts/ProductDistributionChart.tsx`](Frontend/src/features/Analytics/charts/ProductDistributionChart.tsx)
+File: [`Frontend/src/features/Analytics/components/ProductDistributionChart.tsx`](Frontend/src/features/Analytics/components/ProductDistributionChart.tsx)
 
 Logic:
+- Table: `col_db.dpd_cases`
+- Grouped by `bucket` column
 
-- Table: `cases`
-- Column: `dpd`
-- Bucket rules:
-  - `0-30`
-  - `31-60`
-  - `61-90`
-  - `90+`
-
-## Data Source -> Formula -> Chart Matrix
+## Data Source → Formula → Chart Matrix
 
 | Data source | Formula / logic | Chart / UI |
 |---|---|---|
-| `cases.outstanding_principal` | `SUM(outstanding_principal)` for closed cases vs all filtered cases | KPI: `Total Outstanding Principal` |
-| `cases.outstanding_total` | `SUM(outstanding_total)` for closed cases vs all filtered cases | KPI: `Total Outstanding` |
-| `communications.status` | `COUNT(status = 'delivered') / total communication rows` | KPI: `Total Delivered` |
-| `ptps.honoured` | `COUNT(honoured = true) / total PTP rows` | KPI: `PTPs Honoured` |
-| `communications.created_at` | Group by hour; `calls = COUNT(*)`, `responses = delivered count` | `Hourly Call Distribution` |
-| `communications` + `ptps` + `payments` + `cases` | Rate formulas per metric | `Performance Radar` |
-| `strategies` + `cases` | `closed cases / total cases * 100` | `Strategy Effectiveness` |
-| `strategies` + `cases` | `achieved`, `target`, `gap = max(target - achieved, 0)` | `Strategy Gap Chart` |
-| `cases.branch` | `SUM(outstanding_total)` grouped by branch | `Branch Contribution Chart` |
-| `cases` + `agents` | `allocatedCases`, `resolvedCases`, `recoveredAmount` | `Agent Contribution Treemap` |
-| `cases.dpd` | Risk bucket classification by DPD ranges | `Portfolio Risk Distribution` |
-| `communications` | `deliveryRate = delivered / sent * 100` | `Communication Efficiency` |
+| `col_db.dpd_cases.outstanding_principal` | `SUM(outstanding_principal)` for closed cases vs all filtered | KPI: `Total Outstanding Principal` |
+| `col_db.dpd_cases.total_outstanding` | `SUM(total_outstanding)` for closed cases vs all filtered | KPI: `Total Outstanding` |
+| `col_db.communication_logs.status` | `COUNT(status='delivered') / total rows` | KPI: `Total Delivered` |
+| `col_db.ptps.honoured` | `COUNT(honoured=true) / total rows` | KPI: `PTPs Honoured` |
+| `col_db.communication_logs.created_on` | Group by hour; `calls=COUNT(*)`, `responses=delivered count` | `Hourly Call Distribution` |
+| `col_db.communication_logs` + `col_db.ptps` + `col_db.payments` + `col_db.dpd_cases` | Rate formulas per metric | `Performance Radar` |
+| `col_db.strategies` + `col_db.dpd_cases` | `closed cases / total cases * 100` | `Strategy Effectiveness` |
+| `col_db.strategies` + `col_db.dpd_cases` | `achieved`, `target`, `gap = max(target - achieved, 0)` | `Strategy Gap Chart` |
+| `col_db.dpd_cases.branch_name` | `SUM(total_outstanding)` grouped by branch | `Branch Contribution Chart` |
+| `col_db.dpd_cases` + `col_db.ptps` + `auth.users` | `allocatedCases`, `resolvedCases`, `recoveredAmount` | `Agent Contribution Treemap` |
+| `col_db.dpd_cases.bucket` | Grouped by bucket label | `Portfolio Risk Distribution` |
+| `col_db.communication_logs` | `deliveryRate = delivered / sent * 100` | `Communication Efficiency` |
 
 ## Backend API Endpoints
 
@@ -357,35 +314,49 @@ Reports:
 
 ## Database Tables Used
 
-- `cases`
-- `communications`
-- `ptps`
-- `strategies`
-- `agents`
-- `payments`
+| Schema | Table | Description |
+|---|---|---|
+| `col_db` | `dpd_cases` | DPD loan case records with financials and status |
+| `col_db` | `bounce_cases` | Bounce/NACH failure cases |
+| `col_db` | `pre_emi_cases` | Pre-EMI pipeline cases |
+| `col_db` | `strategies` | Recovery strategy definitions |
+| `col_db` | `strategy_steps` | Step definitions per strategy |
+| `col_db` | `strategy_approval_log` | Approval audit trail for strategies |
+| `col_db` | `strategy_execution_log` | Execution log per case+strategy |
+| `col_db` | `communication_logs` | All channel communications (SMS/WhatsApp/email) |
+| `col_db` | `payments` | Payment records linked by `strategy_id` |
+| `col_db` | `ptps` | Promise-To-Pay commitments |
+| `col_db` | `branches` | Branch master with zone, region, state |
+| `auth` | `users` | Agent identity (replaces old `col_db.agents`) |
 
 ## Local Setup
 
+### Prerequisites
+
+- .NET 8 SDK
+- Node.js 20+
+- PostgreSQL 14+ running locally
+  - Host: `localhost`, Port: `5432`
+  - Database: `digital_collection_platform`
+  - User/Password: `postgres`/`postgres`
+
 ### Backend
 
-1. Open the `Backend` folder.
-2. Ensure PostgreSQL is running.
-3. Update `appsettings.json` if needed.
-4. Run:
-
 ```bash
+cd Backend
+dotnet restore
 dotnet run
+# API available at http://localhost:5166
+# Swagger at http://localhost:5166/swagger
 ```
 
 ### Frontend
 
-1. Open the `Frontend` folder.
-2. Install dependencies if needed.
-3. Run:
-
 ```bash
+cd Frontend
 npm install
 npm run dev
+# App available at http://localhost:5173
 ```
 
 ## Notes

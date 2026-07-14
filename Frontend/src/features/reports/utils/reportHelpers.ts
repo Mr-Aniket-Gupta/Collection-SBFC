@@ -11,7 +11,7 @@ export function makeReportRow(row: DcspTableRow, category: string, index: number
   const id =
     pickValue(row, [
       'report_id', 'id', 'strategy_id', 'case_id', 'payment_id', 'communication_id',
-      'agent_id', 'allocation_id', 'ptp_id', 'audit_id',
+      'agent_id', 'ptp_id', 'audit_id',
     ]) || `${category.replace(/\s+/g, '-').toUpperCase()}-${index + 1}`
 
   const name =
@@ -26,7 +26,7 @@ export function makeReportRow(row: DcspTableRow, category: string, index: number
 
   const rawDate = pickValue(row, ['created_at', 'createdDate', 'created_date', 'updated_at', 'payment_date', 'ptp_date'])
   const status =
-    pickValue(row, ['status', 'payment_status', 'response_status', 'allocation_status', 'honoured', 'action']) ||
+    pickValue(row, ['status', 'payment_status', 'response_status', 'honoured', 'action']) ||
     'Ready'
 
   return {

@@ -15,14 +15,32 @@ export interface MisCardMetric {
   subtitle: string
 }
 
+/**
+ * Description of what this function does: Normalizes value into an uppercase trimmed string.
+ * Inputs: value: unknown
+ * Outputs: string
+ * Dependencies: safeToString
+ */
 const norm = (value: unknown): string => safeToString(value).trim().toUpperCase()
 
+/**
+ * Description of what this function does: Safe parses double/number from unknown value.
+ * Inputs: value: unknown
+ * Outputs: number
+ * Dependencies: none
+ */
 const parseAmount = (value: unknown): number => {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-const uniqueRows = (rows: DcspTableRow[], idKey: string): DcspTableRow[] => {
+/**
+ * Description of what this function does: Returns a list of rows deduplicated by a given primary ID key.
+ * Inputs: rows: DcspTableRow[], idKey: string
+ * Outputs: DcspTableRow[]
+ * Dependencies: safeToString
+ */
+const uniqueRows = (rows: DcspTableRow[] = [], idKey: string): DcspTableRow[] => {
   const seen = new Set<string>()
   return rows.filter((row) => {
     const id = safeToString(row[idKey] ?? row.strategy_id ?? row.case_id ?? row.id).trim()
@@ -32,6 +50,12 @@ const uniqueRows = (rows: DcspTableRow[], idKey: string): DcspTableRow[] => {
   })
 }
 
+/**
+ * Description of what this function does: Extracts a set of unique case IDs.
+ * Inputs: rows: DcspTableRow[]
+ * Outputs: Set<string>
+ * Dependencies: safeToString
+ */
 const uniqueCaseIds = (rows: DcspTableRow[]): Set<string> => {
   const ids = new Set<string>()
   rows.forEach((row) => {
@@ -41,9 +65,20 @@ const uniqueCaseIds = (rows: DcspTableRow[]): Set<string> => {
   return ids
 }
 
+/**
+ * Description of what this function does: Calculates percentage of a part over a total.
+ * Inputs: part: number, total: number
+ * Outputs: number
+ * Dependencies: none
+ */
 const percentOf = (part: number, total: number): number => (total > 0 ? (part / total) * 100 : 0)
 
-/** Builds display metrics for the 7 top MIS category cards. */
+/**
+ * Description of what this function does: Builds display metrics for the top MIS category cards.
+ * Inputs: cardTitles: Record<string, string>, rows: MisTableRows
+ * Outputs: Map<string, MisCardMetric>
+ * Dependencies: uniqueRows, parseAmount, formatCurrencyINR, uniqueCaseIds, formatPercent, percentOf, norm
+ */
 export function buildMisCardMetrics(
   cardTitles: Record<string, string>,
   rows: MisTableRows,
@@ -51,47 +86,60 @@ export function buildMisCardMetrics(
   const payments = uniqueRows(rows.payments, 'payment_id')
   const strategies = uniqueRows(rows.strategies, 'strategy_id')
   const communications = uniqueRows(rows.communications, 'communication_id')
-  const preEmiCases = uniqueRows(rows.preEmiCases, 'pre_emi_case_id')
   const dpdCases = uniqueRows(rows.dpdCases, 'dpd_case_id')
   const bounceCases = uniqueRows(rows.bounceCases, 'bounce_case_id')
 
   const metrics = new Map<string, MisCardMetric>()
 
-  const recoveryAmount = payments.reduce(
-    (sum, row) => sum + parseAmount(row.payment_amount ?? row.amount),
-    0,
-  )
-  metrics.set(cardTitles.recovery, {
-    value: formatCurrencyINR(recoveryAmount),
-    subtitle: 'Total payment amount',
-  })
+  const paymentModeCounts = payments.reduce<Map<string, number>>((acc, row) => {
+    const mode = norm(row.payment_mode) || 'UNKNOWN'
+    acc.set(mode, (acc.get(mode) ?? 0) + 1)
+    return acc
+  }, new Map())
 
   const successPayments = payments.filter((row) => norm(row.payment_status) === 'SUCCESS')
 
-  const activeNpaCount = strategies.filter(
-    (row) => norm(row.bucket) === 'NPA' && norm(row.status) === 'ACTIVE',
-  ).length
-  metrics.set(cardTitles.bucket, {
-    value: activeNpaCount.toLocaleString('en-IN'),
-    subtitle: 'Active NPA strategies',
-  })
+  const recoveryAmount = successPayments.reduce(
+    (sum, row) => sum + parseAmount(row.payment_amount ?? row.amount),
+    0,
+  )
+  if (cardTitles.recovery) {
+    metrics.set(cardTitles.recovery, {
+      value: formatCurrencyINR(recoveryAmount),
+      subtitle: 'Total successful payment amount',
+    })
+  }
 
-  const totalPaymentUsers = uniqueCaseIds(payments).size
-  const digitalSuccessUsers = uniqueCaseIds(
-    payments.filter(
-      (row) => norm(row.payment_status) === 'SUCCESS' && norm(row.payment_mode) !== 'CASH',
-    ),
-  ).size
-  metrics.set(cardTitles.digital, {
-    value: totalPaymentUsers > 0 ? formatPercent(percentOf(digitalSuccessUsers, totalPaymentUsers)) : '0.0%',
-    subtitle: `${digitalSuccessUsers.toLocaleString('en-IN')} of ${totalPaymentUsers.toLocaleString('en-IN')} users`,
-  })
+  if (cardTitles.payment) {
+    const summary = Array.from(paymentModeCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([mode, count]) => `${mode}: ${count}`)
+      .join(' • ')
 
-  const paymentSuccessRate = percentOf(successPayments.length, payments.length)
-  metrics.set(cardTitles.payment, {
-    value: payments.length > 0 ? formatPercent(paymentSuccessRate) : '0.0%',
-    subtitle: `${successPayments.length.toLocaleString('en-IN')} successful payments`,
-  })
+    metrics.set(cardTitles.payment, {
+      value: payments.length > 0 ? payments.length.toLocaleString('en-IN') : '0',
+      subtitle: summary || 'No payment modes found',
+    })
+  }
+
+  const npaCount = dpdCases.filter((row) => norm(row.bucket) === 'NPA').length
+  if (cardTitles.bucket) {
+    metrics.set(cardTitles.bucket, {
+      value: npaCount.toLocaleString('en-IN'),
+      subtitle: 'NPA cases',
+    })
+  }
+
+  const digitalPayments = payments.filter(
+    (row) => norm(row.payment_mode) !== 'CASH',
+  )
+  if (cardTitles.digital) {
+    metrics.set(cardTitles.digital, {
+      value: payments.length > 0 ? formatPercent(percentOf(digitalPayments.length, payments.length)) : '0.0%',
+      subtitle: `${digitalPayments.length.toLocaleString('en-IN')} of ${payments.length.toLocaleString('en-IN')} payments`,
+    })
+  }
 
   const activeStrategies = strategies.filter((row) => norm(row.status) === 'ACTIVE').length
   metrics.set(cardTitles.strategy, {
@@ -105,31 +153,19 @@ export function buildMisCardMetrics(
     subtitle: `${deliveredCount.toLocaleString('en-IN')} delivered messages`,
   })
 
-  const failedPayments = payments.filter((row) => norm(row.payment_status) === 'FAILED').length
-  metrics.set(cardTitles.bounce, {
-    value: payments.length > 0 ? formatPercent(percentOf(failedPayments, payments.length)) : '0.0%',
-    subtitle: `${failedPayments.toLocaleString('en-IN')} failed payments`,
-  })
-
-  const preEmiPending = preEmiCases.filter((row) => norm(row.status) === 'PENDING_STRATEGY').length
-  metrics.set('Pre EMI Cases', {
-    value: preEmiCases.length > 0 ? formatPercent(percentOf(preEmiPending, preEmiCases.length)) : '0.0%',
-    subtitle: `${preEmiPending.toLocaleString('en-IN')} pending strategies`,
-  })
-
-  const dpdHighRisk = dpdCases.filter((row) => Number(row.dpd ?? 0) >= 90).length
+  const dpdTotal = dpdCases.length
   metrics.set('DPD Cases', {
-    value: dpdCases.length > 0 ? formatPercent(percentOf(dpdHighRisk, dpdCases.length)) : '0.0%',
-    subtitle: `${dpdHighRisk.toLocaleString('en-IN')} high risk cases`,
+    value: dpdTotal.toLocaleString('en-IN'),
+    subtitle: 'Total DPD cases',
   })
 
   const bounceCount = bounceCases.length
-  metrics.set('Bounce Analysis', {
-    value: bounceCases.length > 0 ? formatPercent(percentOf(bounceCount, bounceCases.length)) : '0.0%',
+  const totalCases = dpdCases.length + bounceCases.length
+  const bounceTitle = cardTitles.bounce || 'Bounce Analysis'
+  metrics.set(bounceTitle, {
+    value: totalCases > 0 ? formatPercent(percentOf(bounceCount, totalCases)) : '0.0%',
     subtitle: `${bounceCount.toLocaleString('en-IN')} bounce cases`,
   })
 
   return metrics
 }
-
-

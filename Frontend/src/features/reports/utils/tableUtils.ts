@@ -7,18 +7,20 @@
 
 import type { DcspTableRow } from '../types'
 
-// ---------------------------------------------------------------------------
-// Row flattening – defensive unwrapping for inconsistent API shapes
-// ---------------------------------------------------------------------------
-
+/**
+ * Description of what this function does: Checks if value is a plain JavaScript object.
+ * Inputs: value: unknown
+ * Outputs: boolean
+ * Dependencies: none
+ */
 export const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 /**
- * Some backend responses wrap each row's real fields inside a single nested
- * key (e.g. `{ values: { case_id: "...", bucket: "..." } }`). This function
- * detects that shape and unwraps it so downstream logic works against the
- * real fields. Already-flat rows are returned unchanged.
+ * Description of what this function does: Unwraps single key nested values objects returned by backend if present.
+ * Inputs: row: DcspTableRow
+ * Outputs: DcspTableRow
+ * Dependencies: isPlainObject
  */
 export const flattenRow = (row: DcspTableRow): DcspTableRow => {
   if (!isPlainObject(row)) return row
@@ -36,17 +38,31 @@ export const flattenRow = (row: DcspTableRow): DcspTableRow => {
   return row
 }
 
+/**
+ * Description of what this function does: Flattens an array of rows.
+ * Inputs: rows: DcspTableRow[]
+ * Outputs: DcspTableRow[]
+ * Dependencies: flattenRow
+ */
 export const flattenRows = (rows: DcspTableRow[]): DcspTableRow[] => rows.map(flattenRow)
 
-// ---------------------------------------------------------------------------
-// String / value formatting helpers
-// ---------------------------------------------------------------------------
-
+/**
+ * Description of what this function does: Checks if a string looks like a JSON string.
+ * Inputs: s: string
+ * Outputs: boolean
+ * Dependencies: none
+ */
 export const looksLikeJsonString = (s: string): boolean => {
   const trimmed = s.trim()
   return (trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))
 }
 
+/**
+ * Description of what this function does: Converts an unknown value to a compact string format.
+ * Inputs: value: unknown
+ * Outputs: string
+ * Dependencies: none
+ */
 export const stringifyCompact = (value: unknown): string => {
   if (value === null || value === undefined) return ''
 
@@ -77,6 +93,12 @@ export const stringifyCompact = (value: unknown): string => {
   return String(value)
 }
 
+/**
+ * Description of what this function does: Safely converts any value to a readable string representation.
+ * Inputs: value: unknown
+ * Outputs: string
+ * Dependencies: looksLikeJsonString, stringifyCompact
+ */
 export const safeToString = (value: unknown): string => {
   if (value === null || value === undefined) return ''
 
@@ -98,42 +120,48 @@ export const safeToString = (value: unknown): string => {
 }
 
 /**
- * Robustly extract a branch name from a row that may use different field names.
- * Supports `name`, `branch_name`, `branch`, camelCase variants, and nested objects.
+ * Description of what this function does: Normalizes a branch name by trailing a standard 'Branch' suffix.
+ * Inputs: input: string
+ * Outputs: string
+ * Dependencies: none
  */
-export const getBranchName = (row: Record<string, unknown> | undefined): string => {
-  if (!row || typeof row !== 'object') return ''
-  // prefer explicit fields in order
-  const candidates = ['name', 'branch_name', 'branch', 'branchName', 'hub_branch_name']
-  for (const key of candidates) {
-    const v = (row as Record<string, unknown>)[key]
-    const s = safeToString(v).trim()
-    if (s) return normalizeBranchName(s)
-  }
-  // fallback: try any plausible-looking key
-  const alt = Object.keys(row).find((k) => k.toLowerCase().includes('branch') || k.toLowerCase() === 'name')
-  if (alt) return normalizeBranchName(safeToString((row as Record<string, unknown>)[alt]).trim())
-  return ''
-}
-
 function normalizeBranchName(input: string): string {
   if (!input) return ''
   let name = input.toString().trim().replace(/\s+/g, ' ')
-  // If it starts with 'Branch ', move it to the end -> 'Branch A1' -> 'A1 Branch'
   if (/^branch\s+/i.test(name)) {
     name = name.replace(/^branch\s+/i, '').trim() + ' Branch'
   }
-  // Collapse multiple occurrences of the word 'Branch' to a single trailing 'Branch'
   const parts = name.split(' ').filter(Boolean)
   const nonBranch = parts.filter((p) => !/^branch$/i.test(p))
   if (nonBranch.length === 0) return 'Branch'
   return (nonBranch.join(' ') + (parts.some((p) => /^branch$/i.test(p)) ? ' Branch' : '')).trim()
 }
 
-// ---------------------------------------------------------------------------
-// Date formatting
-// ---------------------------------------------------------------------------
+/**
+ * Description of what this function does: Extracts branch name from a row safely.
+ * Inputs: row: Record<string, unknown> | undefined
+ * Outputs: string
+ * Dependencies: safeToString, normalizeBranchName
+ */
+export const getBranchName = (row: Record<string, unknown> | undefined): string => {
+  if (!row || typeof row !== 'object') return ''
+  const candidates = ['name', 'branch_name', 'branch', 'branchName', 'hub_branch_name']
+  for (const key of candidates) {
+    const v = (row as Record<string, unknown>)[key]
+    const s = safeToString(v).trim()
+    if (s) return normalizeBranchName(s)
+  }
+  const alt = Object.keys(row).find((k) => k.toLowerCase().includes('branch') || k.toLowerCase() === 'name')
+  if (alt) return normalizeBranchName(safeToString((row as Record<string, unknown>)[alt]).trim())
+  return ''
+}
 
+/**
+ * Description of what this function does: Safely formats date string into local IN display format.
+ * Inputs: value: string
+ * Outputs: string
+ * Dependencies: none
+ */
 export const tryFormatDate = (value: string): string => {
   if (!value) return ''
   const isoCandidate = value.trim()
@@ -154,12 +182,14 @@ export const tryFormatDate = (value: string): string => {
   })
 }
 
+/**
+ * Description of what this function does: Checks if column should be formatted as a date.
+ * Inputs: column: string
+ * Outputs: boolean
+ * Dependencies: none
+ */
 export const shouldFormatDateColumn = (column: string): boolean =>
-  column === 'created_at' || column === 'updated_at'
-
-// ---------------------------------------------------------------------------
-// Column labels & ordering (Cases table)
-// ---------------------------------------------------------------------------
+  column === 'created_at' || column === 'updated_at' || column === 'created_on' || column === 'status_updated_on'
 
 export const CASES_KEY_TO_LABEL: Record<string, string> = {
   case_id: 'Case ID',
@@ -266,28 +296,34 @@ export const CASES_COLUMN_ORDER = [
   'status', 'branch', 'zone',
 ]
 
-// ---------------------------------------------------------------------------
-// Chart data builders
-// ---------------------------------------------------------------------------
-
 export const COLORS = ['#000182', '#CE9B01', '#050058', '#D9EAF5', '#7c8ca6']
 
+/**
+ * Description of what this function does: Pretty formats table names (e.g. strategy-steps -> Strategy Steps).
+ * Inputs: table: string
+ * Outputs: string
+ * Dependencies: none
+ */
 export const prettyTitle = (table: string): string =>
   table
     .split('-')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
 
+/**
+ * Description of what this function does: Dynamically picks a suitable column key for charts representing this table.
+ * Inputs: table: string, columns: string[]
+ * Outputs: string
+ * Dependencies: none
+ */
 export const pickChartKey = (table: string, columns: string[]): string => {
   const preferred: Record<string, RegExp> = {
     cases: /bucket|status|journey|branch|zone|state/i,
     payments: /payment_mode|payment_source|payment_status/i,
-    communications: /channel|status|response_status/i,
+    communication_logs: /channel|status|response_status/i,
     strategies: /strategy_name|status|bucket|journey_type/i,
     agents: /role|branch|zone|state|status/i,
-    allocations: /role|allocation_status/i,
     ptps: /honoured|agent_id/i,
-    'audit-logs': /action|entity_type|user_name/i,
   }
 
   const pattern =
@@ -296,6 +332,12 @@ export const pickChartKey = (table: string, columns: string[]): string => {
   return columns.find((column) => pattern.test(column)) ?? columns[0] ?? ''
 }
 
+/**
+ * Description of what this function does: Aggregates counts and builds general distribution chart data.
+ * Inputs: rows: DcspTableRow[], table: string, columns: string[]
+ * Outputs: Array<{ name: string; value: number; color: string }>
+ * Dependencies: pickChartKey, safeToString
+ */
 export const buildChartData = (
   rows: DcspTableRow[],
   table: string,
@@ -316,10 +358,6 @@ export const buildChartData = (
     .map(([name, value], index) => ({ name, value, color: COLORS[index % COLORS.length] }))
 }
 
-// ---------------------------------------------------------------------------
-// Breakdown config (per-table dual-pie charts)
-// ---------------------------------------------------------------------------
-
 export const BREAKDOWN_CONFIG: Record<
   string,
   { primary: RegExp; secondary: RegExp; primaryTitle: string; secondaryTitle: string }
@@ -336,14 +374,20 @@ export const BREAKDOWN_CONFIG: Record<
     primaryTitle: 'Payments by Mode',
     secondaryTitle: 'Payments by Status',
   },
-  communications: {
+  communication_logs: {
     primary: /channel/i,
-    secondary: /response_status/i,
+    secondary: /status/i, // response_status is no longer used
     primaryTitle: 'Communications by Channel',
-    secondaryTitle: 'Communications by Response',
+    secondaryTitle: 'Communications by Status',
   },
 }
 
+/**
+ * Description of what this function does: Builds primary/secondary breakdown data based on column matching regex.
+ * Inputs: rows: DcspTableRow[], columns: string[], pattern: RegExp
+ * Outputs: Array<{ name: string; value: number; color: string }>
+ * Dependencies: safeToString
+ */
 export const buildBreakdown = (
   rows: DcspTableRow[],
   columns: string[],

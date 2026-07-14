@@ -18,6 +18,8 @@ public sealed record StrategyRowDto(string Name, decimal Percentage, decimal Tar
 
 public sealed record HourlyCallDataDto(string Hour, int Calls, int Responses);
 
+public sealed record HourlyCommunicationEfficiencyDto(string Hour, int Sent, int Delivered, decimal DeliveryRate);
+
 public sealed record ProductDistributionDto(string Name, decimal Value, string Color);
 
 public sealed record PerformanceDto(string Name, decimal Value, decimal Target);
@@ -28,7 +30,9 @@ public sealed record AnalyticsDashboardDto(
     IReadOnlyList<KpiCardDto> KpiCards,
     IReadOnlyList<RadarDataPointDto> PerformanceRadar,
     IReadOnlyList<StrategyRowDto> StrategyPerformance,
+    IReadOnlyList<StrategyRowDto> StrategyGap,
     IReadOnlyList<HourlyCallDataDto> CommunicationPerformance,
+    IReadOnlyList<HourlyCommunicationEfficiencyDto> CommunicationEfficiency,
     IReadOnlyList<ProductDistributionDto> ChannelPerformance,
     IReadOnlyList<ProductDistributionDto> BucketDistribution,
     IReadOnlyList<PerformanceDto> BranchContributors,

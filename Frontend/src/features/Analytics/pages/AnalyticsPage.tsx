@@ -216,8 +216,8 @@ export const AnalyticsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <StrategyGapChart data={dashboard?.strategyPerformance ?? []} />
-            <CommunicationEfficiencyChart data={dashboard?.communicationPerformance ?? []} />
+            <StrategyGapChart data={dashboard?.strategyGap ?? []} />
+            <CommunicationEfficiencyChart data={dashboard?.communicationEfficiency ?? []} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

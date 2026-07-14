@@ -1,0 +1,99 @@
+name: Backend Smoke Test
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "Backend/**"
+
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "Backend/**"
+
+env:
+  API_URL: http://localhost:5000
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Backend
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore Packages
+        run: dotnet restore
+
+      - name: Build Solution
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Start API
+        run: |
+          dotnet run --configuration Release > api.log 2>&1 &
+          echo $! > api.pid
+
+      - name: Wait For API Startup
+        run: |
+          timeout 60 bash -c '
+          until curl -s $API_URL/swagger/v1/swagger.json > /dev/null
+          do
+            echo "Waiting for API..."
+            sleep 5
+          done
+          '
+
+      - name: Download Swagger Spec
+        run: |
+          curl -o swagger.json $API_URL/swagger/v1/swagger.json
+
+      - name: Validate Swagger Exists
+        run: |
+          cat swagger.json | jq '.info.title'
+
+      - name: Smoke Test All GET APIs
+        run: |
+          jq -r '.paths | to_entries[] |
+          select(.value.get != null) |
+          .key' swagger.json > endpoints.txt
+
+          while read endpoint
+          do
+            url="$API_URL$endpoint"
+
+            echo "Testing $url"
+
+            status=$(curl -o /dev/null -s -w "%{http_code}" "$url")
+
+            echo "Status = $status"
+
+            if [[ "$status" -ge 500 ]]; then
+              echo "Failed endpoint: $endpoint"
+              exit 1
+            fi
+
+          done < endpoints.txt
+
+      - name: Check Health Endpoint
+        run: |
+          curl --fail $API_URL/health
+
+      - name: Upload API Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-logs
+          path: Backend/api.log 

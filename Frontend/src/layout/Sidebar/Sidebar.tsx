@@ -24,7 +24,7 @@ const menuItems = [
   { to: '/analytics/dashboard', label: 'Analytics', icon: TrendingUp },
   { to: '/users', label: 'User Management', icon: Users },
   { to: '/masters', label: 'Masters Config', icon: Database },
-  { to: '/communication', label: 'Communication Config', icon: MessageSquare },
+  { to: '/communication_logs', label: 'Communication Logs', icon: MessageSquare },
 ]
 
 export const Sidebar: React.FC = () => {

@@ -5,7 +5,7 @@ import type { DcspTableRow } from '../types'
 import { isWithinDateRange } from '../../../Components/dateFilter'
 import type { DateRangeOption } from '../types'
 import {
-  isCommunicationRow,
+  isCommunicationLogsRow,
   isPaymentRow,
 } from './rowDetectors'
 import { safeToString, getBranchName } from './tableUtils'
@@ -15,20 +15,15 @@ const id = (value: unknown): string => safeToString(value).trim()
 
 export interface ReportTableBundle {
   strategies: DcspTableRow[]
-  'strategy-approval-log': DcspTableRow[]
-  'strategy-steps': DcspTableRow[]
   'strategy-execution-log': DcspTableRow[]
-  agents: DcspTableRow[]
-  'pre-emi-cases': DcspTableRow[]
   'dpd-cases': DcspTableRow[]
   'bounce-cases': DcspTableRow[]
   // cases: DcspTableRow[]
   payments: DcspTableRow[]
-  communications: DcspTableRow[]
-  allocations: DcspTableRow[]
+  communication_logs: DcspTableRow[]
   ptps: DcspTableRow[]
-  'audit-logs': DcspTableRow[]
   branches: DcspTableRow[]
+  agents: DcspTableRow[]
 }
 
 export interface GlobalFilterIds {
@@ -53,39 +48,41 @@ export interface GlobalFilterContext {
 
 export const REPORT_TABLE_KEYS: ReportTableKey[] = [
   'strategies',
-  'strategy-approval-log',
-  'strategy-steps',
   'strategy-execution-log',
-  'agents',
-  'pre-emi-cases',
   'dpd-cases',
   'bounce-cases',
   // 'cases',
   'payments',
-  'communications',
-  'allocations',
+  'communication_logs',
   'ptps',
-  'audit-logs',
   'branches',
+  'agents',
 ]
 
+/**
+ * Description of what this function does.
+ * Inputs: none
+ * Outputs: ReportTableBundle (empty array for all tables)
+ * Dependencies: none
+ */
 export const EMPTY_BUNDLE = (): ReportTableBundle => ({
   strategies: [],
-  'strategy-approval-log': [],
-  'strategy-steps': [],
   'strategy-execution-log': [],
-  agents: [],
-  'pre-emi-cases': [],
   'dpd-cases': [],
   'bounce-cases': [],
   payments: [],
-  communications: [],
-  allocations: [],
+  communication_logs: [],
   ptps: [],
-  'audit-logs': [],
   branches: [],
+  agents: [],
 })
 
+/**
+ * Description of what this function does.
+ * Inputs: none
+ * Outputs: GlobalFilterIds (initialized empty sets)
+ * Dependencies: none
+ */
 const emptyIds = (): GlobalFilterIds => ({
   caseIds: new Set(),
   customerIds: new Set(),
@@ -101,8 +98,8 @@ export const CATEGORY_FILTER_CONFIG: Record<string, CategoryFilterConfig> = {
     primaryPredicate: (row) => isPaymentRow(row) && norm(row.payment_status) === 'SUCCESS',
   },
   'Bucket-wise MIS': {
-    primaryTable: 'strategies',
-    primaryPredicate: (row) => norm(row.bucket) === 'NPA' && norm(row.status) === 'ACTIVE',
+    primaryTable: 'dpd-cases',
+    primaryPredicate: (row) => norm(row.bucket) === 'NPA',
   },
   'Digital Recovery': {
     primaryTable: 'payments',
@@ -110,15 +107,12 @@ export const CATEGORY_FILTER_CONFIG: Record<string, CategoryFilterConfig> = {
   },
   'Payment MIS': {
     primaryTable: 'payments',
-    primaryPredicate: (row) => isPaymentRow(row) && norm(row.payment_status) === 'SUCCESS',
+    primaryPredicate: (row) => isPaymentRow(row),
   },
+
   'Strategy Reports': {
     primaryTable: 'strategies',
     primaryPredicate: (row) => norm(row.status) === 'ACTIVE',
-  },
-  'Pre EMI Cases': {
-    primaryTable: 'pre-emi-cases',
-    primaryPredicate: (row) => norm(row.status) === 'PENDING_STRATEGY',
   },
   'DPD Cases': {
     primaryTable: 'dpd-cases',
@@ -129,15 +123,21 @@ export const CATEGORY_FILTER_CONFIG: Record<string, CategoryFilterConfig> = {
     primaryPredicate: (row) => norm(row.status) === 'PENDING_STRATEGY' || norm(row.status) === 'PENDING',
   },
   'Communication Reports': {
-    primaryTable: 'communications',
-    primaryPredicate: (row) => isCommunicationRow(row) && norm(row.status) === 'DELIVERED',
+    primaryTable: 'communication_logs',
+    primaryPredicate: (row) => isCommunicationLogsRow(row) && norm(row.status) === 'DELIVERED',
   },
   'Bounce Analysis': {
-    primaryTable: 'payments',
-    primaryPredicate: (row) => isPaymentRow(row) && norm(row.payment_status) === 'FAILED',
+    primaryTable: 'bounce-cases',
+    primaryPredicate: () => true,
   },
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: value: unknown, set: Set<string>
+ * Outputs: boolean (whether value was added)
+ * Dependencies: id
+ */
 const addId = (value: unknown, set: Set<string>) => {
   const next = id(value)
   if (!next) return false
@@ -146,34 +146,31 @@ const addId = (value: unknown, set: Set<string>) => {
   return true
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalFilterIds
+ * Outputs: void (mutates ids object)
+ * Dependencies: addId
+ */
 const seedIdsFromPrimaryRow = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalFilterIds) => {
   switch (tableKey) {
     case 'payments':
       addId(row.strategy_id, ids.strategyIds)
       addId(row.loan_number, ids.loanNumbers)
       break
-    case 'communications':
+    case 'communication_logs':
       addId(row.strategy_id, ids.strategyIds)
       break
-    case 'allocations':
     case 'ptps':
       addId(row.strategy_id, ids.strategyIds)
       break
     case 'strategies':
       addId(row.strategy_id, ids.strategyIds)
       break
-    case 'pre-emi-cases':
     case 'dpd-cases':
     case 'bounce-cases':
       addId(row.strategy_id, ids.strategyIds)
       break
-    // case 'cases':
-    //   addId(row.case_id, ids.caseIds)
-    //   addId(row.customer_id, ids.customerIds)
-    //   addId(row.loan_number, ids.loanNumbers)
-    //   addId(row.strategy_id, ids.strategyIds)
-    //   addId(row.assigned_to, ids.agentIds)
-    //   break
     default:
       addId(row.strategy_id, ids.strategyIds)
       addId(row.case_id, ids.caseIds)
@@ -181,6 +178,12 @@ const seedIdsFromPrimaryRow = (row: DcspTableRow, tableKey: ReportTableKey, ids:
   }
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: ids: GlobalFilterIds, cases: DcspTableRow[]
+ * Outputs: boolean (whether sets changed)
+ * Dependencies: id, addId
+ */
 const enrichIdsFromCasesHub = (ids: GlobalFilterIds, cases: DcspTableRow[]): boolean => {
   let changed = false
 
@@ -208,14 +211,14 @@ const enrichIdsFromCasesHub = (ids: GlobalFilterIds, cases: DcspTableRow[]): boo
   return changed
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: ids: GlobalFilterIds, bundle: ReportTableBundle
+ * Outputs: void (mutates ids object)
+ * Dependencies: id, addId
+ */
 const enrichAgentIds = (ids: GlobalFilterIds, bundle: ReportTableBundle) => {
-  bundle.allocations.forEach((row) => {
-    const caseId = id(row.dpd_case_id ?? row.pre_emi_case_id ?? row.bounce_case_id ?? row.case_id)
-    const strategyId = id(row.strategy_id)
-    if ((caseId && ids.caseIds.has(caseId)) || (strategyId && ids.strategyIds.has(strategyId))) {
-      addId(row.allocated_to, ids.agentIds)
-    }
-  })
+
   bundle.ptps.forEach((row) => {
     const caseId = id(row.dpd_case_id ?? row.pre_emi_case_id ?? row.bounce_case_id ?? row.case_id)
     const strategyId = id(row.strategy_id)
@@ -225,7 +228,12 @@ const enrichAgentIds = (ids: GlobalFilterIds, bundle: ReportTableBundle) => {
   })
 }
 
-/** Step 1–2: primary-table predicate → extract & expand Case / Customer / Loan / Strategy IDs. */
+/**
+ * Description of what this function does.
+ * Inputs: categoryTitle: string, bundle: ReportTableBundle
+ * Outputs: GlobalFilterIds | null (resolved filter IDs)
+ * Dependencies: seedIdsFromPrimaryRow, enrichIdsFromCasesHub, enrichAgentIds
+ */
 export function resolveGlobalFilterIds(
   categoryTitle: string,
   bundle: ReportTableBundle,
@@ -247,6 +255,12 @@ export function resolveGlobalFilterIds(
   return ids
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: categoryTitle: string, bundle: ReportTableBundle
+ * Outputs: GlobalFilterContext | null
+ * Dependencies: resolveGlobalFilterIds
+ */
 export function buildGlobalFilterContext(
   categoryTitle: string,
   bundle: ReportTableBundle,
@@ -266,6 +280,12 @@ export function buildGlobalFilterContext(
   }
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: ids: GlobalFilterIds
+ * Outputs: boolean (whether all ID sets are empty)
+ * Dependencies: none
+ */
 const idsAreEmpty = (ids: GlobalFilterIds): boolean =>
   ids.caseIds.size === 0 &&
   ids.customerIds.size === 0 &&
@@ -273,19 +293,22 @@ const idsAreEmpty = (ids: GlobalFilterIds): boolean =>
   ids.strategyIds.size === 0 &&
   ids.agentIds.size === 0
 
+/**
+ * Description of what this function does.
+ * Inputs: row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalFilterIds
+ * Outputs: boolean (whether the row matches any resolved ID)
+ * Dependencies: id, norm
+ */
 const rowMatchesIds = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalFilterIds): boolean => {
   const caseId = id(row.case_id)
-  // const customerId = id(row.customer_id)
   const loanNumber = id(row.loan_number)
   const strategyId = id(row.strategy_id)
   const agentId = id(row.agent_id ?? row.assigned_to ?? row.allocated_to)
 
   switch (tableKey) {
     case 'payments':
-    case 'communications':
+    case 'communication_logs':
     case 'ptps':
-    case 'allocations':
-    case 'pre-emi-cases':
     case 'dpd-cases':
     case 'bounce-cases':
       return (
@@ -295,28 +318,17 @@ const rowMatchesIds = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalF
       )
     case 'strategies':
       return strategyId !== '' && ids.strategyIds.has(strategyId)
-    case 'agents':
-      return agentId !== '' && ids.agentIds.has(agentId)
-    case 'audit-logs': {
-      const entityId = id(row.entity_id)
-      const entityType = norm(row.entity_type)
-      if (!entityId) return false
-      if (entityType.includes('CASE') && ids.caseIds.has(entityId)) return true
-      if (entityType.includes('STRATEGY') && ids.strategyIds.has(entityId)) return true
-      if (entityType.includes('AGENT') && ids.agentIds.has(entityId)) return true
-      return (
-        ids.caseIds.has(entityId) ||
-        ids.strategyIds.has(entityId) ||
-        ids.agentIds.has(entityId) ||
-        ids.customerIds.has(entityId)
-      )
-    }
     default:
       return false
   }
 }
 
-/** Step 3: propagate resolved IDs across every related table. */
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle, ids: GlobalFilterIds
+ * Outputs: ReportTableBundle (filtered bundle)
+ * Dependencies: rowMatchesIds, EMPTY_BUNDLE
+ */
 export function applyGlobalFilterIds(
   bundle: ReportTableBundle,
   ids: GlobalFilterIds,
@@ -330,6 +342,12 @@ export function applyGlobalFilterIds(
   return filtered
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle, categoryTitle: string
+ * Outputs: object { bundle: ReportTableBundle, context: GlobalFilterContext | null }
+ * Dependencies: buildGlobalFilterContext, applyGlobalFilterIds, EMPTY_BUNDLE
+ */
 export function applyCategoryGlobalFilter(
   bundle: ReportTableBundle,
   categoryTitle: string,
@@ -347,6 +365,12 @@ export function applyCategoryGlobalFilter(
   }
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle, dateRange: DateRangeOption, customFromDate?: string, customToDate?: string
+ * Outputs: ReportTableBundle (date-filtered tables)
+ * Dependencies: isWithinDateRange, EMPTY_BUNDLE
+ */
 export function filterBundleByDateRange(
   bundle: ReportTableBundle,
   dateRange: DateRangeOption,
@@ -355,9 +379,6 @@ export function filterBundleByDateRange(
 ): ReportTableBundle {
   const filtered = EMPTY_BUNDLE()
   REPORT_TABLE_KEYS.forEach((tableKey) => {
-    // Reference tables such as `branches` are not time-series data and
-    // should not be excluded by the selected date range. Keep them
-    // unchanged so users can always view branch metadata.
     if (tableKey === 'branches') {
       filtered[tableKey] = bundle[tableKey]
       return
@@ -370,78 +391,80 @@ export function filterBundleByDateRange(
   return filtered
 }
 
-/** Collects distinct branch values from dpd_cases table. */
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle
+ * Outputs: string[] (all unique branch names extracted dynamically from branches table only)
+ * Dependencies: getBranchName
+ */
 export function extractBranchOptions(bundle: ReportTableBundle): string[] {
   const values = new Set<string>()
-  // Prefer explicit branches table names when available, else fall back to dpd-cases
   if (bundle.branches && bundle.branches.length > 0) {
     bundle.branches.forEach((row) => {
       const branch = getBranchName(row)
       if (branch) values.add(branch)
     })
-  } else {
-    bundle['dpd-cases'].forEach((row) => {
-      const branch = getBranchName(row) || safeToString(row.branch_name).trim()
-      if (branch) values.add(branch)
-    })
   }
   return Array.from(values).sort((a, b) => a.localeCompare(b))
 }
 
-/** Collects distinct zone values from dpd_cases table. */
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle
+ * Outputs: string[] (all unique zone codes extracted dynamically from branches table only)
+ * Dependencies: safeToString
+ */
 export function extractZoneOptions(bundle: ReportTableBundle): string[] {
   const values = new Set<string>()
-  // Prefer explicit branches table zone_code when available, else fall back to dpd-cases.zone
   if (bundle.branches && bundle.branches.length > 0) {
     bundle.branches.forEach((row) => {
       const zone = safeToString(row.zone_code || row.zone).trim()
       if (zone) values.add(zone)
     })
-  } else {
-    bundle['dpd-cases'].forEach((row) => {
-      const zone = safeToString(row.zone || row.zone_code).trim()
-      if (zone) values.add(zone)
+  }
+  return Array.from(values).sort((a, b) => a.localeCompare(b))
+}
+
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle
+ * Outputs: string[] (all unique states extracted dynamically from branches table only)
+ * Dependencies: safeToString
+ */
+export function extractStateOptions(bundle: ReportTableBundle): string[] {
+  const values = new Set<string>()
+  if (bundle.branches && bundle.branches.length > 0) {
+    bundle.branches.forEach((row) => {
+      const state = safeToString(row.state || row.region_code).trim()
+      if (state) values.add(state)
     })
   }
   return Array.from(values).sort((a, b) => a.localeCompare(b))
 }
 
-/** Collects distinct state values from dpd_cases table. */
-export function extractStateOptions(bundle: ReportTableBundle): string[] {
-  const values = new Set<string>()
-  bundle['dpd-cases'].forEach((row) => {
-    const state = safeToString(row.state).trim()
-    if (state) values.add(state)
-  })
-  return Array.from(values).sort((a, b) => a.localeCompare(b))
-}
-
-/** Filters bundle rows using branch/zone/state from dpd_cases table; other tables match via case_id or strategy_id. */
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle, branchFilter: string, zoneFilter: string, stateFilter: string
+ * Outputs: ReportTableBundle (filtered bundle)
+ * Dependencies: getBundleIndex, EMPTY_BUNDLE, getBranchName
+ */
 export function filterBundleByBranchZone(
   bundle: ReportTableBundle,
   branchFilter: string,
   zoneFilter: string,
   stateFilter: string,
 ): ReportTableBundle {
-  // Simple per-bundle cache to avoid re-filtering the same inputs repeatedly.
-  // Key is based on the three small filter strings to keep it cheap.
   const cacheForBundle = bundleFilterCache.get(bundle)
   const key = JSON.stringify({ b: branchFilter || '', z: zoneFilter || '', s: stateFilter || '' })
   if (cacheForBundle?.has(key)) return cacheForBundle.get(key) as ReportTableBundle
 
-  const matchingCaseIds = new Set<string>()
-  const matchingStrategyIds = new Set<string>()
-
-  // Build or read per-bundle index to speed lookups (maps from branch/zone/state -> {caseIds, strategyIds})
   const index = getBundleIndex(bundle)
 
-  // If no filters provided, return bundle (cache identity)
   if (!branchFilter && !zoneFilter && !stateFilter) {
     setCache(bundle, key, bundle)
     return bundle
   }
 
-  // Helper to intersect sets
   const intersect = (a: Set<string> | null, b: Set<string>): Set<string> => {
     if (a === null) return new Set(b)
     const out = new Set<string>()
@@ -473,10 +496,8 @@ export function filterBundleByBranchZone(
     strategySet = intersect(strategySet, entry.strategyIds)
   }
 
-  // Convert nulls to empty sets (meaning "no constraint on that id type")
   const finalCaseIds = caseSet ?? new Set<string>()
   const finalStrategyIds = strategySet ?? new Set<string>()
-  // If both are empty, no matches
   if (finalCaseIds.size === 0 && finalStrategyIds.size === 0) {
     setCache(bundle, key, EMPTY_BUNDLE())
     return EMPTY_BUNDLE()
@@ -490,6 +511,7 @@ export function filterBundleByBranchZone(
         const name = getBranchName(row)
         if (branchFilter && norm(name) !== norm(branchFilter)) return false
         if (zoneFilter && norm(row.zone_code || row.zone) !== norm(zoneFilter)) return false
+        if (stateFilter && norm(row.state || row.region_code) !== norm(stateFilter)) return false
         return true
       })
       return
@@ -508,8 +530,14 @@ export function filterBundleByBranchZone(
   return filtered
 }
 
-// --- simple cache helpers ---
 const bundleFilterCache = new WeakMap<ReportTableBundle, Map<string, ReportTableBundle>>()
+
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle, key: string, value: ReportTableBundle
+ * Outputs: void
+ * Dependencies: none
+ */
 function setCache(bundle: ReportTableBundle, key: string, value: ReportTableBundle) {
   let m = bundleFilterCache.get(bundle)
   if (!m) {
@@ -519,7 +547,6 @@ function setCache(bundle: ReportTableBundle, key: string, value: ReportTableBund
   m.set(key, value)
 }
 
-// Per-bundle index for fast lookups: branch/zone/state -> { caseIds, strategyIds }
 type IdSet = { caseIds: Set<string>, strategyIds: Set<string> }
 const bundleIndexCache = new WeakMap<ReportTableBundle, {
   branches: Map<string, IdSet>
@@ -527,6 +554,12 @@ const bundleIndexCache = new WeakMap<ReportTableBundle, {
   states: Map<string, IdSet>
 }>()
 
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle
+ * Outputs: index mapping branch/zone/state to case/strategy IDs.
+ * Dependencies: norm, getBranchName, id
+ */
 function getBundleIndex(bundle: ReportTableBundle) {
   let idx = bundleIndexCache.get(bundle)
   if (idx) return idx
@@ -560,6 +593,12 @@ function getBundleIndex(bundle: ReportTableBundle) {
   return idx
 }
 
+/**
+ * Description of what this function does.
+ * Inputs: bundle: ReportTableBundle
+ * Outputs: number (total count of all rows in bundle)
+ * Dependencies: none
+ */
 export function countBundleRows(bundle: ReportTableBundle): number {
   return REPORT_TABLE_KEYS.reduce((sum, key) => sum + bundle[key].length, 0)
 }

@@ -36,8 +36,8 @@ export const REPORT_CATEGORIES_CONFIG: CategoryConfig[] = [
     borderColor: 'border-[rgba(206,155,1,0.24)]'
   },
   {
-    id: 'communications',
-    label: 'Communications',
+    id: 'communication_logs',
+    label: 'Communication Logs',
     icon: Smartphone,
     bgColor: 'bg-[var(--color-ice)]',
     iconColor: 'text-[var(--color-blue)]',
@@ -59,14 +59,7 @@ export const REPORT_CATEGORIES_CONFIG: CategoryConfig[] = [
     iconColor: 'text-[var(--color-navy)]',
     borderColor: 'border-[rgba(5,0,88,0.12)]'
   },
-  {
-    id: 'allocations',
-    label: 'Allocations',
-    icon: MessageSquare,
-    bgColor: 'bg-[rgba(206,155,1,0.13)]',
-    iconColor: 'text-[var(--color-gold)]',
-    borderColor: 'border-[rgba(206,155,1,0.24)]'
-  },
+
   {
     id: 'ptps',
     label: 'PTPs',
@@ -75,14 +68,6 @@ export const REPORT_CATEGORIES_CONFIG: CategoryConfig[] = [
     iconColor: 'text-[var(--color-blue)]',
     borderColor: 'border-[rgba(0,1,130,0.14)]'
   },
-  {
-    id: 'audit-logs',
-    label: 'Audit Logs',
-    icon: AlertTriangle,
-    bgColor: 'bg-[var(--color-ice)]',
-    iconColor: 'text-[var(--color-blue)]',
-    borderColor: 'border-[rgba(0,1,130,0.14)]'
-  }
 ]
 
 // Brand Color Palette for Recharts

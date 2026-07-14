@@ -1,6 +1,5 @@
 // table data fetch, pagination & state management
 
-
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { reportsService } from '../services/reportsService'
@@ -9,40 +8,35 @@ import type { DcspTableRow } from '../types'
 
 export type ReportTableKey =
   | 'strategies'
-  | 'strategy-approval-log'
-  | 'strategy-steps'
   | 'strategy-execution-log'
-  | 'agents'
-  | 'pre-emi-cases'
   | 'dpd-cases'
   | 'bounce-cases'
-
   | 'payments'
-  | 'communications'
-  | 'allocations'
+  | 'communication_logs'
   | 'ptps'
-  | 'audit-logs'
   | 'branches'
+  | 'agents'
 
 export const REPORT_TABLES: ReportTableKey[] = [
   'strategies',
-  'strategy-approval-log',
-  'strategy-steps',
   'strategy-execution-log',
-  'agents',
-  'pre-emi-cases',
   'dpd-cases',
   'bounce-cases',
   // 'cases',
   'payments',
-  'communications',
-  'allocations',
+  'communication_logs',
   'ptps',
-  'audit-logs',
   'branches',
+  'agents',
 ]
 const defaultTable: ReportTableKey = 'strategies'
 
+/**
+ * Description of what this function does: Normalizes raw string to a valid ReportTableKey.
+ * Inputs: value?: string | null
+ * Outputs: ReportTableKey
+ * Dependencies: REPORT_TABLES
+ */
 const normalizeTableKey = (value?: string | null): ReportTableKey => {
   if (value && REPORT_TABLES.includes(value as ReportTableKey)) {
     return value as ReportTableKey
@@ -51,6 +45,12 @@ const normalizeTableKey = (value?: string | null): ReportTableKey => {
   return defaultTable
 }
 
+/**
+ * Description of what this function does: React hook that fetches paginated report tables data.
+ * Inputs: initialTable?: string | null
+ * Outputs: Hook state including active table, pagination controls, rows, columns, and loading status.
+ * Dependencies: reportsService, useQuery, flattenRows, normalizeTableKey
+ */
 export const useReports = (initialTable?: string | null) => {
   const [activeTable, setActiveTable] = useState<ReportTableKey>(normalizeTableKey(initialTable))
   const [page, setPage] = useState(1)

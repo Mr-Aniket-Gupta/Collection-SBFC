@@ -39,9 +39,9 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
     title: 'Masters Config',
     subtitle: 'Configure master data and settings',
   },
-  '/communication': {
-    title: 'Communication Config',
-    subtitle: 'Manage communication templates and channels',
+  '/communication_logs': {
+    title: 'Communication Logs',
+    subtitle: 'View and manage communication log records',
   },
 }
 

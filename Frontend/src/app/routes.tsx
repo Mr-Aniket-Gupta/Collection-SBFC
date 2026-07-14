@@ -23,6 +23,10 @@ export const router = createBrowserRouter([
         element: <ReportsPage />,
       },
       {
+        path: 'communication_logs',
+        element: <Navigate to="/reports/dpd-cases" replace />,
+      },
+      {
         path: 'analytics',
         element: <Navigate to="/analytics/dashboard" replace />,
       },

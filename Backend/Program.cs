@@ -3,6 +3,7 @@ using backend.Modules.Analytics.Config;
 using backend.Modules.Reports.Config;
 using System.Text.Json;
 using Prometheus;
+using backend.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,16 +44,38 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// required for httpsRedirection
 app.UseHttpsRedirection();
 
+// allow frontend to access
 app.UseCors("Frontend");
 
-// Register BEFORE endpoints
+// rate limiting
+app.UseSlidingWindowRateLimiter();
+
+// register before endpoints
 app.UseHttpMetrics();
 
+// routes
 app.MapControllers();
 
 // Expose Prometheus metrics
 app.MapMetrics();
+
+
+// test
+app.MapGet("/", () =>
+{
+    Console.WriteLine("coming....");
+
+    var instanceId = Environment.GetEnvironmentVariable("INSTANCE_ID");
+
+    return Results.Json(new
+    {
+        instanceId
+    });
+});
+
+
 
 app.Run();
