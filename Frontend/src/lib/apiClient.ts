@@ -1,3 +1,5 @@
+import { toast } from './toast'
+
 /**
  * Shared API client utilities.
  * All feature services should import from here instead of duplicating this logic.
@@ -28,7 +30,9 @@ export async function unwrap<T>(response: Response): Promise<T> {
   const body = (await response.json()) as Partial<ApiResponse<T>> & { payload?: T; data?: T }
 
   if (!response.ok || (body.status && body.status !== 'SUCCESS')) {
-    throw new Error(body.message ?? 'API request failed')
+    const message = body.message ?? 'API request failed'
+    toast.error(message)
+    throw new Error(message)
   }
 
   return (body.payload ?? body.data) as T
@@ -52,5 +56,7 @@ export async function fetchWithFallback(path: string): Promise<Response> {
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error('Unable to reach API')
+  const message = lastError instanceof Error ? lastError.message : 'Unable to reach API'
+  toast.error(message)
+  throw lastError instanceof Error ? lastError : new Error(message)
 }

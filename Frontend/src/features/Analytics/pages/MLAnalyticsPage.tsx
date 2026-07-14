@@ -83,10 +83,7 @@ export default function MLAnalyticsPage() {
     <main className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[28px] border border-[rgba(5,0,88,0.1)] bg-[#f8fbff] p-4 text-[var(--color-navy)] shadow-[0_20px_50px_rgba(5,0,88,0.08)] sm:p-6 lg:p-8">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(5,0,88,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(5,0,88,0.025)_1px,transparent_1px)] bg-[size:32px_32px]" />
 
-      <div className="p-6">
-        <h1 className="text-xl font-bold mb-4">User distribution</h1>
-        <HexWorldMap />
-      </div>
+
 
       <div className="relative space-y-5">
         <header className="relative overflow-hidden rounded-2xl border border-[rgba(5,0,88,0.1)] bg-[radial-gradient(circle_at_84%_15%,rgba(206,155,1,0.13),transparent_24%),radial-gradient(circle_at_68%_95%,rgba(217,234,245,0.9),transparent_34%),linear-gradient(120deg,#ffffff,#f4f9fd_58%,#edf6fb)] px-5 py-6 shadow-[0_12px_32px_rgba(5,0,88,0.06)] sm:px-7 sm:py-7">
@@ -112,6 +109,11 @@ export default function MLAnalyticsPage() {
             </div>
           </div>
         </header>
+
+        <div className="p-6">
+          <h1 className="text-xl font-bold mb-4">User distribution</h1>
+          <HexWorldMap />
+        </div>
 
         <KPIGrid items={kpis} />
 

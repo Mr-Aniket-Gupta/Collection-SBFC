@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { AlertTriangle, Clock3, ShieldAlert, Target, TrendingUp } from 'lucide-react'
+import { toast } from '@/lib/toast'
 import { KPICard } from '../Components/KPICard'
 import { PageHeader } from '../Components/PageHeader'
 import { PerformanceRadar } from '../charts/PerformanceRadar'
@@ -70,6 +71,12 @@ export const AnalyticsPage: React.FC = () => {
     const items = dashboard?.bucketDistribution ?? []
     return items.length ? [...items].sort((a, b) => b.value - a.value)[0] : null
   }, [dashboard?.bucketDistribution])
+
+  React.useEffect(() => {
+    if (error) {
+      toast.error(String(error instanceof Error ? error.message : 'Unable to load analytics data'))
+    }
+  }, [error])
 
   const analysisSignals = [
     {
@@ -143,29 +150,56 @@ export const AnalyticsPage: React.FC = () => {
         isRefreshing={isRefreshing}
       />
 
-      <div className="surface-card rounded-xl p-2 border border-[rgba(5,0,88,0.08)] inline-flex gap-2">
+      <div className="relative inline-flex rounded-2xl border border-[rgba(5,0,88,0.08)] bg-white p-1 shadow-sm">
+
+        {/* Sliding Background */}
+        <div
+          className={`
+      absolute top-1 bottom-1
+      rounded-xl shadow-sm
+      transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]
+      ${activeDashboard === "dashboard"
+              ? "left-1 w-[220px] bg-[var(--color-blue)]"
+              : "left-[221px] w-[180px] bg-[var(--color-gold)]"
+            }
+    `}
+        />
 
         <button
           onClick={() => setActiveDashboard("dashboard")}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${activeDashboard === "dashboard"
-            ? "bg-[var(--color-blue)] text-white shadow"
-            : "text-[var(--color-navy)] hover:bg-[rgba(5,0,88,0.05)]"
-            }`}
+          className={`
+      relative z-10 px-8 py-3
+      text-sm font-semibold
+      transition-colors duration-500
+      w-[220px]
+      ${activeDashboard === "dashboard"
+              ? "text-white"
+              : "text-[var(--color-navy)]"
+            }
+    `}
         >
           Analytics Dashboard
         </button>
 
         <button
           onClick={() => setActiveDashboard("ml")}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${activeDashboard === "ml"
-            ? "bg-[var(--color-gold)] text-white shadow"
-            : "text-[var(--color-navy)] hover:bg-[rgba(5,0,88,0.05)]"
-            }`}
+          className={`
+      relative z-10 px-8 py-3
+      text-sm font-semibold
+      transition-colors duration-500
+      w-[180px]
+      ${activeDashboard === "ml"
+              ? "text-white"
+              : "text-[var(--color-navy)]"
+            }
+    `}
         >
           ML Intelligence
         </button>
 
       </div>
+
+
 
 
       {activeDashboard === "dashboard" && (
@@ -177,12 +211,6 @@ export const AnalyticsPage: React.FC = () => {
               <KPICard key={card.id} card={card} />
             ))}
           </div>
-
-          {error && (
-            <div className="surface-card rounded-xl p-4 border border-[rgba(206,155,1,0.18)] bg-[rgba(206,155,1,0.1)] text-sm text-[var(--color-navy)]">
-              {String(error instanceof Error ? error.message : 'Unable to load analytics data')}
-            </div>
-          )}
 
           <div className="surface-card rounded-xl p-4 border border-[rgba(5,0,88,0.08)]">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
@@ -245,7 +273,7 @@ export const AnalyticsPage: React.FC = () => {
       {activeDashboard === "ml" && (
         <MLAnalyticsPage />
       )}
-      
+
     </div>
   )
 }

@@ -5,6 +5,8 @@ import type { MisCardMetric } from '../utils/misCardMetrics'
 import FiltersPanel from '@/Components/Filters/FiltersPanel'
 import type { DateRangeOption } from '../types'
 
+import { ChevronRight } from "lucide-react"
+
 export interface CategoryCardConfig {
   id: string
   title: string
@@ -100,7 +102,7 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
     <div className="flex flex-col gap-3">
       {/* Top Row: First 5 Cards */}
       <div className="flex flex-wrap gap-3">
-        {cards.slice(0, 5).map((card) => {
+        {cards.slice(0, 4).map((card) => {
           const isActive = selectedCategory === card.title
           const metric = categoryMetrics.get(card.title)
 
@@ -109,16 +111,15 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
               key={card.id}
               type="button"
               onClick={() => onSelectCategory(card)}
-              style={{ flex: '1 1 180px' }}
-              className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 ${
-                isActive
-                  ? 'border-[var(--color-gold)] bg-[#FFFBF2] shadow-md ring-2 ring-[rgba(206,155,1,0.18)]'
-                  : 'border-[rgba(5,0,88,0.08)] bg-[#FAFBFD] hover:-translate-y-0.5 hover:border-[rgba(206,155,1,0.35)] hover:shadow-md'
-              }`}
+              style={{ flex: '1 1 190px' }}
+              className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 min-h-[150px] ${isActive
+                ? 'border-[var(--color-gold)] bg-[#FFFBF2] shadow-md ring-2 ring-[rgba(206,155,1,0.18)]'
+                : 'border-[rgba(5,0,88,0.08)] bg-[#FAFBFD] hover:-translate-y-1 hover:shadow-xl hover:border-[rgba(206,155,1,0.35)] hover:shadow-md'
+                }`}
             >
               <div className={`absolute inset-x-0 top-0 h-1 ${card.accent}`} />
               <div className="flex items-start gap-3">
-                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.iconBg}`}>
+                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${card.iconBg} shadow-sm transition-transform duration-300 group-hover:scale-105`}>
                   {card.icon}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -130,6 +131,11 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
                     {metric?.subtitle ?? 'Click to load'}
                   </p>
                 </div>
+
+                <div className="absolute right-4 top-4 text-gray-400 transition-transform group-hover:translate-x-1">
+                  <ChevronRight className="h-4 w-4" />
+                </div>
+
               </div>
             </button>
           )
@@ -138,7 +144,7 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
 
       {/* Bottom Row: Remaining 4 Cards */}
       <div className="flex flex-wrap gap-3">
-        {cards.slice(5).map((card) => {
+        {cards.slice(4).map((card) => {
           const isActive = selectedCategory === card.title
           const metric = categoryMetrics.get(card.title)
 
@@ -148,15 +154,14 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
               type="button"
               onClick={() => onSelectCategory(card)}
               style={{ flex: '1 1 180px' }}
-              className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 ${
-                isActive
-                  ? 'border-[var(--color-gold)] bg-[#FFFBF2] shadow-md ring-2 ring-[rgba(206,155,1,0.18)]'
-                  : 'border-[rgba(5,0,88,0.08)] bg-[#FAFBFD] hover:-translate-y-0.5 hover:border-[rgba(206,155,1,0.35)] hover:shadow-md'
-              }`}
+              className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 min-h-[150px] ${isActive
+                ? 'border-[var(--color-gold)] bg-[#FFFBF2] shadow-md ring-2 ring-[rgba(206,155,1,0.18)]'
+                : 'border-[rgba(5,0,88,0.08)] bg-[#FAFBFD] hover:-translate-y-1 hover:shadow-xl hover:border-[rgba(206,155,1,0.35)] hover:shadow-md'
+                }`}
             >
               <div className={`absolute inset-x-0 top-0 h-1 ${card.accent}`} />
               <div className="flex items-start gap-3">
-                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.iconBg}`}>
+                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${card.iconBg} shadow-sm transition-transform duration-300 group-hover:scale-105`}>
                   {card.icon}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -167,6 +172,9 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
                   <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-muted)]">
                     {metric?.subtitle ?? 'Click to load'}
                   </p>
+                </div>
+                <div className="absolute right-4 top-4 text-gray-400 transition-transform group-hover:translate-x-1">
+                  <ChevronRight className="h-4 w-4" />
                 </div>
               </div>
             </button>

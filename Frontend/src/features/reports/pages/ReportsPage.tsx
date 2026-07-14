@@ -5,7 +5,7 @@ import {
   RotateCw, Search, Printer, Share2, Download, TrendingDown, TrendingUp,
   Wallet, Smartphone, Target, CheckCircle, ArrowUpDown,
 } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/toast'
 import { useReports } from '@/features/reports/hooks/useReports'
 import type { ReportTableKey } from '@/features/reports/hooks/useReports'
 import type { DateRangeOption, SortOrder } from '@/features/reports/types'
@@ -72,12 +72,6 @@ const DATE_RANGE_OPTIONS: DateRangeOption[] = [
   'Custom Range',
 ]
 
-/**
- * Description of what this function does: Reads the user's stored date range choice from sessionStorage.
- * Inputs: none
- * Outputs: DateRangeOption
- * Dependencies: DATE_STORAGE_KEY, DATE_RANGE_OPTIONS
- */
 const readStoredDateRange = (): DateRangeOption => {
   const stored = sessionStorage.getItem(DATE_STORAGE_KEY)
   return DATE_RANGE_OPTIONS.includes(stored as DateRangeOption)
@@ -85,24 +79,12 @@ const readStoredDateRange = (): DateRangeOption => {
     : DEFAULT_DATE_RANGE
 }
 
-/**
- * Description of what this function does: Reads stored custom from date from sessionStorage.
- * Inputs: none
- * Outputs: string (YYYY-MM-DD)
- * Dependencies: CUSTOM_FROM_STORAGE_KEY, getDefaultCustomFromDate
- */
 const readStoredCustomFromDate = (): string => {
   const stored = sessionStorage.getItem(CUSTOM_FROM_STORAGE_KEY)
   if (stored && !Number.isNaN(new Date(stored).getTime())) return stored
   return getDefaultCustomFromDate()
 }
 
-/**
- * Description of what this function does: Reads stored custom to date from sessionStorage.
- * Inputs: none
- * Outputs: string (YYYY-MM-DD)
- * Dependencies: CUSTOM_TO_STORAGE_KEY, getDefaultCustomToDate
- */
 const readStoredCustomToDate = (): string => {
   const stored = sessionStorage.getItem(CUSTOM_TO_STORAGE_KEY)
   if (stored && !Number.isNaN(new Date(stored).getTime())) return stored
@@ -122,12 +104,6 @@ const CATEGORY_CARDS: CategoryCardConfig[] = [
 
 const TABS = ['Overview', 'Detailed Reports'] as const
 
-/**
- * Description of what this function does: Renders the complete Reports page.
- * Inputs: none
- * Outputs: ReactElement
- * Dependencies: useReports, CategoryCards, FiltersPanel, useQuery
- */
 export const ReportsPage: React.FC = () => {
   const params = useParams()
   const navigate = useNavigate()
@@ -164,13 +140,6 @@ export const ReportsPage: React.FC = () => {
   useEffect(() => {
     sessionStorage.setItem(CUSTOM_TO_STORAGE_KEY, customToDate)
   }, [customToDate])
-
-  // Always start with Overview section - removed automatic tab switch on tableKey
-  // useEffect(() => {
-  //   if (params.tableKey) {
-  //     setActiveTab('Detailed Reports')
-  //   }
-  // }, [params.tableKey])
 
   useEffect(() => {
     sessionStorage.setItem(BRANCH_FILTER_STORAGE_KEY, branchFilter)
@@ -345,11 +314,6 @@ export const ReportsPage: React.FC = () => {
     [locationFilteredBundle],
   )
 
-  // const statusOptions = useMemo(
-  //   () => Array.from(new Set(syncReports.map((r) => r.status).filter(Boolean))).sort(),
-  //   [syncReports],
-  // )
-
   const chartReports = syncReports
 
   const channelConversionData = useMemo(() => buildChannelConversionData(chartReports), [chartReports])
@@ -360,12 +324,6 @@ export const ReportsPage: React.FC = () => {
   const branchCaseTrend = useMemo(() => buildBranchCaseTrend(chartReports), [chartReports])
   const communicationFunnel = useMemo(() => buildCommunicationFunnel(chartReports), [chartReports])
 
-  /**
-   * Description of what this function does: Resets all filter state back to defaults.
-   * Inputs: none
-   * Outputs: void
-   * Dependencies: setDateRange, setCustomFromDate, setCustomToDate, setBranchFilter, setZoneFilter, setStateFilter, setSearch, setSelectedCategory, setStatusFilter, setSortOrder, setPage
-   */
   const resetAllFilters = () => {
     setDateRange(DEFAULT_DATE_RANGE)
     setCustomFromDate(getDefaultCustomFromDate())
@@ -380,12 +338,6 @@ export const ReportsPage: React.FC = () => {
     setPage(1)
   }
 
-  /**
-   * Description of what this function does: Navigates to a specific report table and updates active table state.
-   * Inputs: table: ReportTableKey
-   * Outputs: void
-   * Dependencies: navigate, setActiveTable, setPage, setSelectedCategory
-   */
   const selectReportTable = (table: ReportTableKey) => {
     setSelectedCategory('')
     navigate(`/reports/${table}`)
@@ -393,12 +345,6 @@ export const ReportsPage: React.FC = () => {
     setPage(1)
   }
 
-  /**
-   * Description of what this function does: Toggles a category card filter on/off in the overview view.
-   * Inputs: cat: CategoryCardConfig
-   * Outputs: void
-   * Dependencies: setSelectedCategory, setStatusFilter, setPage
-   */
   const selectCategory = (cat: CategoryCardConfig) => {
     const same = selectedCategory === cat.title
     setSelectedCategory(same ? '' : cat.title)
@@ -408,12 +354,6 @@ export const ReportsPage: React.FC = () => {
     // Keep the user on the current tab (usually Overview) and apply the filter in-place.
   }
 
-  /**
-   * Description of what this function does: Clears all filters from state and sessionStorage and re-fetches all data.
-   * Inputs: none
-   * Outputs: Promise<void>
-   * Dependencies: resetAllFilters, refetchLibrary, refetch, toast
-   */
   const refreshPageContent = async () => {
     resetAllFilters()
     sessionStorage.setItem(DATE_STORAGE_KEY, DEFAULT_DATE_RANGE)
@@ -428,12 +368,6 @@ export const ReportsPage: React.FC = () => {
 
   const dateRangeLabel = formatDateRangeLabel(dateRange, customFromDate, customToDate)
 
-  /**
-   * Description of what this function does: Returns the DOM element and title to use for the current print/share action.
-   * Inputs: none
-   * Outputs: { element: HTMLElement; title: string } | null
-   * Dependencies: activeTab, overviewAnalyticsRef, detailedReportsRef, dateRangeLabel, activeTable
-   */
   const getPrintTarget = (): { element: HTMLElement; title: string } | null => {
     if (activeTab === 'Overview' && overviewAnalyticsRef.current) {
       return { element: overviewAnalyticsRef.current, title: `Reports Overview — ${dateRangeLabel}` }
@@ -444,12 +378,6 @@ export const ReportsPage: React.FC = () => {
     return null
   }
 
-  /**
-   * Description of what this function does: Builds a plain-text summary of active filters and page metadata for sharing.
-   * Inputs: none
-   * Outputs: string
-   * Dependencies: activeTab, activeTable, dateRangeLabel, branchFilter, zoneFilter, stateFilter, selectedCategory, page, totalPages, filteredRows
-   */
   const buildShareText = () => {
     if (activeTab === 'Detailed Reports') {
       return [
@@ -474,24 +402,12 @@ export const ReportsPage: React.FC = () => {
     ].join('\n')
   }
 
-  /**
-   * Description of what this function does: Resets all filters and refreshes the active detailed table data.
-   * Inputs: none
-   * Outputs: Promise<void>
-   * Dependencies: resetAllFilters, refetch, toast
-   */
   const resetDetailedFilters = async () => {
     resetAllFilters()
     await refetch()
     toast.success('Filters reset & table refreshed')
   }
 
-  /**
-   * Description of what this function does: Constructs a single-sheet Excel export for the active detailed table.
-   * Inputs: none
-   * Outputs: Array<{ name: string; rows: Record<string, string>[] }>
-   * Dependencies: activeTable, filteredSourceRows, toExportRows
-   */
   const buildDetailedExcelSheets = () => [{
     name: prettyTitle(activeTable).slice(0, 31),
     rows: [
@@ -500,12 +416,6 @@ export const ReportsPage: React.FC = () => {
     ],
   }]
 
-  /**
-   * Description of what this function does: Constructs a multi-sheet Excel export covering all available report tables.
-   * Inputs: none
-   * Outputs: Array<{ name: string; rows: Record<string, string>[] }>
-   * Dependencies: syncBundle, dateRangeLabel, branchFilter, zoneFilter, stateFilter, selectedCategory, filteredRows, toExportRows
-   */
   const buildExportSheets = () => {
     type ExportSheet = {
       name: string
@@ -551,12 +461,6 @@ export const ReportsPage: React.FC = () => {
     return sheets
   }
 
-  /**
-   * Description of what this function does: Handles print action; downloads Excel on Detailed tab, opens print dialog on Overview.
-   * Inputs: none (React event handler)
-   * Outputs: Promise<void>
-   * Dependencies: activeTab, downloadMultiSheetWorkbook, buildDetailedExcelSheets, getPrintTarget, printElement, toast
-   */
   const handlePrint = async () => {
     if (activeTab === 'Detailed Reports') {
       try {
@@ -580,12 +484,6 @@ export const ReportsPage: React.FC = () => {
     toast.success('Print dialog opened')
   }
 
-  /**
-   * Description of what this function does: Handles share option selection by sharing CSV or screenshot depending on active tab.
-   * Inputs: option: ShareOption
-   * Outputs: Promise<void>
-   * Dependencies: activeTab, shareCsvFile, shareElementAsImage, buildDetailedExcelSheets, buildShareText, getPrintTarget, toast
-   */
   const handleShareSelect = async (option: ShareOption) => {
     setShareProcessing(true)
     try {
@@ -614,12 +512,6 @@ export const ReportsPage: React.FC = () => {
     }
   }
 
-  /**
-   * Description of what this function does: Triggers Excel download for the current tab (detailed or overview).
-   * Inputs: none (React event handler)
-   * Outputs: Promise<void>
-   * Dependencies: activeTab, downloadMultiSheetWorkbook, buildDetailedExcelSheets, buildExportSheets, toast
-   */
   const handleExport = async () => {
     try {
       if (activeTab === 'Detailed Reports') {
@@ -633,12 +525,6 @@ export const ReportsPage: React.FC = () => {
     }
   }
 
-  /**
-   * Description of what this function does: Renders the four summary KPI cards at the top of the Overview tab.
-   * Inputs: none
-   * Outputs: JSX.Element
-   * Dependencies: syncBundle, branchOptions, zoneOptions, safeToString
-   */
   const renderKpis = () => (
     <div className="reports-kpi-grid">
       {[
@@ -667,26 +553,54 @@ export const ReportsPage: React.FC = () => {
     </div>
   )
 
-  /**
-   * Description of what this function does: Renders the tab switcher and Print/Share/Export action buttons toolbar.
-   * Inputs: none
-   * Outputs: JSX.Element
-   * Dependencies: TABS, activeTab, handlePrint, handleExport, setShareOpen
-   */
+
   const renderTabsAndActions = () => (
     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-      <div className="hide-scrollbar flex gap-1 overflow-x-auto rounded-xl border border-[rgba(5,0,88,0.08)] bg-[#F8FAFC] p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            className={`whitespace-nowrap rounded-lg px-4 py-2 text-[13px] font-bold transition-colors ${activeTab === tab ? 'border border-gray-100 bg-white text-[var(--color-navy)] shadow-sm' : 'text-gray-500 hover:bg-white hover:text-[var(--color-navy)]'}`}
-          >
-            {tab}
-          </button>
-        ))}
+
+      <div className="relative inline-flex rounded-2xl border border-[rgba(5,0,88,0.08)] bg-[#F8FAFC] p-1 shadow-sm">
+
+        {/* Sliding Background */}
+        <div className={` absolute top-1 bottom-1 rounded-xl shadow-sm transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]
+      ${activeTab === 'Overview' ? 'left-1 w-[150px] bg-white' : 'left-[151px] w-[170px] bg-white'}`}
+        />
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('Overview')}
+          className={`
+      relative z-10 w-[150px]
+      px-5 py-3 text-sm font-semibold
+      transition-colors duration-500
+      ${activeTab === 'Overview'
+              ? 'text-[var(--color-navy)]'
+              : 'text-gray-500'
+            }
+    `}
+        >
+          Overview
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('Detailed Reports')}
+          className={`
+      relative z-10 w-[170px]
+      px-5 py-3 text-sm font-semibold
+      transition-colors duration-500
+      ${activeTab === 'Detailed Reports'
+              ? 'text-[var(--color-navy)]'
+              : 'text-gray-500'
+            }
+    `}
+        >
+          Detailed Reports
+        </button>
+
       </div>
+
+
+
+
       <div className="no-print flex items-center gap-3">
         {activeTab !== 'Detailed Reports' && (
           <>
@@ -705,12 +619,7 @@ export const ReportsPage: React.FC = () => {
     </div>
   )
 
-  /**
-   * Description of what this function does: Renders the payment volume trend and branch/communication chart pair.
-   * Inputs: none
-   * Outputs: JSX.Element
-   * Dependencies: paymentVolumeTrend, branchCaseTrend, communicationFunnel chart components
-   */
+
   const renderTrends = () => (
     <>
       <div className="w-full">
@@ -732,11 +641,6 @@ export const ReportsPage: React.FC = () => {
     <div className="reports-page -m-6 space-y-6 p-6">
       {/* Group 1 — Category cards */}
       <div className="reports-section surface-card rounded-xl p-5">
-        {isLibraryError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            Unable to load report data. Ensure backend is running on port 5166.
-          </div>
-        )}
         <CategoryCards
           cards={CATEGORY_CARDS}
           selectedCategory={selectedCategory}
