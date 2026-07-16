@@ -1,11 +1,9 @@
 import React from 'react'
-import { RotateCw } from 'lucide-react'
+import { RotateCw, ChevronRight } from 'lucide-react'
 import type { ReportTableKey } from '../hooks/useReports'
 import type { MisCardMetric } from '../utils/misCardMetrics'
-import FiltersPanel from '@/Components/Filters/FiltersPanel'
-import type { DateRangeOption } from '../types'
-
-import { ChevronRight } from "lucide-react"
+import { FilterPanel } from '@/Components/Filters/FilterPanel'
+import type { useReportFilters } from '@/Components/Filters/useReportFilters'
 
 export interface CategoryCardConfig {
   id: string
@@ -20,21 +18,7 @@ interface CategoryCardsProps {
   cards: CategoryCardConfig[]
   selectedCategory: string
   categoryMetrics: Map<string, MisCardMetric>
-  dateRange: DateRangeOption
-  customFromDate: string
-  customToDate: string
-  branchFilter: string
-  zoneFilter: string
-  stateFilter: string
-  branchOptions: string[]
-  zoneOptions: string[]
-  stateOptions: string[]
-  onDateRangeChange: (option: DateRangeOption) => void
-  onCustomFromDateChange: (date: string) => void
-  onCustomToDateChange: (date: string) => void
-  onBranchFilterChange: (value: string) => void
-  onZoneFilterChange: (value: string) => void
-  onStateFilterChange: (value: string) => void
+  filters: ReturnType<typeof useReportFilters>
   onSelectCategory: (card: CategoryCardConfig) => void
   onRefresh: () => void
   isRefreshing?: boolean
@@ -44,21 +28,7 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
   cards,
   selectedCategory,
   categoryMetrics,
-  dateRange,
-  customFromDate,
-  customToDate,
-  branchFilter,
-  zoneFilter,
-  stateFilter,
-  branchOptions,
-  zoneOptions,
-  stateOptions,
-  onDateRangeChange,
-  onCustomFromDateChange,
-  onCustomToDateChange,
-  onBranchFilterChange,
-  onZoneFilterChange,
-  onStateFilterChange,
+  filters,
   onSelectCategory,
   onRefresh,
   isRefreshing = false,
@@ -71,23 +41,7 @@ export const CategoryCards: React.FC<CategoryCardsProps> = ({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <FiltersPanel
-          selectedDateFilter={dateRange}
-          customFromDate={customFromDate}
-          customToDate={customToDate}
-          branchFilter={branchFilter}
-          zoneFilter={zoneFilter}
-          stateFilter={stateFilter}
-          branchOptions={branchOptions}
-          zoneOptions={zoneOptions}
-          stateOptions={stateOptions}
-          onDateFilterChange={onDateRangeChange}
-          onCustomFromDateChange={onCustomFromDateChange}
-          onCustomToDateChange={onCustomToDateChange}
-          onBranchFilterChange={onBranchFilterChange}
-          onZoneFilterChange={onZoneFilterChange}
-          onStateFilterChange={onStateFilterChange}
-        />
+        <FilterPanel filters={filters} />
         <button
           type="button"
           onClick={onRefresh}

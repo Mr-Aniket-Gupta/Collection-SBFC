@@ -26,21 +26,7 @@ export const AnalyticsPage: React.FC = () => {
   >("dashboard");
 
   const {
-    selectedDateFilter,
-    setSelectedDateFilter,
-    customFromDate,
-    setCustomFromDate,
-    customToDate,
-    setCustomToDate,
-    branchFilter,
-    setBranchFilter,
-    zoneFilter,
-    setZoneFilter,
-    stateFilter,
-    setStateFilter,
-    branchOptions,
-    zoneOptions,
-    stateOptions,
+    filters,
     isRefreshing,
     dashboard,
     handleRefresh,
@@ -127,25 +113,7 @@ export const AnalyticsPage: React.FC = () => {
       <PageHeader
         title="Analytics Dashboard"
         subtitle="Advanced analytics and performance insights"
-        selectedDateFilter={selectedDateFilter}
-        customFromDate={customFromDate}
-        customToDate={customToDate}
-        onDateFilterChange={setSelectedDateFilter}
-        onCustomFromDateChange={setCustomFromDate}
-        onCustomToDateChange={setCustomToDate}
-
-        branchFilter={branchFilter}
-        zoneFilter={zoneFilter}
-        stateFilter={stateFilter}
-
-        branchOptions={branchOptions}
-        zoneOptions={zoneOptions}
-        stateOptions={stateOptions}
-
-        onBranchFilterChange={setBranchFilter}
-        onZoneFilterChange={setZoneFilter}
-        onStateFilterChange={setStateFilter}
-
+        filters={filters}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       />

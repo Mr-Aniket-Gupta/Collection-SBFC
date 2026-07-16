@@ -2,27 +2,13 @@
 
 import React from 'react'
 import { RotateCw } from 'lucide-react'
-import type { DateRangeOption } from '@/features/reports/types'
-import FiltersPanel from '@/Components/Filters/FiltersPanel'
+import { FilterPanel } from '@/Components/Filters/FilterPanel'
+import type { useReportFilters } from '@/Components/Filters/useReportFilters'
 
 interface PageHeaderProps {
   title: string
   subtitle: string
-  selectedDateFilter: DateRangeOption
-  customFromDate?: string
-  customToDate?: string
-  branchFilter?: string
-  stateFilter?: string
-  zoneFilter?: string
-  branchOptions?: string[]
-  zoneOptions?: string[]
-  stateOptions?: string[]
-  onDateFilterChange: (filter: DateRangeOption) => void
-  onCustomFromDateChange?: (date: string) => void
-  onCustomToDateChange?: (date: string) => void
-  onBranchFilterChange?: (value: string) => void
-  onZoneFilterChange?: (value: string) => void
-  onStateFilterChange?: (value: string) => void
+  filters: ReturnType<typeof useReportFilters>
   onRefresh: () => void
   isRefreshing?: boolean
 }
@@ -30,21 +16,7 @@ interface PageHeaderProps {
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
-  selectedDateFilter,
-  customFromDate = '',
-  customToDate = '',
-  branchFilter = '',
-  zoneFilter = '',
-  stateFilter = '',
-  branchOptions = [],
-  zoneOptions = [],
-  stateOptions = [],
-  onDateFilterChange,
-  onCustomFromDateChange,
-  onCustomToDateChange,
-  onBranchFilterChange,
-  onZoneFilterChange,
-  onStateFilterChange,
+  filters,
   onRefresh,
   isRefreshing = false,
 }) => {
@@ -58,23 +30,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-2">
-        <FiltersPanel
-          selectedDateFilter={selectedDateFilter}
-          customFromDate={customFromDate}
-          customToDate={customToDate}
-          branchFilter={branchFilter}
-          zoneFilter={zoneFilter}
-          stateFilter={stateFilter}
-          branchOptions={branchOptions}
-          zoneOptions={zoneOptions}
-          stateOptions={stateOptions}
-          onDateFilterChange={onDateFilterChange}
-          onCustomFromDateChange={onCustomFromDateChange}
-          onCustomToDateChange={onCustomToDateChange}
-          onBranchFilterChange={onBranchFilterChange}
-          onZoneFilterChange={onZoneFilterChange}
-          onStateFilterChange={onStateFilterChange}
-        />
+        <FilterPanel filters={filters} />
 
         {/* Refresh Button */}
         <button
