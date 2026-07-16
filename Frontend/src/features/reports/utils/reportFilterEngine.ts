@@ -370,46 +370,46 @@ export function filterBundleByBranchZone(
   const key = JSON.stringify({ b: branchFilter || '', z: zoneFilter || '', s: stateFilter || '' })
   if (cacheForBundle?.has(key)) return cacheForBundle.get(key) as ReportTableBundle
 
-  const index = getBundleIndex(bundle)
-
   if (!branchFilter && !zoneFilter && !stateFilter) {
     setCache(bundle, key, bundle)
     return bundle
   }
 
-  const intersect = (a: Set<string> | null, b: Set<string>): Set<string> => {
-    if (a === null) return new Set(b)
-    const out = new Set<string>()
-    b.forEach((v) => { if (a.has(v)) out.add(v) })
-    return out
+  const allowedBranches = new Set<string>()
+  const filteredBranches = bundle.branches.filter((row) => {
+    const name = getBranchName(row)
+    if (branchFilter && norm(name) !== norm(branchFilter)) return false
+    if (zoneFilter && norm(row.zone_code || row.zone) !== norm(zoneFilter)) return false
+    if (stateFilter && norm(row.state || row.region_code) !== norm(stateFilter)) return false
+    return true
+  })
+
+  filteredBranches.forEach(row => {
+    const name = getBranchName(row)
+    if (name) allowedBranches.add(norm(name))
+  })
+
+  if (allowedBranches.size === 0) {
+    setCache(bundle, key, EMPTY_BUNDLE())
+    return EMPTY_BUNDLE()
   }
 
-  let caseSet: Set<string> | null = null
-  let strategySet: Set<string> | null = null
+  const finalCaseIds = new Set<string>()
+  const finalStrategyIds = new Set<string>()
 
-  if (branchFilter) {
-    const entry = index.branches.get(norm(branchFilter))
-    if (!entry) { setCache(bundle, key, EMPTY_BUNDLE()); return EMPTY_BUNDLE() }
-    caseSet = intersect(caseSet, entry.caseIds)
-    strategySet = intersect(strategySet, entry.strategyIds)
+  const processCaseRow = (row: DcspTableRow) => {
+    const branchVal = norm(getBranchName(row) || row.branch_name || '')
+    if (allowedBranches.has(branchVal)) {
+      const caseId = id(row.case_id ?? row.dpd_case_id ?? row.bounce_case_id ?? row.pre_emi_case_id)
+      const strategyId = id(row.strategy_id)
+      if (caseId) finalCaseIds.add(caseId)
+      if (strategyId) finalStrategyIds.add(strategyId)
+    }
   }
 
-  if (zoneFilter) {
-    const entry = index.zones.get(norm(zoneFilter))
-    if (!entry) { setCache(bundle, key, EMPTY_BUNDLE()); return EMPTY_BUNDLE() }
-    caseSet = intersect(caseSet, entry.caseIds)
-    strategySet = intersect(strategySet, entry.strategyIds)
-  }
+  bundle['dpd-cases'].forEach(processCaseRow)
+  bundle['bounce-cases'].forEach(processCaseRow)
 
-  if (stateFilter) {
-    const entry = index.states.get(norm(stateFilter))
-    if (!entry) { setCache(bundle, key, EMPTY_BUNDLE()); return EMPTY_BUNDLE() }
-    caseSet = intersect(caseSet, entry.caseIds)
-    strategySet = intersect(strategySet, entry.strategyIds)
-  }
-
-  const finalCaseIds = caseSet ?? new Set<string>()
-  const finalStrategyIds = strategySet ?? new Set<string>()
   if (finalCaseIds.size === 0 && finalStrategyIds.size === 0) {
     setCache(bundle, key, EMPTY_BUNDLE())
     return EMPTY_BUNDLE()
@@ -419,13 +419,7 @@ export function filterBundleByBranchZone(
 
   REPORT_TABLE_KEYS.forEach((tableKey) => {
     if (tableKey === 'branches') {
-      filtered.branches = bundle.branches.filter((row) => {
-        const name = getBranchName(row)
-        if (branchFilter && norm(name) !== norm(branchFilter)) return false
-        if (zoneFilter && norm(row.zone_code || row.zone) !== norm(zoneFilter)) return false
-        if (stateFilter && norm(row.state || row.region_code) !== norm(stateFilter)) return false
-        return true
-      })
+      filtered.branches = filteredBranches
       return
     }
 
@@ -456,46 +450,6 @@ function setCache(bundle: ReportTableBundle, key: string, value: ReportTableBund
     bundleFilterCache.set(bundle, m)
   }
   m.set(key, value)
-}
-
-type IdSet = { caseIds: Set<string>, strategyIds: Set<string> }
-const bundleIndexCache = new WeakMap<ReportTableBundle, {
-  branches: Map<string, IdSet>
-  zones: Map<string, IdSet>
-  states: Map<string, IdSet>
-}>()
-
-function getBundleIndex(bundle: ReportTableBundle) {
-  let idx = bundleIndexCache.get(bundle)
-  if (idx) return idx
-
-  const branches = new Map<string, IdSet>()
-  const zones = new Map<string, IdSet>()
-  const states = new Map<string, IdSet>()
-
-  bundle['dpd-cases'].forEach((row) => {
-    const branchVal = norm(getBranchName(row) || row.branch_name || '')
-    const zoneVal = norm(row.zone_code || row.zone || '')
-    const stateVal = norm(row.state || '')
-    const caseId = id(row.case_id) || id(row.dpd_case_id) || ''
-    const strategyId = id(row.strategy_id) || ''
-
-    const addTo = (map: Map<string, IdSet>, key: string) => {
-      if (!key) return
-      let e = map.get(key)
-      if (!e) { e = { caseIds: new Set<string>(), strategyIds: new Set<string>() }; map.set(key, e) }
-      if (caseId) e.caseIds.add(caseId)
-      if (strategyId) e.strategyIds.add(strategyId)
-    }
-
-    addTo(branches, branchVal)
-    addTo(zones, zoneVal)
-    addTo(states, stateVal)
-  })
-
-  idx = { branches, zones, states }
-  bundleIndexCache.set(bundle, idx)
-  return idx
 }
 
 export function countBundleRows(bundle: ReportTableBundle): number {
