@@ -298,24 +298,12 @@ export const CASES_COLUMN_ORDER = [
 
 export const COLORS = ['#000182', '#CE9B01', '#050058', '#D9EAF5', '#7c8ca6']
 
-/**
- * Description of what this function does: Pretty formats table names (e.g. strategy-steps -> Strategy Steps).
- * Inputs: table: string
- * Outputs: string
- * Dependencies: none
- */
 export const prettyTitle = (table: string): string =>
   table
     .split('-')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
 
-/**
- * Description of what this function does: Dynamically picks a suitable column key for charts representing this table.
- * Inputs: table: string, columns: string[]
- * Outputs: string
- * Dependencies: none
- */
 export const pickChartKey = (table: string, columns: string[]): string => {
   const preferred: Record<string, RegExp> = {
     cases: /bucket|status|journey|branch|zone|state/i,
@@ -332,12 +320,6 @@ export const pickChartKey = (table: string, columns: string[]): string => {
   return columns.find((column) => pattern.test(column)) ?? columns[0] ?? ''
 }
 
-/**
- * Description of what this function does: Aggregates counts and builds general distribution chart data.
- * Inputs: rows: DcspTableRow[], table: string, columns: string[]
- * Outputs: Array<{ name: string; value: number; color: string }>
- * Dependencies: pickChartKey, safeToString
- */
 export const buildChartData = (
   rows: DcspTableRow[],
   table: string,
@@ -382,12 +364,6 @@ export const BREAKDOWN_CONFIG: Record<
   },
 }
 
-/**
- * Description of what this function does: Builds primary/secondary breakdown data based on column matching regex.
- * Inputs: rows: DcspTableRow[], columns: string[], pattern: RegExp
- * Outputs: Array<{ name: string; value: number; color: string }>
- * Dependencies: safeToString
- */
 export const buildBreakdown = (
   rows: DcspTableRow[],
   columns: string[],

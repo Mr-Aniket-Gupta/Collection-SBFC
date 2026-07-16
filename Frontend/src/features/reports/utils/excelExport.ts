@@ -1,3 +1,4 @@
+// Helps download Excel files
 import type { DcspTableRow } from '../types'
 import { safeToString } from './tableUtils'
 

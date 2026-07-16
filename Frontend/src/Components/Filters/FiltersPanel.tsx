@@ -45,19 +45,10 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({
         customFromDate={customFromDate}
         customToDate={customToDate}
         onChange={onDateFilterChange}
-        onCustomFromDateChange={onCustomFromDateChange ?? (() => {})}
-        onCustomToDateChange={onCustomToDateChange ?? (() => {})}
+        onCustomFromDateChange={onCustomFromDateChange ?? (() => { })}
+        onCustomToDateChange={onCustomToDateChange ?? (() => { })}
       />
 
-      {onBranchFilterChange && (
-        <ReportSelectFilter
-          label="Branch"
-          value={branchFilter}
-          options={branchOptions}
-          allLabel="All Branches"
-          onChange={onBranchFilterChange}
-        />
-      )}
 
       {onZoneFilterChange && (
         <ReportSelectFilter
@@ -78,6 +69,17 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({
           onChange={onStateFilterChange}
         />
       )}
+
+      {onBranchFilterChange && (
+        <ReportSelectFilter
+          label="Branch"
+          value={branchFilter}
+          options={branchOptions}
+          allLabel="All Branches"
+          onChange={onBranchFilterChange}
+        />
+      )}
+      
     </div>
   )
 }

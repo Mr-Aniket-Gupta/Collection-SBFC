@@ -4,7 +4,6 @@ import {
   Smartphone,
   Coins,
   Network,
-  MessageSquare,
   AlertTriangle
 } from 'lucide-react'
 import React from 'react'

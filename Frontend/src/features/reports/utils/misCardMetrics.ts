@@ -33,15 +33,6 @@ const uniqueRows = (rows: DcspTableRow[] = [], idKey: string): DcspTableRow[] =>
   })
 }
 
-// const uniqueCaseIds = (rows: DcspTableRow[]): Set<string> => {
-//   const ids = new Set<string>()
-//   rows.forEach((row) => {
-//     const caseId = safeToString(row.strategy_id || row.case_id).trim()
-//     if (caseId) ids.add(caseId)
-//   })
-//   return ids
-// }
-
 const percentOf = (part: number, total: number): number => (total > 0 ? (part / total) * 100 : 0)
 
 

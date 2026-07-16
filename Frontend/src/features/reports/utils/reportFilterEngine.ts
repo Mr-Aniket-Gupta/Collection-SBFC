@@ -103,7 +103,7 @@ export const CATEGORY_FILTER_CONFIG: Record<string, CategoryFilterConfig> = {
   },
   'DPD Cases': {
     primaryTable: 'dpd-cases',
-    primaryPredicate: (row) => Number(row.dpd ?? 0) >= 0,
+    primaryPredicate: (row) => row.dpd_case_id != null
   },
   'Bounce Cases': {
     primaryTable: 'bounce-cases',
@@ -128,6 +128,7 @@ const addId = (value: unknown, set: Set<string>) => {
 }
 
 const seedIdsFromPrimaryRow = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalFilterIds) => {
+  const getCaseId = (r: any) => id(r.dpd_case_id ?? r.pre_emi_case_id ?? r.bounce_case_id ?? r.case_id)
   switch (tableKey) {
     case 'payments':
       addId(row.strategy_id, ids.strategyIds)
@@ -145,10 +146,11 @@ const seedIdsFromPrimaryRow = (row: DcspTableRow, tableKey: ReportTableKey, ids:
     case 'dpd-cases':
     case 'bounce-cases':
       addId(row.strategy_id, ids.strategyIds)
+      addId(getCaseId(row), ids.caseIds)
       break
     default:
       addId(row.strategy_id, ids.strategyIds)
-      addId(row.case_id, ids.caseIds)
+      addId(getCaseId(row), ids.caseIds)
       break
   }
 }
@@ -240,7 +242,7 @@ const idsAreEmpty = (ids: GlobalFilterIds): boolean =>
 
 
 const rowMatchesIds = (row: DcspTableRow, tableKey: ReportTableKey, ids: GlobalFilterIds): boolean => {
-  const caseId = id(row.case_id)
+  const caseId = id(row.dpd_case_id ?? row.pre_emi_case_id ?? row.bounce_case_id ?? row.case_id)
   const loanNumber = id(row.loan_number)
   const strategyId = id(row.strategy_id)
   // const agentId = id(row.agent_id ?? row.assigned_to ?? row.allocated_to)
@@ -271,7 +273,11 @@ export function applyGlobalFilterIds(
 
   const filtered = EMPTY_BUNDLE()
   REPORT_TABLE_KEYS.forEach((tableKey) => {
-    filtered[tableKey] = bundle[tableKey].filter((row) => rowMatchesIds(row, tableKey, ids))
+    if (tableKey === 'branches') {
+      filtered[tableKey] = bundle[tableKey]
+    } else {
+      filtered[tableKey] = bundle[tableKey].filter((row) => rowMatchesIds(row, tableKey, ids))
+    }
   })
   return filtered
 }
@@ -282,13 +288,21 @@ export function applyCategoryGlobalFilter(
 ): { bundle: ReportTableBundle; context: GlobalFilterContext | null } {
   if (!categoryTitle) return { bundle, context: null }
 
+  const config = CATEGORY_FILTER_CONFIG[categoryTitle]
+  if (!config) return { bundle, context: null }
+
   const context = buildGlobalFilterContext(categoryTitle, bundle)
   if (!context || context.primaryMatchCount === 0) {
     return { bundle: EMPTY_BUNDLE(), context }
   }
 
+  const filtered = applyGlobalFilterIds(bundle, context.ids)
+
+  filtered[config.primaryTable] =
+    bundle[config.primaryTable].filter(config.primaryPredicate)
+
   return {
-    bundle: applyGlobalFilterIds(bundle, context.ids),
+    bundle: filtered,
     context,
   }
 }
@@ -416,7 +430,12 @@ export function filterBundleByBranchZone(
     }
 
     filtered[tableKey] = bundle[tableKey].filter((row) => {
-      const caseId = id(row.case_id)
+      const caseId = id(
+        row.case_id ??
+        row.dpd_case_id ??
+        row.bounce_case_id ??
+        row.pre_emi_case_id
+      )
       const strategyId = id(row.strategy_id)
       const matchCase = caseId !== '' && finalCaseIds.has(caseId)
       const matchStrategy = strategyId !== '' && finalStrategyIds.has(strategyId)

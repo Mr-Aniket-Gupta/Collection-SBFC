@@ -11,12 +11,6 @@ import {
 } from './reportFilterEngine'
 import { flattenRows, prettyTitle } from './tableUtils'
 
-/**
- * Description of what this function does: Fetches a table bundle containing all report tables simultaneously.
- * Inputs: limit: number, keys?: ReportTableKey[]
- * Outputs: Promise<ReportTableBundle>
- * Dependencies: reportsService, EMPTY_BUNDLE, flattenRows
- */
 export async function fetchReportTableBundle(
   limit: number,
   keys: ReportTableKey[] = REPORT_TABLE_KEYS,
@@ -33,12 +27,6 @@ export async function fetchReportTableBundle(
   return bundle
 }
 
-/**
- * Description of what this function does: Builds de-duplicated report-library rows from a synchronized table bundle.
- * Inputs: bundle: ReportTableBundle
- * Outputs: ReportLibraryRow[]
- * Dependencies: REPORT_TABLE_KEYS, makeReportRow, prettyTitle
- */
 export function buildReportsFromBundle(bundle: ReportTableBundle): ReportLibraryRow[] {
   const reports: ReportLibraryRow[] = []
 
@@ -51,12 +39,6 @@ export function buildReportsFromBundle(bundle: ReportTableBundle): ReportLibrary
   return reports
 }
 
-/**
- * Description of what this function does: Retrieves rows for a specific table key from the bundle.
- * Inputs: bundle: ReportTableBundle, tableKey: ReportTableKey
- * Outputs: DcspTableRow[]
- * Dependencies: none
- */
 export function getBundleTableRows(bundle: ReportTableBundle, tableKey: ReportTableKey) {
   return bundle[tableKey] ?? []
 }
@@ -69,12 +51,6 @@ export interface MisTableRows {
   communications: ReportTableBundle['communication_logs']
 }
 
-/**
- * Description of what this function does: Groups bundle tables into MIS-relevant tables structure.
- * Inputs: bundle: ReportTableBundle
- * Outputs: MisTableRows
- * Dependencies: none
- */
 export function groupTableRowsFromBundle(bundle: ReportTableBundle): MisTableRows {
   return {
     strategies: bundle.strategies,

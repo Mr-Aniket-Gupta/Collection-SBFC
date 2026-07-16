@@ -1,3 +1,4 @@
+// Helps map raw database row → clean UI report row with standardized fields (id, name, category, createdBy, date, status).
 import type { DcspTableRow, ReportLibraryRow } from '../types'
 import { safeToString, shouldFormatDateColumn, tryFormatDate } from './tableUtils'
 

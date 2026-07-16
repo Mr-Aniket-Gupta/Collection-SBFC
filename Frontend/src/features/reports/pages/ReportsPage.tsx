@@ -153,7 +153,7 @@ export const ReportsPage: React.FC = () => {
     sessionStorage.setItem(STATE_FILTER_STORAGE_KEY, stateFilter)
   }, [stateFilter])
 
-  const { data: rawTableBundle, isFetching: isLibraryLoading, isError: isLibraryError, refetch: refetchLibrary } = useQuery({
+  const { data: rawTableBundle, isFetching: isLibraryLoading, refetch: refetchLibrary } = useQuery({
     queryKey: ['reportTableBundle', REPORT_LIBRARY_FETCH_LIMIT],
     queryFn: () => fetchReportTableBundle(REPORT_LIBRARY_FETCH_LIMIT, ['branches', 'dpd-cases', 'strategies', 'strategy-execution-log', 'bounce-cases', 'payments', 'communication_logs', 'ptps', 'agents']),
   })
