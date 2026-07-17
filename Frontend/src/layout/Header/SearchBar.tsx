@@ -1,5 +1,5 @@
-import React from 'react'
-import { Search } from 'lucide-react'
+import React from "react";
+import { Search } from "lucide-react";
 
 export const SearchBar: React.FC = () => {
   return (
@@ -13,5 +13,5 @@ export const SearchBar: React.FC = () => {
         className="block w-full pl-9 pr-4 py-1.5 bg-white/10 text-slate-200 text-xs border border-white/10 rounded-lg placeholder-slate-400 focus:outline-none focus:border-[var(--color-gold)] focus:ring-1 focus:ring-[var(--color-gold)] transition-all duration-200"
       />
     </div>
-  )
-}
+  );
+};

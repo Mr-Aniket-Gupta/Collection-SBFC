@@ -117,11 +117,11 @@ Frontend/src/
 
 ## Routes
 
-| Route                      | Page                | Description                       |
-|----------------------------|---------------------|-----------------------------------|
-| `/`                        | Redirect            | Redirects to analytics dashboard  |
-| `/analytics/dashboard`     | `AnalyticsPage`     | Executive KPI and chart dashboard |
-| `/reports/:tableKey`       | `ReportsPage`       | Table explorer with filters       |
+| Route                  | Page            | Description                       |
+| ---------------------- | --------------- | --------------------------------- |
+| `/`                    | Redirect        | Redirects to analytics dashboard  |
+| `/analytics/dashboard` | `AnalyticsPage` | Executive KPI and chart dashboard |
+| `/reports/:tableKey`   | `ReportsPage`   | Table explorer with filters       |
 
 ---
 
@@ -129,14 +129,14 @@ Frontend/src/
 
 All filters are managed in component state and synchronized to `sessionStorage` for persistence across page reloads.
 
-| Filter    | State variable    | Persisted in sessionStorage key         |
-|-----------|-------------------|-----------------------------------------|
-| Date Range | `dateRange`      | `reportsDateRange.v2`                   |
-| From Date  | `customFromDate` | `reportsCustomFromDate.v1`              |
-| To Date    | `customToDate`   | `reportsCustomToDate.v1`                |
-| Branch     | `branchFilter`   | `reportsBranchFilter.v1`                |
-| Zone       | `zoneFilter`     | `reportsZoneFilter.v1`                  |
-| State      | `stateFilter`    | `reportsStateFilter.v1`                 |
+| Filter     | State variable   | Persisted in sessionStorage key |
+| ---------- | ---------------- | ------------------------------- |
+| Date Range | `dateRange`      | `reportsDateRange.v2`           |
+| From Date  | `customFromDate` | `reportsCustomFromDate.v1`      |
+| To Date    | `customToDate`   | `reportsCustomToDate.v1`        |
+| Branch     | `branchFilter`   | `reportsBranchFilter.v1`        |
+| Zone       | `zoneFilter`     | `reportsZoneFilter.v1`          |
+| State      | `stateFilter`    | `reportsStateFilter.v1`         |
 
 ### Filter Option Generation
 

@@ -1,24 +1,29 @@
 // Renders progress bars to show the effectiveness of various strategies.
 
-import React, { useState } from 'react'
-import { ChartCard } from '@/Components'
-import { ProgressBar } from '../Components/ProgressBar'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { StrategyRow } from '../types/analytics.types'
-import { formatCappedPercent } from '@/Components/formatters'
+import React, { useState } from "react";
+import { ChartCard } from "@/Components";
+import { ProgressBar } from "../Components/ProgressBar";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { StrategyRow } from "../types/analytics.types";
+import { formatCappedPercent } from "@/Components/formatters";
 
 interface StrategyEffectivenessProps {
-  data: StrategyRow[]
+  data: StrategyRow[];
 }
 
-export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ data = [] }) => {
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
-  const totalPages = Math.ceil(data.length / itemsPerPage)
-  const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages))
-  const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1))
+export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({
+  data = [],
+}) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
+  const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
 
-  const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const paginatedData = data.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
   return (
     <ChartCard
@@ -29,10 +34,10 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
       <div className="flex flex-col gap-6 mt-2 min-h-[320px]">
         {paginatedData.map((strategy) => (
           <div key={strategy.name} className="flex flex-col gap-1.5">
-              <ProgressBar
-                label={strategy.name}
-                percentage={strategy.percentage}
-                target={strategy.target}
+            <ProgressBar
+              label={strategy.name}
+              percentage={strategy.percentage}
+              target={strategy.target}
               color={strategy.color}
               showPercentageBadge
               showTargetLabel
@@ -45,10 +50,13 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
               <span className="text-[11px] text-[var(--color-ink-muted)]">
                 Target: {formatCappedPercent(strategy.target)}
                 {strategy.percentage >= strategy.target ? (
-                  <span className="ml-2 text-[var(--color-gold)] font-semibold">Achieved</span>
+                  <span className="ml-2 text-[var(--color-gold)] font-semibold">
+                    Achieved
+                  </span>
                 ) : (
                   <span className="ml-2 text-[var(--color-blue)] font-semibold">
-                    {formatCappedPercent(strategy.target - strategy.percentage)} to go
+                    {formatCappedPercent(strategy.target - strategy.percentage)}{" "}
+                    to go
                   </span>
                 )}
               </span>
@@ -61,7 +69,8 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <span className="text-xs text-[var(--color-ink-muted)]">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, data.length)} of {data.length}
+            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+            {Math.min(currentPage * itemsPerPage, data.length)} of {data.length}
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -89,16 +98,22 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({ da
       <div className="mt-6 pt-5 border-t border-[rgba(5,0,88,0.08)] flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[var(--color-gold)]" />
-          <span className="text-[12px] text-[var(--color-ink-muted)] font-medium">Performance</span>
+          <span className="text-[12px] text-[var(--color-ink-muted)] font-medium">
+            Performance
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-[var(--color-ice)]" />
-          <span className="text-[12px] text-[var(--color-ink-muted)] font-medium">Target</span>
+          <span className="text-[12px] text-[var(--color-ink-muted)] font-medium">
+            Target
+          </span>
         </div>
         <span className="text-[12px] font-semibold text-[var(--color-gold)] bg-[rgba(206,155,1,0.12)] px-2.5 py-1 rounded-lg">
-          {data.every((strategy) => strategy.percentage >= strategy.target) ? 'All Targets Exceeded' : 'Targets In Progress'}
+          {data.every((strategy) => strategy.percentage >= strategy.target)
+            ? "All Targets Exceeded"
+            : "Targets In Progress"}
         </span>
       </div>
     </ChartCard>
-  )
-}
+  );
+};

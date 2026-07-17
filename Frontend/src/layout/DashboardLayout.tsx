@@ -1,9 +1,9 @@
 // Dashboard Layout
 
-import React from 'react'
-import { Outlet } from 'react-router-dom'
-import { Sidebar } from './Sidebar'
-import { Header } from './Header'
+import React from "react";
+import { Outlet } from "react-router-dom";
+import { Sidebar } from "./Sidebar";
+import { Header } from "./Header";
 
 export const DashboardLayout: React.FC = () => {
   return (
@@ -17,14 +17,17 @@ export const DashboardLayout: React.FC = () => {
         <Header />
 
         {/* Scrollable Content Area */}
-        <main className="flex-grow overflow-y-auto bg-[linear-gradient(180deg,#FFFFFF_0%,#D9EAF5_100%)] p-6 scrollbar-thin" role="main">
+        <main
+          className="flex-grow overflow-y-auto bg-[linear-gradient(180deg,#FFFFFF_0%,#D9EAF5_100%)] p-6 scrollbar-thin"
+          role="main"
+        >
           <div className="max-w-full">
             <Outlet />
           </div>
         </main>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default DashboardLayout
+export default DashboardLayout;

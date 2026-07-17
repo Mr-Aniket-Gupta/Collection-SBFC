@@ -91,7 +91,7 @@ Check:
 - Business logic exists.
 - Missing pagination.
 - Missing filtering.
-- SELECT * usage.
+- SELECT \* usage.
 
 Fix only affected query.
 

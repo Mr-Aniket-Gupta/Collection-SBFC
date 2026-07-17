@@ -1,10 +1,10 @@
-import React from 'react'
-import { DateRangeFilter } from '@/Components/DateRangeFilter'
-import { ReportSelectFilter } from '@/features/reports/components/ReportSelectFilter'
-import type { useReportFilters } from './useReportFilters'
+import React from "react";
+import { DateRangeFilter } from "@/Components/DateRangeFilter";
+import { ReportSelectFilter } from "@/features/reports/components/ReportSelectFilter";
+import type { useReportFilters } from "./useReportFilters";
 
 interface FiltersPanelProps {
-  filters: ReturnType<typeof useReportFilters>
+  filters: ReturnType<typeof useReportFilters>;
 }
 
 export const FilterPanel: React.FC<FiltersPanelProps> = ({ filters }) => {
@@ -43,7 +43,7 @@ export const FilterPanel: React.FC<FiltersPanelProps> = ({ filters }) => {
         onChange={filters.setBranchFilter}
       />
     </div>
-  )
-}
+  );
+};
 
-export default FilterPanel
+export default FilterPanel;

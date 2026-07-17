@@ -1,28 +1,28 @@
 // ChartCard Component (Common)
 // Shared between Reports and Analytics features
 
-import React, { useState } from 'react'
-import { Maximize2 } from 'lucide-react'
-import { ChartDataModal } from './ChartDataModal'
+import React, { useState } from "react";
+import { Maximize2 } from "lucide-react";
+import { ChartDataModal } from "./ChartDataModal";
 
 interface ChartCardProps {
-  title: string
-  subtitle?: string
-  children: React.ReactNode
-  className?: string
-  headerAction?: React.ReactNode
-  data?: any[]
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  className?: string;
+  headerAction?: React.ReactNode;
+  data?: any[];
 }
 
 export const ChartCard: React.FC<ChartCardProps> = ({
   title,
   subtitle,
   children,
-  className = '',
+  className = "",
   headerAction,
   data,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div
@@ -35,9 +35,13 @@ export const ChartCard: React.FC<ChartCardProps> = ({
     >
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h3 className="text-[16px] font-bold text-[var(--color-navy)] leading-tight">{title}</h3>
+          <h3 className="text-[16px] font-bold text-[var(--color-navy)] leading-tight">
+            {title}
+          </h3>
           {subtitle && (
-            <p className="text-[12px] text-[var(--color-ink-muted)] mt-1 font-medium">{subtitle}</p>
+            <p className="text-[12px] text-[var(--color-ink-muted)] mt-1 font-medium">
+              {subtitle}
+            </p>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -63,5 +67,5 @@ export const ChartCard: React.FC<ChartCardProps> = ({
         />
       )}
     </div>
-  )
-}
+  );
+};

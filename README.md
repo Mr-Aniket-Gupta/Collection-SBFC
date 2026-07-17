@@ -185,23 +185,23 @@ Trend direction: `up` if current > previous, `down` if current < previous, `neut
 
 ## API Endpoint Table
 
-| Method | Endpoint | Purpose | Main source |
-|---|---|---|---|
-| `GET` | `/api/analytics/dashboard` | Full analytics payload | `AnalyticsRepository.GetDashboardAsync` |
-| `GET` | `/api/analytics/kpi-cards` | KPI cards only | `GetKpiCardsAsync` |
-| `GET` | `/api/analytics/radar` | Radar metrics | `GetRadarAsync` |
-| `GET` | `/api/analytics/strategy-performance` | Strategy performance list | `GetStrategyPerformanceAsync` |
-| `GET` | `/api/analytics/communication-performance` | Hourly communication stats | `GetCommunicationPerformanceAsync` |
-| `GET` | `/api/analytics/channel-performance` | Product recovery split | `GetChannelPerformanceAsync` |
-| `GET` | `/api/analytics/bucket-distribution` | DPD bucket distribution | `GetBucketDistributionAsync` |
-| `GET` | `/api/reports/payments` | Payment records | `ReportsController.GetPayments` |
-| `GET` | `/api/reports/communication_logs` | Communication logs | `ReportsController.GetCommunicationLogs` |
-| `GET` | `/api/reports/strategies` | Strategies | `ReportsController.GetStrategies` |
-| `GET` | `/api/reports/dpd-cases` | DPD cases | `ReportsController.GetDpdCases` |
-| `GET` | `/api/reports/bounce-cases` | Bounce cases | `ReportsController.GetBounceCases` |
-| `GET` | `/api/reports/pre-emi-cases` | Pre-EMI cases | `ReportsController.GetPreEmiCases` |
-| `GET` | `/api/reports/ptps` | PTPs | `ReportsController.GetPtps` |
-| `GET` | `/api/reports/branches` | Branch master data | `ReportsController.GetBranches` |
+| Method | Endpoint                                   | Purpose                    | Main source                              |
+| ------ | ------------------------------------------ | -------------------------- | ---------------------------------------- |
+| `GET`  | `/api/analytics/dashboard`                 | Full analytics payload     | `AnalyticsRepository.GetDashboardAsync`  |
+| `GET`  | `/api/analytics/kpi-cards`                 | KPI cards only             | `GetKpiCardsAsync`                       |
+| `GET`  | `/api/analytics/radar`                     | Radar metrics              | `GetRadarAsync`                          |
+| `GET`  | `/api/analytics/strategy-performance`      | Strategy performance list  | `GetStrategyPerformanceAsync`            |
+| `GET`  | `/api/analytics/communication-performance` | Hourly communication stats | `GetCommunicationPerformanceAsync`       |
+| `GET`  | `/api/analytics/channel-performance`       | Product recovery split     | `GetChannelPerformanceAsync`             |
+| `GET`  | `/api/analytics/bucket-distribution`       | DPD bucket distribution    | `GetBucketDistributionAsync`             |
+| `GET`  | `/api/reports/payments`                    | Payment records            | `ReportsController.GetPayments`          |
+| `GET`  | `/api/reports/communication_logs`          | Communication logs         | `ReportsController.GetCommunicationLogs` |
+| `GET`  | `/api/reports/strategies`                  | Strategies                 | `ReportsController.GetStrategies`        |
+| `GET`  | `/api/reports/dpd-cases`                   | DPD cases                  | `ReportsController.GetDpdCases`          |
+| `GET`  | `/api/reports/bounce-cases`                | Bounce cases               | `ReportsController.GetBounceCases`       |
+| `GET`  | `/api/reports/pre-emi-cases`               | Pre-EMI cases              | `ReportsController.GetPreEmiCases`       |
+| `GET`  | `/api/reports/ptps`                        | PTPs                       | `ReportsController.GetPtps`              |
+| `GET`  | `/api/reports/branches`                    | Branch master data         | `ReportsController.GetBranches`          |
 
 ## Analytics Charts
 
@@ -210,6 +210,7 @@ Trend direction: `up` if current > previous, `down` if current < previous, `neut
 File: [`Frontend/src/features/Analytics/components/PerformanceRadar.tsx`](Frontend/src/features/Analytics/components/PerformanceRadar.tsx)
 
 Logic:
+
 - `Contact Rate = delivered / total communications * 100`
 - `PTP Success Rate = honoured PTPs / total PTPs * 100`
 - `Collection Rate = successful payment amount / outstanding amount * 100`
@@ -221,6 +222,7 @@ Logic:
 File: [`Frontend/src/features/Analytics/components/StrategyEffectiveness.tsx`](Frontend/src/features/Analytics/components/StrategyEffectiveness.tsx)
 
 Logic:
+
 - Data source: `col_db.strategies` joined with `col_db.dpd_cases`
 - Formula: `closed cases for strategy / total cases for strategy * 100`
 
@@ -229,6 +231,7 @@ Logic:
 File: [`Frontend/src/features/Analytics/components/StrategyGapChart.tsx`](Frontend/src/features/Analytics/components/StrategyGapChart.tsx)
 
 Logic:
+
 - Uses `strategyPerformance`
 - `achieved = percentage`
 - `target = dpd_range_to` (used as proxy target)
@@ -239,6 +242,7 @@ Logic:
 File: [`Frontend/src/features/Analytics/components/HourlyCallDistribution.tsx`](Frontend/src/features/Analytics/components/HourlyCallDistribution.tsx)
 
 Logic:
+
 - Table: `col_db.communication_logs`
 - Grouped by hour of `created_on`
 - `calls = COUNT(*)`, `responses = COUNT(*) WHERE status = 'delivered'`
@@ -248,6 +252,7 @@ Logic:
 File: [`Frontend/src/features/Analytics/components/CommunicationEfficiencyChart.tsx`](Frontend/src/features/Analytics/components/CommunicationEfficiencyChart.tsx)
 
 Logic:
+
 - Uses hourly communication dataset
 - `deliveryRate = responses / calls * 100`
 
@@ -256,6 +261,7 @@ Logic:
 File: [`Frontend/src/features/Analytics/components/BranchContributionChart.tsx`](Frontend/src/features/Analytics/components/BranchContributionChart.tsx)
 
 Logic:
+
 - Table: `col_db.dpd_cases`
 - Grouped by `branch_name`
 - Measure: `SUM(total_outstanding)`
@@ -265,6 +271,7 @@ Logic:
 File: [`Frontend/src/features/Analytics/components/AgentContributionChart.tsx`](Frontend/src/features/Analytics/components/AgentContributionChart.tsx)
 
 Logic:
+
 - Tables: `col_db.dpd_cases` + `col_db.ptps` + `auth.users`
 - Agent identity resolved via `ptps.agent_id → auth.users.agent_id`
 - `allocatedCases = COUNT(dpd_cases)`
@@ -276,25 +283,26 @@ Logic:
 File: [`Frontend/src/features/Analytics/components/ProductDistributionChart.tsx`](Frontend/src/features/Analytics/components/ProductDistributionChart.tsx)
 
 Logic:
+
 - Table: `col_db.dpd_cases`
 - Grouped by `bucket` column
 
 ## Data Source → Formula → Chart Matrix
 
-| Data source | Formula / logic | Chart / UI |
-|---|---|---|
-| `col_db.dpd_cases.outstanding_principal` | `SUM(outstanding_principal)` for closed cases vs all filtered | KPI: `Total Outstanding Principal` |
-| `col_db.dpd_cases.total_outstanding` | `SUM(total_outstanding)` for closed cases vs all filtered | KPI: `Total Outstanding` |
-| `col_db.communication_logs.status` | `COUNT(status='delivered') / total rows` | KPI: `Total Delivered` |
-| `col_db.ptps.honoured` | `COUNT(honoured=true) / total rows` | KPI: `PTPs Honoured` |
-| `col_db.communication_logs.created_on` | Group by hour; `calls=COUNT(*)`, `responses=delivered count` | `Hourly Call Distribution` |
-| `col_db.communication_logs` + `col_db.ptps` + `col_db.payments` + `col_db.dpd_cases` | Rate formulas per metric | `Performance Radar` |
-| `col_db.strategies` + `col_db.dpd_cases` | `closed cases / total cases * 100` | `Strategy Effectiveness` |
-| `col_db.strategies` + `col_db.dpd_cases` | `achieved`, `target`, `gap = max(target - achieved, 0)` | `Strategy Gap Chart` |
-| `col_db.dpd_cases.branch_name` | `SUM(total_outstanding)` grouped by branch | `Branch Contribution Chart` |
-| `col_db.dpd_cases` + `col_db.ptps` + `auth.users` | `allocatedCases`, `resolvedCases`, `recoveredAmount` | `Agent Contribution Treemap` |
-| `col_db.dpd_cases.bucket` | Grouped by bucket label | `Portfolio Risk Distribution` |
-| `col_db.communication_logs` | `deliveryRate = delivered / sent * 100` | `Communication Efficiency` |
+| Data source                                                                          | Formula / logic                                               | Chart / UI                         |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------- | ---------------------------------- |
+| `col_db.dpd_cases.outstanding_principal`                                             | `SUM(outstanding_principal)` for closed cases vs all filtered | KPI: `Total Outstanding Principal` |
+| `col_db.dpd_cases.total_outstanding`                                                 | `SUM(total_outstanding)` for closed cases vs all filtered     | KPI: `Total Outstanding`           |
+| `col_db.communication_logs.status`                                                   | `COUNT(status='delivered') / total rows`                      | KPI: `Total Delivered`             |
+| `col_db.ptps.honoured`                                                               | `COUNT(honoured=true) / total rows`                           | KPI: `PTPs Honoured`               |
+| `col_db.communication_logs.created_on`                                               | Group by hour; `calls=COUNT(*)`, `responses=delivered count`  | `Hourly Call Distribution`         |
+| `col_db.communication_logs` + `col_db.ptps` + `col_db.payments` + `col_db.dpd_cases` | Rate formulas per metric                                      | `Performance Radar`                |
+| `col_db.strategies` + `col_db.dpd_cases`                                             | `closed cases / total cases * 100`                            | `Strategy Effectiveness`           |
+| `col_db.strategies` + `col_db.dpd_cases`                                             | `achieved`, `target`, `gap = max(target - achieved, 0)`       | `Strategy Gap Chart`               |
+| `col_db.dpd_cases.branch_name`                                                       | `SUM(total_outstanding)` grouped by branch                    | `Branch Contribution Chart`        |
+| `col_db.dpd_cases` + `col_db.ptps` + `auth.users`                                    | `allocatedCases`, `resolvedCases`, `recoveredAmount`          | `Agent Contribution Treemap`       |
+| `col_db.dpd_cases.bucket`                                                            | Grouped by bucket label                                       | `Portfolio Risk Distribution`      |
+| `col_db.communication_logs`                                                          | `deliveryRate = delivered / sent * 100`                       | `Communication Efficiency`         |
 
 ## Backend API Endpoints
 
@@ -314,20 +322,20 @@ Reports:
 
 ## Database Tables Used
 
-| Schema | Table | Description |
-|---|---|---|
-| `col_db` | `dpd_cases` | DPD loan case records with financials and status |
-| `col_db` | `bounce_cases` | Bounce/NACH failure cases |
-| `col_db` | `pre_emi_cases` | Pre-EMI pipeline cases |
-| `col_db` | `strategies` | Recovery strategy definitions |
-| `col_db` | `strategy_steps` | Step definitions per strategy |
-| `col_db` | `strategy_approval_log` | Approval audit trail for strategies |
-| `col_db` | `strategy_execution_log` | Execution log per case+strategy |
-| `col_db` | `communication_logs` | All channel communications (SMS/WhatsApp/email) |
-| `col_db` | `payments` | Payment records linked by `strategy_id` |
-| `col_db` | `ptps` | Promise-To-Pay commitments |
-| `col_db` | `branches` | Branch master with zone, region, state |
-| `auth` | `users` | Agent identity (replaces old `col_db.agents`) |
+| Schema   | Table                    | Description                                      |
+| -------- | ------------------------ | ------------------------------------------------ |
+| `col_db` | `dpd_cases`              | DPD loan case records with financials and status |
+| `col_db` | `bounce_cases`           | Bounce/NACH failure cases                        |
+| `col_db` | `pre_emi_cases`          | Pre-EMI pipeline cases                           |
+| `col_db` | `strategies`             | Recovery strategy definitions                    |
+| `col_db` | `strategy_steps`         | Step definitions per strategy                    |
+| `col_db` | `strategy_approval_log`  | Approval audit trail for strategies              |
+| `col_db` | `strategy_execution_log` | Execution log per case+strategy                  |
+| `col_db` | `communication_logs`     | All channel communications (SMS/WhatsApp/email)  |
+| `col_db` | `payments`               | Payment records linked by `strategy_id`          |
+| `col_db` | `ptps`                   | Promise-To-Pay commitments                       |
+| `col_db` | `branches`               | Branch master with zone, region, state           |
+| `auth`   | `users`                  | Agent identity (replaces old `col_db.agents`)    |
 
 ## Local Setup
 

@@ -1,43 +1,43 @@
 // ProgressBar Component
 
-import React, { useEffect, useRef, useState } from 'react'
-import { clampPercent, formatCappedPercent } from '@/Components/formatters'
+import React, { useEffect, useRef, useState } from "react";
+import { clampPercent, formatCappedPercent } from "@/Components/formatters";
 
 interface ProgressBarProps {
-  label?: string
-  percentage: number
-  target?: number
-  color?: string
-  trackColor?: string
-  showPercentageBadge?: boolean
-  showTargetLabel?: boolean
-  animated?: boolean
-  height?: string
+  label?: string;
+  percentage: number;
+  target?: number;
+  color?: string;
+  trackColor?: string;
+  showPercentageBadge?: boolean;
+  showTargetLabel?: boolean;
+  animated?: boolean;
+  height?: string;
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   label,
   percentage,
   target,
-  color = '#CE9B01',
-  trackColor = '#D9EAF5',
+  color = "#CE9B01",
+  trackColor = "#D9EAF5",
   showPercentageBadge = true,
   showTargetLabel = true,
   animated = true,
-  height = 'h-2',
+  height = "h-2",
 }) => {
-  const [width, setWidth] = useState(0)
-  const ref = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!animated) {
-      setWidth(clampPercent(percentage))
-      return
+      setWidth(clampPercent(percentage));
+      return;
     }
     // Trigger animation after mount
-    const timer = setTimeout(() => setWidth(clampPercent(percentage)), 120)
-    return () => clearTimeout(timer)
-  }, [percentage, animated])
+    const timer = setTimeout(() => setWidth(clampPercent(percentage)), 120);
+    return () => clearTimeout(timer);
+  }, [percentage, animated]);
 
   return (
     <div className="flex flex-col gap-2">
@@ -45,11 +45,15 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       {(label || showPercentageBadge) && (
         <div className="flex items-center justify-between">
           {label && (
-            <span className="text-[13px] font-medium text-[var(--color-navy)] truncate">{label}</span>
+            <span className="text-[13px] font-medium text-[var(--color-navy)] truncate">
+              {label}
+            </span>
           )}
           {showPercentageBadge && (
             <div className="flex items-center gap-2 shrink-0 ml-2">
-              <span className="text-[13px] font-bold text-[var(--color-navy)]">{formatCappedPercent(percentage)}</span>
+              <span className="text-[13px] font-bold text-[var(--color-navy)]">
+                {formatCappedPercent(percentage)}
+              </span>
               {target !== undefined && showTargetLabel && (
                 <span className="text-[11px] text-[var(--color-ink-muted)] font-medium">
                   Target {formatCappedPercent(target)}
@@ -75,7 +79,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProgressBar
+export default ProgressBar;

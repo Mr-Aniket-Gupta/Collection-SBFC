@@ -1,6 +1,6 @@
 // Renders a bar chart showing the distribution of calls over different hours.
 
-import React from 'react'
+import React from "react";
 import {
   ComposedChart,
   Bar,
@@ -11,26 +11,40 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts'
-import { ChartCard } from '@/Components'
-import type { HourlyCallData } from '../types/analytics.types'
+} from "recharts";
+import { ChartCard } from "@/Components";
+import type { HourlyCallData } from "../types/analytics.types";
 
 interface CustomTooltipProps {
-  active?: boolean
-  payload?: Array<{ name: string; value: number; color: string }>
-  label?: string
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: string;
 }
 
-const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({
+  active,
+  payload,
+  label,
+}) => {
   if (active && payload && payload.length > 0) {
     return (
       <div className="bg-white border border-[rgba(5,0,88,0.12)] rounded-xl px-4 py-3 shadow-xl">
-        <p className="text-[12px] font-bold text-[var(--color-navy)] mb-2">{label}</p>
+        <p className="text-[12px] font-bold text-[var(--color-navy)] mb-2">
+          {label}
+        </p>
         {payload.map((entry) => (
-          <div key={entry.name} className="flex items-center justify-between gap-4">
+          <div
+            key={entry.name}
+            className="flex items-center justify-between gap-4"
+          >
             <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: entry.color }} />
-              <span className="text-[12px] text-[var(--color-ink-muted)]">{entry.name}</span>
+              <div
+                className="w-2.5 h-2.5 rounded-sm"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-[12px] text-[var(--color-ink-muted)]">
+                {entry.name}
+              </span>
             </div>
             <span className="text-[12px] font-bold text-[var(--color-navy)]">
               {entry.value.toLocaleString()}
@@ -38,28 +52,30 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
           </div>
         ))}
       </div>
-    )
+    );
   }
-  return null
-}
+  return null;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomBar = (props: any) => {
-  const { x, y, width, height, fill } = props
-  const radius = 5
+  const { x, y, width, height, fill } = props;
+  const radius = 5;
   return (
     <path
       d={`M${x},${y + radius} Q${x},${y} ${x + radius},${y} L${x + width - radius},${y} Q${x + width},${y} ${x + width},${y + radius} L${x + width},${y + height} L${x},${y + height} Z`}
       fill={fill}
     />
-  )
-}
+  );
+};
 
 interface HourlyCallDistributionProps {
-  data: HourlyCallData[]
+  data: HourlyCallData[];
 }
 
-export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({ data }) => {
+export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({
+  data,
+}) => {
   return (
     <ChartCard
       title="Hourly Call Distribution"
@@ -81,9 +97,9 @@ export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({ 
             dataKey="hour"
             tick={{
               fontSize: 12,
-              fill: '#5f6f88',
+              fill: "#5f6f88",
               fontWeight: 500,
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
+              fontFamily: "Plus Jakarta Sans, sans-serif",
             }}
             axisLine={false}
             tickLine={false}
@@ -91,15 +107,15 @@ export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({ 
           <YAxis
             tick={{
               fontSize: 11,
-              fill: '#5f6f88',
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
+              fill: "#5f6f88",
+              fontFamily: "Plus Jakarta Sans, sans-serif",
             }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip
             content={<CustomTooltip />}
-            cursor={{ fill: '#D9EAF5', radius: 8 }}
+            cursor={{ fill: "#D9EAF5", radius: 8 }}
           />
           <Legend
             verticalAlign="top"
@@ -107,10 +123,10 @@ export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({ 
             iconType="circle"
             iconSize={8}
             wrapperStyle={{
-              fontSize: '12px',
+              fontSize: "12px",
               fontWeight: 600,
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
-              paddingBottom: '12px',
+              fontFamily: "Plus Jakarta Sans, sans-serif",
+              paddingBottom: "12px",
             }}
           />
           <Bar
@@ -128,8 +144,8 @@ export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({ 
             name="Responses"
             stroke="#CE9B01"
             strokeWidth={2.5}
-            dot={{ fill: '#CE9B01', r: 4, strokeWidth: 2, stroke: '#fff' }}
-            activeDot={{ r: 6, stroke: '#CE9B01', strokeWidth: 2 }}
+            dot={{ fill: "#CE9B01", r: 4, strokeWidth: 2, stroke: "#fff" }}
+            activeDot={{ r: 6, stroke: "#CE9B01", strokeWidth: 2 }}
             type="monotone"
             animationBegin={400}
             animationDuration={900}
@@ -137,5 +153,5 @@ export const HourlyCallDistribution: React.FC<HourlyCallDistributionProps> = ({ 
         </ComposedChart>
       </ResponsiveContainer>
     </ChartCard>
-  )
-}
+  );
+};

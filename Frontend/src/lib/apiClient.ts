@@ -1,4 +1,4 @@
-import { toast } from './toast'
+import { toast } from "./toast";
 
 /**
  * Shared API client utilities.
@@ -8,18 +8,18 @@ import { toast } from './toast'
 /** URLs attempted in order; first successful response wins. */
 const API_BASE_URLS: string[] = [
   import.meta.env.VITE_API_BASE_URL,
-  '',
-  'http://localhost:5166',
-  'https://localhost:7093',
-].filter((url): url is string => url !== undefined && url !== null)
+  "",
+  "http://localhost:5166",
+  "https://localhost:7093",
+].filter((url): url is string => url !== undefined && url !== null);
 
 /** Shape every backend endpoint returns. */
 interface ApiResponse<T> {
-  apiCodeStatus: string
-  statusCode: number
-  message: string
-  status: string
-  payload: T
+  apiCodeStatus: string;
+  statusCode: number;
+  message: string;
+  status: string;
+  payload: T;
 }
 
 /**
@@ -27,15 +27,18 @@ interface ApiResponse<T> {
  * can surface the error correctly.
  */
 export async function unwrap<T>(response: Response): Promise<T> {
-  const body = (await response.json()) as Partial<ApiResponse<T>> & { payload?: T; data?: T }
+  const body = (await response.json()) as Partial<ApiResponse<T>> & {
+    payload?: T;
+    data?: T;
+  };
 
-  if (!response.ok || (body.status && body.status !== 'SUCCESS')) {
-    const message = body.message ?? 'API request failed'
-    toast.error(message)
-    throw new Error(message)
+  if (!response.ok || (body.status && body.status !== "SUCCESS")) {
+    const message = body.message ?? "API request failed";
+    toast.error(message);
+    throw new Error(message);
   }
 
-  return (body.payload ?? body.data) as T
+  return (body.payload ?? body.data) as T;
 }
 
 /**
@@ -43,20 +46,21 @@ export async function unwrap<T>(response: Response): Promise<T> {
  * Falls back gracefully if a server is not reachable (CORS / network errors).
  */
 export async function fetchWithFallback(path: string): Promise<Response> {
-  let lastError: unknown = null
+  let lastError: unknown = null;
 
   for (const baseUrl of API_BASE_URLS) {
     try {
-      const response = await fetch(`${baseUrl}${path}`)
+      const response = await fetch(`${baseUrl}${path}`);
       // Return immediately on success or on any non-404 status
-      if (response.ok || response.status !== 404) return response
-      lastError = new Error(`404 from ${baseUrl}`)
+      if (response.ok || response.status !== 404) return response;
+      lastError = new Error(`404 from ${baseUrl}`);
     } catch (err) {
-      lastError = err
+      lastError = err;
     }
   }
 
-  const message = lastError instanceof Error ? lastError.message : 'Unable to reach API'
-  toast.error(message)
-  throw lastError instanceof Error ? lastError : new Error(message)
+  const message =
+    lastError instanceof Error ? lastError.message : "Unable to reach API";
+  toast.error(message);
+  throw lastError instanceof Error ? lastError : new Error(message);
 }

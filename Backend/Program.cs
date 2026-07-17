@@ -4,6 +4,7 @@ using backend.Modules.Reports.Config;
 using System.Text.Json;
 using Prometheus;
 // using backend.Extensions;
+using backend.Modules.UserTour.Config;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,8 @@ builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 builder.Services.AddReportsModule();
 builder.Services.AddAnalyticsModule();
 
+builder.Services.AddUserTourModule();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -61,21 +64,6 @@ app.MapControllers();
 
 // Expose Prometheus metrics
 app.MapMetrics();
-
-
-// test
-app.MapGet("/", () =>
-{
-    Console.WriteLine("coming....");
-
-    var instanceId = Environment.GetEnvironmentVariable("INSTANCE_ID");
-
-    return Results.Json(new
-    {
-        instanceId
-    });
-});
-
 
 
 app.Run();

@@ -9,9 +9,7 @@ on:
       - "Backend/**"
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     defaults:
@@ -19,7 +17,6 @@ jobs:
         working-directory: Backend
 
     steps:
-
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4

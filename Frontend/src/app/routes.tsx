@@ -1,13 +1,13 @@
 // App Router
 
-import { createBrowserRouter, Navigate } from 'react-router-dom'
-import DashboardLayout from '@/layout/DashboardLayout'
-import { ReportsPage } from '@/features/reports'
-import { AnalyticsPage } from '@/features/Analytics'
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import DashboardLayout from "@/layout/DashboardLayout";
+import { ReportsPage } from "@/features/reports";
+import { AnalyticsPage } from "@/features/Analytics";
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <DashboardLayout />,
     children: [
       {
@@ -15,29 +15,29 @@ export const router = createBrowserRouter([
         element: <Navigate to="/analytics/dashboard" replace />,
       },
       {
-        path: 'reports',
+        path: "reports",
         element: <Navigate to="/reports/dpd-cases" replace />,
       },
       {
-        path: 'reports/:tableKey',
+        path: "reports/:tableKey",
         element: <ReportsPage />,
       },
       {
-        path: 'communication_logs',
+        path: "communication_logs",
         element: <Navigate to="/reports/dpd-cases" replace />,
       },
       {
-        path: 'analytics',
+        path: "analytics",
         element: <Navigate to="/analytics/dashboard" replace />,
       },
       {
-        path: 'analytics/dashboard',
+        path: "analytics/dashboard",
         element: <AnalyticsPage />,
       },
       {
-        path: '*',
+        path: "*",
         element: <Navigate to="/analytics/dashboard" replace />,
       },
     ],
   },
-])
+]);

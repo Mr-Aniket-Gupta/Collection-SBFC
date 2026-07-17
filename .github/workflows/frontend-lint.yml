@@ -3,7 +3,6 @@
 # hook dependency issues
 # code quality issues
 
-
 name: Frontend Lint
 
 on:

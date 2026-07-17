@@ -10,7 +10,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     defaults:
@@ -18,7 +17,6 @@ jobs:
         working-directory: Frontend
 
     steps:
-
       - name: Checkout Code
         uses: actions/checkout@v4
 

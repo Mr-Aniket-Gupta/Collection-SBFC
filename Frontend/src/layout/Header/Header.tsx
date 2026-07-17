@@ -1,72 +1,70 @@
 // Top Navbar
 
-import React, { useState, useRef, useEffect } from 'react'
-import { Bell } from 'lucide-react'
-import { UserMenu } from './UserMenu'
+import React, { useState, useRef, useEffect } from "react";
+import { Bell } from "lucide-react";
+import { UserMenu } from "./UserMenu";
 // import { toast } from 'sonner'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from "react-router-dom";
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
-  '/analytics': {
-    title: 'Analytics Dashboard',
-    subtitle: 'Advanced analytics and performance insights',
+  "/analytics": {
+    title: "Analytics Dashboard",
+    subtitle: "Advanced analytics and performance insights",
   },
-  '/reports': {
-    title: 'Reports & Analytics',
-    subtitle: 'Comprehensive collection analytics and MIS reports',
+  "/reports": {
+    title: "Reports & Analytics",
+    subtitle: "Comprehensive collection analytics and MIS reports",
   },
-  '/dashboard': {
-    title: 'Dashboard',
-    subtitle: 'Overview of collection performance',
+  "/dashboard": {
+    title: "Dashboard",
+    subtitle: "Overview of collection performance",
   },
-  '/cases': {
-    title: 'Case Management',
-    subtitle: 'Manage and track collection cases',
+  "/cases": {
+    title: "Case Management",
+    subtitle: "Manage and track collection cases",
   },
-  '/strategy': {
-    title: 'Strategy Builder',
-    subtitle: 'Configure and manage collection strategies',
+  "/strategy": {
+    title: "Strategy Builder",
+    subtitle: "Configure and manage collection strategies",
   },
-  '/approvals': {
-    title: 'Approvals',
-    subtitle: 'Review and approve pending items',
+  "/approvals": {
+    title: "Approvals",
+    subtitle: "Review and approve pending items",
   },
-  '/users': {
-    title: 'User Management',
-    subtitle: 'Manage users, roles and permissions',
+  "/users": {
+    title: "User Management",
+    subtitle: "Manage users, roles and permissions",
   },
-  '/masters': {
-    title: 'Masters Config',
-    subtitle: 'Configure master data and settings',
+  "/masters": {
+    title: "Masters Config",
+    subtitle: "Configure master data and settings",
   },
-  '/communication_logs': {
-    title: 'Communication Logs',
-    subtitle: 'View and manage communication log records',
+  "/communication_logs": {
+    title: "Communication Logs",
+    subtitle: "View and manage communication log records",
   },
-}
+};
 
 export const Header: React.FC = () => {
-  const [notifOpen, setNotifOpen] = useState(false)
-  const notifRef = useRef<HTMLDivElement>(null)
-  const location = useLocation()
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
 
   const pageInfo = PAGE_TITLES[location.pathname] ?? {
-    title: 'SBFC Collections',
-    subtitle: 'Digital collection management platform',
-  }
-
+    title: "SBFC Collections",
+    subtitle: "Digital collection management platform",
+  };
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false)
+        setNotifOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header
@@ -75,13 +73,16 @@ export const Header: React.FC = () => {
     >
       {/* Page Title and Subtitle */}
       <div>
-        <h2 className="text-[17px] font-bold text-slate-100 leading-tight">{pageInfo.title}</h2>
-        <p className="text-[11px] text-slate-400 font-medium mt-0.5">{pageInfo.subtitle}</p>
+        <h2 className="text-[17px] font-bold text-slate-100 leading-tight">
+          {pageInfo.title}
+        </h2>
+        <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+          {pageInfo.subtitle}
+        </p>
       </div>
 
       {/* Right-side Actions */}
       <div className="flex flex-wrap items-center gap-3">
-
         {/* Notification Bell */}
         <div className="relative" ref={notifRef}>
           <button
@@ -97,27 +98,53 @@ export const Header: React.FC = () => {
           {notifOpen && (
             <div className="absolute right-0 top-10 w-72 bg-[var(--color-blue)] border border-white/10 rounded-xl shadow-2xl py-2 z-50">
               <div className="px-4 py-2 border-b border-white/5 flex items-center justify-between">
-                <span className="text-[13px] font-bold text-slate-100">Notifications</span>
+                <span className="text-[13px] font-bold text-slate-100">
+                  Notifications
+                </span>
                 <span className="text-[10px] font-semibold text-[var(--color-gold)] bg-[rgba(206,155,1,0.14)] px-2 py-0.5 rounded-full">
                   3 New
                 </span>
               </div>
               {[
-                { title: 'Target Exceeded', desc: 'Soft Collection hit 101.4%', time: '2m ago', dot: '#CE9B01' },
-                { title: 'SLA Alert', desc: 'Legal Action approaching SLA', time: '18m ago', dot: '#D9EAF5' },
-                { title: 'Report Ready', desc: 'Monthly MIS report generated', time: '1h ago', dot: '#FFFFFF' },
+                {
+                  title: "Target Exceeded",
+                  desc: "Soft Collection hit 101.4%",
+                  time: "2m ago",
+                  dot: "#CE9B01",
+                },
+                {
+                  title: "SLA Alert",
+                  desc: "Legal Action approaching SLA",
+                  time: "18m ago",
+                  dot: "#D9EAF5",
+                },
+                {
+                  title: "Report Ready",
+                  desc: "Monthly MIS report generated",
+                  time: "1h ago",
+                  dot: "#FFFFFF",
+                },
               ].map((n) => (
                 <button
                   key={n.title}
                   className="w-full flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
                   onClick={() => setNotifOpen(false)}
                 >
-                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: n.dot }} />
+                  <div
+                    className="w-2 h-2 rounded-full mt-1.5 shrink-0"
+                    style={{ backgroundColor: n.dot }}
+                  />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-slate-200 truncate">{n.title}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{n.desc}</p>
+                    <p className="text-[12px] font-semibold text-slate-200 truncate">
+                      {n.title}
+                    </p>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      {n.desc}
+                    </p>
                   </div>
-                  <span className="text-[10px] text-slate-500 shrink-0">{n.time}</span>
+                  <span className="text-[10px] text-slate-500 shrink-0">
+                    {n.time}
+                  </span>
                 </button>
               ))}
             </div>
@@ -131,5 +158,5 @@ export const Header: React.FC = () => {
         <UserMenu />
       </div>
     </header>
-  )
-}
+  );
+};

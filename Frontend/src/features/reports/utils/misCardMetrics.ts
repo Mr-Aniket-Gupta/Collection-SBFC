@@ -3,68 +3,78 @@ This utility processes raw payment, strategy, and communication data to calculat
 It removes duplicate records, performs calculations such as recovery amount, success rate, digital recovery percentage, and bounce rate, then returns formatted values for display.
 */
 
-import type { DcspTableRow } from '../types'
-import { formatCurrencyINR, formatPercent } from '../../../Components/formatters'
-import { safeToString } from './tableUtils'
-import type { MisTableRows } from './reportDataUtils'
-export type { MisTableRows } from './reportDataUtils'
-export { groupTableRowsFromBundle } from './reportDataUtils'
+import type { DcspTableRow } from "../types";
+import {
+  formatCurrencyINR,
+  formatPercent,
+} from "../../../Components/formatters";
+import { safeToString } from "./tableUtils";
+import type { MisTableRows } from "./reportDataUtils";
+export type { MisTableRows } from "./reportDataUtils";
+export { groupTableRowsFromBundle } from "./reportDataUtils";
 
 export interface MisCardMetric {
-  value: string
-  subtitle: string
+  value: string;
+  subtitle: string;
 }
 
-
-const norm = (value: unknown): string => safeToString(value).trim().toUpperCase()
+const norm = (value: unknown): string =>
+  safeToString(value).trim().toUpperCase();
 
 const parseAmount = (value: unknown): number => {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : 0
-}
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
-const uniqueRows = (rows: DcspTableRow[] = [], idKey: string): DcspTableRow[] => {
-  const seen = new Set<string>()
+const uniqueRows = (
+  rows: DcspTableRow[] = [],
+  idKey: string,
+): DcspTableRow[] => {
+  const seen = new Set<string>();
   return rows.filter((row) => {
-    const id = safeToString(row[idKey] ?? row.strategy_id ?? row.case_id ?? row.id).trim()
-    if (!id || seen.has(id)) return false
-    seen.add(id)
-    return true
-  })
-}
+    const id = safeToString(
+      row[idKey] ?? row.strategy_id ?? row.case_id ?? row.id,
+    ).trim();
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+};
 
-const percentOf = (part: number, total: number): number => (total > 0 ? (part / total) * 100 : 0)
-
+const percentOf = (part: number, total: number): number =>
+  total > 0 ? (part / total) * 100 : 0;
 
 export function buildMisCardMetrics(
   cardTitles: Record<string, string>,
   rows: MisTableRows,
 ): Map<string, MisCardMetric> {
-  const payments = uniqueRows(rows.payments, 'payment_id')
-  const strategies = uniqueRows(rows.strategies, 'strategy_id')
-  const communications = uniqueRows(rows.communications, 'communication_id')
-  const dpdCases = uniqueRows(rows.dpdCases, 'dpd_case_id')
-  const bounceCases = uniqueRows(rows.bounceCases, 'bounce_case_id')
+  const payments = uniqueRows(rows.payments, "payment_id");
+  const strategies = uniqueRows(rows.strategies, "strategy_id");
+  const communications = uniqueRows(rows.communications, "communication_id");
+  const dpdCases = uniqueRows(rows.dpdCases, "dpd_case_id");
+  const bounceCases = uniqueRows(rows.bounceCases, "bounce_case_id");
 
-  const metrics = new Map<string, MisCardMetric>()
+  const metrics = new Map<string, MisCardMetric>();
 
   const paymentModeCounts = payments.reduce<Map<string, number>>((acc, row) => {
-    const mode = norm(row.payment_mode) || 'UNKNOWN'
-    acc.set(mode, (acc.get(mode) ?? 0) + 1)
-    return acc
-  }, new Map())
+    const mode = norm(row.payment_mode) || "UNKNOWN";
+    acc.set(mode, (acc.get(mode) ?? 0) + 1);
+    return acc;
+  }, new Map());
 
-  const successPayments = payments.filter((row) => norm(row.payment_status) === 'SUCCESS')
+  const successPayments = payments.filter(
+    (row) => norm(row.payment_status) === "SUCCESS",
+  );
 
   const recoveryAmount = successPayments.reduce(
     (sum, row) => sum + parseAmount(row.payment_amount ?? row.amount),
     0,
-  )
+  );
   if (cardTitles.recovery) {
     metrics.set(cardTitles.recovery, {
       value: formatCurrencyINR(recoveryAmount),
-      subtitle: 'Total successful payment amount',
-    })
+      subtitle: "Total successful payment amount",
+    });
   }
 
   if (cardTitles.payment) {
@@ -72,57 +82,74 @@ export function buildMisCardMetrics(
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
       .map(([mode, count]) => `${mode}: ${count}`)
-      .join(' • ')
+      .join(" • ");
 
     metrics.set(cardTitles.payment, {
-      value: payments.length > 0 ? payments.length.toLocaleString('en-IN') : '0',
-      subtitle: summary || 'No payment modes found',
-    })
+      value:
+        payments.length > 0 ? payments.length.toLocaleString("en-IN") : "0",
+      subtitle: summary || "No payment modes found",
+    });
   }
 
-  const npaCount = dpdCases.filter((row) => norm(row.bucket) === 'NPA').length
+  const npaCount = dpdCases.filter((row) => norm(row.bucket) === "NPA").length;
   if (cardTitles.bucket) {
     metrics.set(cardTitles.bucket, {
-      value: npaCount.toLocaleString('en-IN'),
-      subtitle: 'NPA cases',
-    })
+      value: npaCount.toLocaleString("en-IN"),
+      subtitle: "NPA cases",
+    });
   }
 
   const digitalPayments = payments.filter(
-    (row) => norm(row.payment_mode) !== 'CASH',
-  )
+    (row) => norm(row.payment_mode) !== "CASH",
+  );
   if (cardTitles.digital) {
     metrics.set(cardTitles.digital, {
-      value: payments.length > 0 ? formatPercent(percentOf(digitalPayments.length, payments.length)) : '0.0%',
-      subtitle: `${digitalPayments.length.toLocaleString('en-IN')} of ${payments.length.toLocaleString('en-IN')} payments`,
-    })
+      value:
+        payments.length > 0
+          ? formatPercent(percentOf(digitalPayments.length, payments.length))
+          : "0.0%",
+      subtitle: `${digitalPayments.length.toLocaleString("en-IN")} of ${payments.length.toLocaleString("en-IN")} payments`,
+    });
   }
 
-  const activeStrategies = strategies.filter((row) => norm(row.status) === 'ACTIVE').length
+  const activeStrategies = strategies.filter(
+    (row) => norm(row.status) === "ACTIVE",
+  ).length;
   metrics.set(cardTitles.strategy, {
-    value: strategies.length > 0 ? formatPercent(percentOf(activeStrategies, strategies.length)) : '0.0%',
-    subtitle: `${activeStrategies.toLocaleString('en-IN')} active strategies`,
-  })
+    value:
+      strategies.length > 0
+        ? formatPercent(percentOf(activeStrategies, strategies.length))
+        : "0.0%",
+    subtitle: `${activeStrategies.toLocaleString("en-IN")} active strategies`,
+  });
 
-  const deliveredCount = communications.filter((row) => norm(row.status) === 'DELIVERED').length
+  const deliveredCount = communications.filter(
+    (row) => norm(row.status) === "DELIVERED",
+  ).length;
   metrics.set(cardTitles.comm, {
-    value: communications.length > 0 ? formatPercent(percentOf(deliveredCount, communications.length)) : '0.0%',
-    subtitle: `${deliveredCount.toLocaleString('en-IN')} delivered messages`,
-  })
+    value:
+      communications.length > 0
+        ? formatPercent(percentOf(deliveredCount, communications.length))
+        : "0.0%",
+    subtitle: `${deliveredCount.toLocaleString("en-IN")} delivered messages`,
+  });
 
-  const dpdTotal = dpdCases.length
-  metrics.set('DPD Cases', {
-    value: dpdTotal.toLocaleString('en-IN'),
-    subtitle: 'Total DPD cases',
-  })
+  const dpdTotal = dpdCases.length;
+  metrics.set("DPD Cases", {
+    value: dpdTotal.toLocaleString("en-IN"),
+    subtitle: "Total DPD cases",
+  });
 
-  const bounceCount = bounceCases.length
-  const totalCases = dpdCases.length + bounceCases.length
-  const bounceTitle = cardTitles.bounce || 'Bounce Analysis'
+  const bounceCount = bounceCases.length;
+  const totalCases = dpdCases.length + bounceCases.length;
+  const bounceTitle = cardTitles.bounce || "Bounce Analysis";
   metrics.set(bounceTitle, {
-    value: totalCases > 0 ? formatPercent(percentOf(bounceCount, totalCases)) : '0.0%',
-    subtitle: `${bounceCount.toLocaleString('en-IN')} bounce cases`,
-  })
+    value:
+      totalCases > 0
+        ? formatPercent(percentOf(bounceCount, totalCases))
+        : "0.0%",
+    subtitle: `${bounceCount.toLocaleString("en-IN")} bounce cases`,
+  });
 
-  return metrics
+  return metrics;
 }

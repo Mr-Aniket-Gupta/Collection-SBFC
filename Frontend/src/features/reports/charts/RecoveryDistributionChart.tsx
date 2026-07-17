@@ -1,28 +1,36 @@
 // Recovery Distribution
 
-
-import React from 'react'
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts'
-import { ChartCard } from '@/Components'
-import type { RecoveryDistributionData } from '../types'
-import { RECOVERY_PIE_COLORS } from '../constants'
-import { clampPercent } from '../../../Components/formatters'
+import React from "react";
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+} from "recharts";
+import { ChartCard } from "@/Components";
+import type { RecoveryDistributionData } from "../types";
+import { RECOVERY_PIE_COLORS } from "../constants";
+import { clampPercent } from "../../../Components/formatters";
 
 interface RecoveryDistributionChartProps {
-  data: RecoveryDistributionData[]
+  data: RecoveryDistributionData[];
 }
 
 const TOOLTIP_STYLE = {
-  backgroundColor: '#ffffff',
-  border: '1px solid rgba(5, 0, 88, 0.12)',
-  borderRadius: '8px',
-  color: '#050058',
-  fontSize: '11px',
-  boxShadow: '0 14px 30px rgba(5, 0, 88, 0.12)',
-}
+  backgroundColor: "#ffffff",
+  border: "1px solid rgba(5, 0, 88, 0.12)",
+  borderRadius: "8px",
+  color: "#050058",
+  fontSize: "11px",
+  boxShadow: "0 14px 30px rgba(5, 0, 88, 0.12)",
+};
 
 /** Recovery Distribution pie chart — share of recovery by channel. */
-export const RecoveryDistributionChart: React.FC<RecoveryDistributionChartProps> = ({ data }) => (
+export const RecoveryDistributionChart: React.FC<
+  RecoveryDistributionChartProps
+> = ({ data }) => (
   <ChartCard
     title="Recovery Distribution"
     subtitle="Share of recovery by channel"
@@ -35,10 +43,10 @@ export const RecoveryDistributionChart: React.FC<RecoveryDistributionChartProps>
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
             formatter={(value, _name, item) => {
-              const percentage = clampPercent(Number(value ?? 0))
-              const amount = item.payload?.amount ?? 0
+              const percentage = clampPercent(Number(value ?? 0));
+              const amount = item.payload?.amount ?? 0;
 
-              return `${percentage}% (₹${amount.toLocaleString('en-IN')})`
+              return `${percentage}% (₹${amount.toLocaleString("en-IN")})`;
             }}
           />
           <Pie
@@ -52,7 +60,10 @@ export const RecoveryDistributionChart: React.FC<RecoveryDistributionChartProps>
             nameKey="name"
           >
             {data.map((entry, index) => (
-              <Cell key={entry.name} fill={RECOVERY_PIE_COLORS[index % RECOVERY_PIE_COLORS.length]} />
+              <Cell
+                key={entry.name}
+                fill={RECOVERY_PIE_COLORS[index % RECOVERY_PIE_COLORS.length]}
+              />
             ))}
           </Pie>
           <Legend
@@ -60,12 +71,16 @@ export const RecoveryDistributionChart: React.FC<RecoveryDistributionChartProps>
             height={40}
             iconSize={8}
             iconType="circle"
-            wrapperStyle={{ fontSize: 10, color: '#5f6f88', lineHeight: '16px' }}
+            wrapperStyle={{
+              fontSize: 10,
+              color: "#5f6f88",
+              lineHeight: "16px",
+            }}
           />
         </PieChart>
       </ResponsiveContainer>
     </div>
   </ChartCard>
-)
+);
 
-export default RecoveryDistributionChart
+export default RecoveryDistributionChart;

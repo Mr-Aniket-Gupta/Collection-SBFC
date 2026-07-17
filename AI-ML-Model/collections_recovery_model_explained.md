@@ -31,14 +31,14 @@ LEFT JOIN payments p      ON p.strategy_id = sel.strategy_id
 WHERE sel.status IN ('COMPLETED', 'FAILED')
 ```
 
-| Table | Ye Kya Deta Hai | Kyun Chahiye |
-|---|---|---|
-| `strategy_execution_log` | Base table — konsi strategy kab assign/complete hui | Ye hamara "event" hai jispar prediction karna hai |
-| `dpd_cases` | Loan ki detail — kitne din late hai (DPD), outstanding amount, bucket, EMI, last payment | Customer kitna "risky" hai, ye batata hai |
-| `branches` | Branch ka zone, region, type | Location-based pattern pakadne ke liye (e.g. kuch zones me recovery zyada hoti hai) |
-| `strategies` | Journey type, priority, customer segment | Strategy design ka context |
-| `communication_logs` | Call/SMS ka channel, status, customer response, retry count | Customer engage hua ya nahi, ye judge karta hai |
-| `payments` | Payment success hua ya nahi | **Yehi hamara target/label banata hai** |
+| Table                    | Ye Kya Deta Hai                                                                          | Kyun Chahiye                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `strategy_execution_log` | Base table — konsi strategy kab assign/complete hui                                      | Ye hamara "event" hai jispar prediction karna hai                                   |
+| `dpd_cases`              | Loan ki detail — kitne din late hai (DPD), outstanding amount, bucket, EMI, last payment | Customer kitna "risky" hai, ye batata hai                                           |
+| `branches`               | Branch ka zone, region, type                                                             | Location-based pattern pakadne ke liye (e.g. kuch zones me recovery zyada hoti hai) |
+| `strategies`             | Journey type, priority, customer segment                                                 | Strategy design ka context                                                          |
+| `communication_logs`     | Call/SMS ka channel, status, customer response, retry count                              | Customer engage hua ya nahi, ye judge karta hai                                     |
+| `payments`               | Payment success hua ya nahi                                                              | **Yehi hamara target/label banata hai**                                             |
 
 **Important note (already flagged in code):** `branch_name <-> branches.code` join key thoda assume kiya gaya hai. Production me chalane se pehle apne actual schema se ye match zaroor kar lena — agar mismatch hua, to `branches` ka data silently missing (NULL) aa jayega kyunki ye `LEFT JOIN` hai.
 

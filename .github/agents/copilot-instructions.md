@@ -235,7 +235,7 @@ Responsibilities:
 - Use UUID primary keys when possible.
 - Use indexes on filtering columns.
 - Use foreign keys properly.
-- Never use SELECT * in production queries.
+- Never use SELECT \* in production queries.
 
 ---
 
@@ -263,11 +263,11 @@ KPIs, charts and tables must always remain connected.
 Example:
 
 Branch Filter
-    ↓
+↓
 KPI Cards
-    ↓
+↓
 Charts
-    ↓
+↓
 Tables
 
 Changing any filter must refresh all dependent components.

@@ -100,35 +100,35 @@ Backend/
 
 All endpoints accept query parameters: `state`, `branch_name`, `zone`, `start_date`, `end_date`, `limit`.
 
-| Endpoint                                   | Description                              |
-|--------------------------------------------|------------------------------------------|
-| `GET /api/analytics/dashboard`             | Full dashboard payload (parallel fetch)  |
-| `GET /api/analytics/kpi-cards`             | 4 KPI summary cards                      |
-| `GET /api/analytics/radar`                 | 6 performance radar metrics              |
-| `GET /api/analytics/strategy-performance`  | Strategy closure rate list               |
-| `GET /api/analytics/communication-performance` | Hourly calls vs delivered            |
-| `GET /api/analytics/channel-performance`   | Product-level recovery %                 |
-| `GET /api/analytics/bucket-distribution`   | DPD bucket case counts                   |
-| `GET /api/analytics/branch-contributors`   | Branch outstanding totals                |
-| `GET /api/analytics/agent-contributors`    | Agent resolution stats                   |
+| Endpoint                                       | Description                             |
+| ---------------------------------------------- | --------------------------------------- |
+| `GET /api/analytics/dashboard`                 | Full dashboard payload (parallel fetch) |
+| `GET /api/analytics/kpi-cards`                 | 4 KPI summary cards                     |
+| `GET /api/analytics/radar`                     | 6 performance radar metrics             |
+| `GET /api/analytics/strategy-performance`      | Strategy closure rate list              |
+| `GET /api/analytics/communication-performance` | Hourly calls vs delivered               |
+| `GET /api/analytics/channel-performance`       | Product-level recovery %                |
+| `GET /api/analytics/bucket-distribution`       | DPD bucket case counts                  |
+| `GET /api/analytics/branch-contributors`       | Branch outstanding totals               |
+| `GET /api/analytics/agent-contributors`        | Agent resolution stats                  |
 
 ### Reports (`/api/reports/...`)
 
 All endpoints accept query parameters: `page` (default 1), `limit` (default 25, max 200).
 
-| Endpoint                                 | DB Table                         |
-|------------------------------------------|----------------------------------|
-| `GET /api/reports/payments`              | `col_db.payments`                |
-| `GET /api/reports/communication_logs`    | `col_db.communication_logs`      |
-| `GET /api/reports/strategies`            | `col_db.strategies`              |
-| `GET /api/reports/strategy-approval-log` | `col_db.strategy_approval_log`   |
-| `GET /api/reports/strategy-steps`        | `col_db.strategy_steps`          |
-| `GET /api/reports/strategy-execution-log`| `col_db.strategy_execution_log`  |
-| `GET /api/reports/pre-emi-cases`         | `col_db.pre_emi_cases`           |
-| `GET /api/reports/dpd-cases`             | `col_db.dpd_cases`               |
-| `GET /api/reports/bounce-cases`          | `col_db.bounce_cases`            |
-| `GET /api/reports/ptps`                  | `col_db.ptps`                    |
-| `GET /api/reports/branches`              | `col_db.branches`                |
+| Endpoint                                  | DB Table                        |
+| ----------------------------------------- | ------------------------------- |
+| `GET /api/reports/payments`               | `col_db.payments`               |
+| `GET /api/reports/communication_logs`     | `col_db.communication_logs`     |
+| `GET /api/reports/strategies`             | `col_db.strategies`             |
+| `GET /api/reports/strategy-approval-log`  | `col_db.strategy_approval_log`  |
+| `GET /api/reports/strategy-steps`         | `col_db.strategy_steps`         |
+| `GET /api/reports/strategy-execution-log` | `col_db.strategy_execution_log` |
+| `GET /api/reports/pre-emi-cases`          | `col_db.pre_emi_cases`          |
+| `GET /api/reports/dpd-cases`              | `col_db.dpd_cases`              |
+| `GET /api/reports/bounce-cases`           | `col_db.bounce_cases`           |
+| `GET /api/reports/ptps`                   | `col_db.ptps`                   |
+| `GET /api/reports/branches`               | `col_db.branches`               |
 
 ---
 
@@ -164,17 +164,17 @@ Error responses include an `errors` array. HTTP 4xx/5xx status codes are set app
 
 ## Database Schema Overview
 
-| Schema   | Table                       | Description                                |
-|----------|-----------------------------|--------------------------------------------|
-| `col_db` | `dpd_cases`                 | DPD loan cases with financials and status  |
-| `col_db` | `bounce_cases`              | NACH/bounce cases                          |
-| `col_db` | `pre_emi_cases`             | Pre-EMI pipeline cases                     |
-| `col_db` | `strategies`                | Collection strategy definitions            |
-| `col_db` | `strategy_steps`            | Step config per strategy                   |
-| `col_db` | `strategy_approval_log`     | Approval workflow history                  |
-| `col_db` | `strategy_execution_log`    | Strategy execution per case                |
-| `col_db` | `communication_logs`        | SMS/WhatsApp/email communication records   |
-| `col_db` | `payments`                  | Payment records (linked by `strategy_id`)  |
-| `col_db` | `ptps`                      | Promise-To-Pay commitments                 |
-| `col_db` | `branches`                  | Branch master (zone, region, state)        |
-| `auth`   | `users`                     | Agent identity and account records         |
+| Schema   | Table                    | Description                               |
+| -------- | ------------------------ | ----------------------------------------- |
+| `col_db` | `dpd_cases`              | DPD loan cases with financials and status |
+| `col_db` | `bounce_cases`           | NACH/bounce cases                         |
+| `col_db` | `pre_emi_cases`          | Pre-EMI pipeline cases                    |
+| `col_db` | `strategies`             | Collection strategy definitions           |
+| `col_db` | `strategy_steps`         | Step config per strategy                  |
+| `col_db` | `strategy_approval_log`  | Approval workflow history                 |
+| `col_db` | `strategy_execution_log` | Strategy execution per case               |
+| `col_db` | `communication_logs`     | SMS/WhatsApp/email communication records  |
+| `col_db` | `payments`               | Payment records (linked by `strategy_id`) |
+| `col_db` | `ptps`                   | Promise-To-Pay commitments                |
+| `col_db` | `branches`               | Branch master (zone, region, state)       |
+| `auth`   | `users`                  | Agent identity and account records        |
