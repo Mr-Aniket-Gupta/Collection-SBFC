@@ -95,10 +95,10 @@ export async function shareCsvFile(sheets: ExcelSheet[], filename: string, share
   const { name, rows } = sheets[0] // CSV only supports one sheet
   const worksheet = XLSX.utils.json_to_sheet(rows.length ? rows : [{ message: 'No data' }])
   XLSX.utils.book_append_sheet(workbook, worksheet, name.slice(0, 31))
-  
+
   const buffer = XLSX.write(workbook, { bookType: 'csv', type: 'array' })
   const blob = new Blob([buffer], { type: 'text/csv;charset=utf-8;' })
-  
+
   const csvFilename = filename.replace(/\.xlsx$/, '.csv')
   const file = new File([blob], csvFilename, { type: blob.type })
   const fallbackShareData = { title, text: shareText ?? `Sharing ${csvFilename}`, url }

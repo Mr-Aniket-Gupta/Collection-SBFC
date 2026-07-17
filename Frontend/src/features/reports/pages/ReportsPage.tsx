@@ -32,7 +32,7 @@ import {
   buildPaymentVolumeTrend,
   buildRecoveryDistributionData,
 } from '@/features/reports/utils/chartBuilders'
-import { formatDateRangeLabel, getDefaultCustomToDate } from '@/Components/dateFilter'
+import { formatDateRangeLabel } from '@/Components/dateFilter'
 import { printElement, shareElementAsImage } from '@/features/reports/utils/captureUtils'
 import { downloadMultiSheetWorkbook, shareCsvFile, toExportRows } from '@/features/reports/utils/excelExport'
 import { buildMisCardMetrics, groupTableRowsFromBundle } from '@/features/reports/utils/misCardMetrics'

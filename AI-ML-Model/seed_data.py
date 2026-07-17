@@ -1,8 +1,8 @@
 import random
 from datetime import date, datetime, timedelta
- 
+
 import psycopg2
- 
+
 # ---------------------------------------------------------------------
 # 1. DB CONNECTION -- apni details yahan fill karein
 # ---------------------------------------------------------------------
@@ -13,17 +13,14 @@ DB_CONFIG = {
     "user": "postgres",
     "password": "postgres",
 }
- 
+
 random.seed(42)  # reproducible dummy data (chaho to hata sakte ho)
- 
+
 # ---------------------------------------------------------------------
 # 2. MASTER / REFERENCE DATA (ye hi values sab tables me reuse hongi)
 # ---------------------------------------------------------------------
-# 6 realistic branches -- real city/state/branch names, alag alag zones
-# (branch / zone / state linking logic UNCHANGED — jaisa tha waisa hi hai)
-# zone_code ab seedha East/West/North/South hi hai (koi prefix/number nahi)
-ZONE_CODE_MAP = {"West": "West", "North": "North", "East": "East", "South": "South"}
- 
+ZONE_CODE_MAP = {"West": "ZN-WEST", "North": "ZN-NORTH", "East": "ZN-EAST", "South": "ZN-SOUTH"}
+
 BRANCH_SEED = [
     {"code": "BR001", "name": "Mumbai Andheri Branch", "city": "Mumbai",
      "state": "Maharashtra", "pincode": "400053", "zone": "West",
@@ -50,7 +47,7 @@ BRANCH_SEED = [
      "manager": "Neha Rathore",
      "address": "Central Spine, Malviya Nagar, Jaipur, Rajasthan"},
 ]
- 
+
 BRANCHES = []
 for i, s in enumerate(BRANCH_SEED, start=1):
     BRANCHES.append(
@@ -75,7 +72,7 @@ for i, s in enumerate(BRANCH_SEED, start=1):
             "address": s["address"],
         }
     )
- 
+
 CUSTOMER_NAMES = [
     "Anita Desai", "Vikram Patel", "Sunita Reddy", "Rohan Mehta",
     "Kavita Joshi", "Arjun Nair", "Pooja Verma", "Sanjay Gupta",
@@ -83,28 +80,49 @@ CUSTOMER_NAMES = [
     "Shreya Kapoor", "Ajay Singh", "Ritu Malhotra", "Deepak Rao",
     "Nisha Agarwal", "Vivek Bhatt", "Swati Pillai", "Karan Chawla",
 ]
- 
+
 AGENT_NAMES = [s["manager"] for s in BRANCH_SEED]
- 
+
 PRODUCTS = ["Personal Loan", "Business Loan", "Gold Loan", "Vehicle Loan"]
-BUCKETS = ["0-30", "31-60", "61-90", "NPA"]
- 
- 
+
+# Bucket codes ab col_db.bucket_master.bucket_code se match karte hain
+BUCKET_MASTER_SEED = [
+    ("1-30", "0-30 Days Past Due", True),
+    ("31-60", "31-60 Days Past Due", True),
+    ("61-90", "61-90 Days Past Due", True),
+    ("NPA", "Non-Performing Asset", True),
+    ("91-180", "91-180 Days Past Due (Legacy)", False),  # inactive bucket case
+]
+BUCKETS = [b[0] for b in BUCKET_MASTER_SEED if b[2]]  # active buckets only
+
+
 def bucket_for_dpd(dpd):
-    """DPD value ke hisaab se sahi bucket return karta hai, taaki dpd
-    aur bucket hamesha ek dusre se consistent/logical rahein."""
+    """DPD value ke hisaab se sahi bucket_code return karta hai (bucket_master
+    ke codes se match), taaki dpd aur bucket hamesha consistent rahein."""
     if dpd <= 30:
-        return "0-30"
+        return "1-30"
     elif dpd <= 60:
         return "31-60"
     elif dpd <= 90:
         return "61-90"
     else:
         return "NPA"
-CHANNELS = ["SMS", "EMAIL", "MANUAL_CALL", "AI_VOICE", "FIELD_VISIT", "WHATSAPP"]
+
+
+# Channel codes ab col_db.channel_master.channel_code se match karte hain
+CHANNEL_MASTER_SEED = [
+    ("SMS", "SMS", True),
+    ("EMAIL", "Email", True),
+    ("MANUAL_CALL", "Manual Call", True),
+    ("AI_VOICE", "AI Voice", True),
+    ("FIELD_VISIT", "Field Visit", True),
+    ("WHATSAPP", "Whatsapp", True),
+    ("IVR", "Interactive Voice Response", False),  # inactive/disabled channel case
+]
+CHANNELS = [c[0] for c in CHANNEL_MASTER_SEED if c[2]]  # active channels only
+
 COMM_STATUS = ["SENT", "DELIVERED", "FAILED", "READ", "QUEUED", "Responded", "Converted"]
- 
-# --- Naya: extra variety lists (real-world jaisi range of values) ---
+
 LOAN_STATUSES = ["ACTIVE", "NPA", "WRITTEN_OFF", "RESTRUCTURED", "CLOSED"]
 CASE_STATUSES = [
     "PENDING_STRATEGY", "IN_PROGRESS", "ASSIGNED", "ESCALATED",
@@ -131,24 +149,23 @@ CUSTOMER_SEGMENTS = ["RETAIL", "MSME", "PRIME", "SUBPRIME"]
 JOURNEY_TYPES = ["SOFT_COLLECTION", "FIELD_COLLECTION", "LEGAL", "TELE_CALLING"]
 STRATEGY_STATUSES = ["ACTIVE", "DRAFT", "PAUSED"]
 CURRENT_YEAR = date.today().year
- 
- 
+
+
 def rand_date(start_days_ago=400, end_days_ago=0):
     d = random.randint(end_days_ago, start_days_ago)
     return date.today() - timedelta(days=d)
- 
- 
+
+
 def rand_dt(start_days_ago=60, end_days_ago=0):
     d = random.randint(end_days_ago, start_days_ago)
     return datetime.now() - timedelta(days=d, hours=random.randint(0, 23), minutes=random.randint(0, 59))
- 
- 
+
+
 def rand_dt_between(start_dt, end_dt=None):
-    """start_dt aur end_dt (default: abhi) ke BEECH ek random datetime
-    deta hai -- taaki related columns (created_at -> updated_at,
-    assigned_at -> completed_at, etc.) hamesha logically sahi order me
-    rahein aur kabhi future date na aaye. start_dt date ya datetime dono
-    ho sakta hai."""
+    """start_dt aur end_dt (default: abhi) ke BEECH ek random datetime deta
+    hai -- taaki related columns (created_at -> updated_at, assigned_at ->
+    completed_at, etc.) hamesha logically sahi order me rahein aur kabhi
+    future date na aaye. start_dt date ya datetime dono ho sakta hai."""
     if isinstance(start_dt, datetime):
         start = start_dt
     else:
@@ -158,12 +175,12 @@ def rand_dt_between(start_dt, end_dt=None):
         return end
     delta_seconds = int((end - start).total_seconds())
     return start + timedelta(seconds=random.randint(0, delta_seconds))
- 
- 
+
+
 def rand_mobile(seed):
     return f"98{seed:08d}"[:10]
- 
- 
+
+
 # ---------------------------------------------------------------------
 # 3. INSERT FUNCTIONS
 # ---------------------------------------------------------------------
@@ -186,21 +203,18 @@ def insert_branches(cur):
         b["created_at"] = rand_dt(700, 400)  # branch onboarding date, random
         # created_by/updated_by abhi None -- users insert hone ke baad
         # link_branch_audit() inhe branch ke apne manager agent_id se
-        # link kar dega (logically connected: jisne branch banaya wahi
-        # uska record bhi maintain karta hai)
+        # link kar dega (branch ka creator = uska manager)
         b["created_by"] = None
         b["updated_by"] = None
         b["updated_at"] = b["created_at"]
         cur.execute(sql, b)
     print(f"Inserted {len(BRANCHES)} branches.")
- 
- 
+
+
 def link_branch_audit(cur, agent_ids):
     """Users insert hone ke baad chalta hai -- har branch ka
     created_by/updated_by uske apne manager agent_id se set karta hai,
-    aur updated_at ko created_at ke baad (aaj tak) ek random date deta
-    hai. Ye "same-meaning columns logically connected rahein" wali
-    requirement fulfil karta hai (branch ka creator = uska manager)."""
+    aur updated_at ko created_at ke baad (aaj tak) ek random date deta hai."""
     sql = """
         UPDATE col_db.branches
         SET created_by = %(agent_id)s,
@@ -218,14 +232,35 @@ def link_branch_audit(cur, agent_ids):
             },
         )
     print(f"Linked created_by/updated_by/updated_at for {len(BRANCHES)} branches.")
- 
- 
+
+
+def insert_bucket_master(cur):
+    sql = """
+        INSERT INTO col_db.bucket_master (bucket_code, bucket_name, is_active)
+        VALUES (%(bucket_code)s, %(bucket_name)s, %(is_active)s)
+        ON CONFLICT (bucket_code) DO NOTHING;
+    """
+    for code, name, active in BUCKET_MASTER_SEED:
+        cur.execute(sql, {"bucket_code": code, "bucket_name": name, "is_active": active})
+    print(f"Inserted {len(BUCKET_MASTER_SEED)} rows into col_db.bucket_master.")
+
+
+def insert_channel_master(cur):
+    sql = """
+        INSERT INTO col_db.channel_master (channel_code, channel_name, is_active)
+        VALUES (%(channel_code)s, %(channel_name)s, %(is_active)s)
+        ON CONFLICT (channel_code) DO NOTHING;
+    """
+    for code, name, active in CHANNEL_MASTER_SEED:
+        cur.execute(sql, {"channel_code": code, "channel_name": name, "is_active": active})
+    print(f"Inserted {len(CHANNEL_MASTER_SEED)} rows into col_db.channel_master.")
+
+
 def insert_users(cur):
     """Har branch ke liye ek agent (auth.users), branch se linked.
- 
+
     NOTE: auth.users.branch par FK hai jo col_db.branches.code (PK) ko
-    reference karta hai -- isliye yahan branch NAME nahi, branch CODE
-    (e.g. 'BR001') jaata hai. (Ye FK-linking logic change nahi hui hai.)
+    reference karta hai -- isliye yahan branch NAME nahi, branch CODE jaata hai.
     """
     sql = """
         INSERT INTO auth.users
@@ -262,7 +297,7 @@ def insert_users(cur):
             {
                 "username": username,
                 "agent_name": agent_name,
-                "branch": b["code"],  # <-- FK expects branches.code (unchanged)
+                "branch": b["code"],  # FK expects branches.code
                 "password": "$2b$12$hashedpasswordvaluexxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                 "email": f"{username}@example.com",
                 "mobile": rand_mobile(random.randint(90000000, 99999999)),
@@ -286,8 +321,8 @@ def insert_users(cur):
         agent_ids.append(cur.fetchone()[0])
     print(f"Inserted {len(agent_ids)} users. agent_ids={agent_ids}")
     return agent_ids
- 
- 
+
+
 def insert_strategies(cur, agent_ids):
     sql = """
         INSERT INTO col_db.strategies
@@ -352,13 +387,13 @@ def insert_strategies(cur, agent_ids):
         strategy_ids.append(cur.fetchone()[0])
     print(f"Inserted {len(strategy_ids)} strategies. strategy_ids={strategy_ids}")
     return strategy_ids
- 
- 
+
+
 def insert_cases(cur, table_name, count, strategy_ids):
     """
     Generic inserter for dpd_cases / bounce_cases.
-    Har case ek branch (=> uski state) aur ek strategy se linked hota hai
-    (ye linking pehle jaisi hi hai). Baaki saari fields ab randomised hain.
+    Har case ek branch (=> uski state) aur ek strategy se linked hota hai.
+    bucket ab bucket_master.bucket_code se match karta hai.
     """
     base_cols = """
         case_ref, pr_number, customer_id, customer_name, mobile_number,
@@ -377,7 +412,7 @@ def insert_cases(cur, table_name, count, strategy_ids):
             ", %(bounce_date)s, %(bounce_reason)s, %(nach_status)s, "
             "%(bounce_cycle)s"
         )
- 
+
     sql = f"""
         INSERT INTO col_db.{table_name}
             ({base_cols}{extra_cols})
@@ -399,34 +434,30 @@ def insert_cases(cur, table_name, count, strategy_ids):
             branch_name = EXCLUDED.branch_name
         RETURNING {"dpd_case_id" if table_name == "dpd_cases" else "bounce_case_id"};
     """
- 
+
     ids = []
     prefix = "DPD-CASE" if table_name == "dpd_cases" else "BNC-CASE"
-    offset = 0 if table_name == "dpd_cases" else 1000  # keep pr_number/customer_id unique across both tables
+    offset = 0 if table_name == "dpd_cases" else 1000  # keep pr_number/customer_id unique
     for i in range(1, count + 1):
-        b = BRANCHES[(i - 1) % len(BRANCHES)]  # branch cycling unchanged
-        strategy_id = random.choice(strategy_ids)  # randomised (still valid FK)
+        b = BRANCHES[(i - 1) % len(BRANCHES)]  # branch cycling
+        strategy_id = random.choice(strategy_ids)
         customer_name = random.choice(CUSTOMER_NAMES)
         principal = round(random.uniform(15000, 500000), 2)
         tenure_months = random.choice([6, 12, 18, 24, 36, 48])
         emi = round(principal / tenure_months, 2)
         seq = i + offset
- 
-        # --- Poori timeline ek dusre se logically chained hai, koi bhi
-        # date future me nahi jaati:
-        #   dpd  ->  next_emi_date (jo EMI miss hui, wahi dpd ki wajah hai)
-        #        ->  last_payment_date (usse pehle wala payment)
-        #        ->  disbursal_date (loan tab liya gaya tha)
-        #        ->  created_at (case system me tab aaya jab EMI miss hui)
-        #        ->  updated_at (created_at ke baad, aaj tak, ya kabhi nahi)
-        dpd_value = random.randint(0, 200)  # 200 tak taaki NPA bucket bhi achhi tarah cover ho
+
+        # Poori timeline ek dusre se logically chained hai, koi bhi date
+        # future me nahi jaati: dpd -> next_emi_date -> last_payment_date
+        # -> disbursal_date -> created_at -> updated_at
+        dpd_value = random.randint(0, 200)
         next_emi_date = date.today() - timedelta(days=dpd_value)
         last_pay_date = next_emi_date - timedelta(days=random.randint(25, 35))
         disb_date = last_pay_date - timedelta(days=random.randint(60, 600))
- 
-        created_at = rand_dt_between(next_emi_date)  # case created after EMI miss hui, up to now
-        updated_at = rand_dt_between(created_at) if random.random() < 0.6 else None  # kuch cases abhi tak update nahi hue
- 
+
+        created_at = rand_dt_between(next_emi_date)
+        updated_at = rand_dt_between(created_at) if random.random() < 0.6 else None
+
         row = {
             "case_ref": f"{prefix}-{i:04d}",
             "pr_number": f"PR{CURRENT_YEAR}{seq:04d}",
@@ -435,8 +466,8 @@ def insert_cases(cur, table_name, count, strategy_ids):
             "mobile_number": rand_mobile(random.randint(90000000, 99999999)),
             "alternate_mobile": rand_mobile(random.randint(90000000, 99999999)),
             "email_id": f"{customer_name.lower().replace(' ', '.')}{random.randint(1,999)}@example.com",
-            "state": b["state"],          # branch/state linking unchanged
-            "branch_name": b["name"],     # branch linking unchanged
+            "state": b["state"],
+            "branch_name": b["name"],
             "product_name": random.choice(PRODUCTS),
             "disbursal_date": disb_date,
             "loan_amount": principal,
@@ -450,7 +481,7 @@ def insert_cases(cur, table_name, count, strategy_ids):
         }
         row.update({
             "dpd": dpd_value,
-            "bucket": bucket_for_dpd(dpd_value),
+            "bucket": bucket_for_dpd(dpd_value),  # matches bucket_master.bucket_code
             "loan_status": random.choice(LOAN_STATUSES),
             "strategy_id": strategy_id,
             "status": random.choice(CASE_STATUSES),
@@ -463,7 +494,6 @@ def insert_cases(cur, table_name, count, strategy_ids):
             row["outstanding_principal"] + row["outstanding_interest"], 2
         )
         if table_name == "bounce_cases":
-            # bounce EMI due date ke thode dino baad hota hai, aaj se aage nahi
             bounce_date = min(
                 next_emi_date + timedelta(days=random.randint(1, 5)), date.today()
             )
@@ -475,14 +505,14 @@ def insert_cases(cur, table_name, count, strategy_ids):
                     "bounce_cycle": random.randint(1, 5),
                 }
             )
- 
+
         cur.execute(sql, row)
         ids.append((cur.fetchone()[0], strategy_id, b, created_at))
- 
+
     print(f"Inserted {count} rows into col_db.{table_name}.")
     return ids  # list of (case_id, strategy_id, branch_dict, created_at)
- 
- 
+
+
 def insert_ptps(cur, strategy_ids, agent_ids, count=25):
     sql = """
         INSERT INTO col_db.ptps
@@ -517,8 +547,8 @@ def insert_ptps(cur, strategy_ids, agent_ids, count=25):
         )
         count_done += 1
     print(f"Inserted {count_done} rows into col_db.ptps.")
- 
- 
+
+
 def insert_payments(cur, strategy_ids, count=40):
     sql = """
         INSERT INTO col_db.payments
@@ -551,10 +581,12 @@ def insert_payments(cur, strategy_ids, count=40):
         )
         count_done += 1
     print(f"Inserted {count_done} rows into col_db.payments.")
- 
- 
+
+
 def insert_communication_logs(cur, cases):
-    """cases = list of (case_id, strategy_id, branch_dict, case_created_at)."""
+    """cases = list of (case_id, strategy_id, branch_dict, case_created_at).
+    channel ab CHANNELS list se aata hai jo channel_master.channel_code
+    (active channels) se match karta hai."""
     sql = """
         INSERT INTO col_db.communication_logs
             (case_id, strategy_id, queue_id, channel, recipient, status,
@@ -565,9 +597,6 @@ def insert_communication_logs(cur, cases):
     """
     count = 0
     for case_id, strategy_id, b, case_created_at in cases:
-        # har case ke liye random 1-3 communication attempts, taaki
-        # "har possible data" ka variety zyada real lage. Attempts case
-        # ke created_at ke BAAD hi hote hain (logically connected).
         for _ in range(random.randint(1, 3)):
             created_on = rand_dt_between(case_created_at)
             status = random.choice(COMM_STATUS)
@@ -580,7 +609,7 @@ def insert_communication_logs(cur, cases):
                 {
                     "case_id": case_id,
                     "strategy_id": strategy_id,
-                    "queue_id": strategy_id,  # queue linked to strategy for simplicity
+                    "queue_id": strategy_id,
                     "channel": random.choice(CHANNELS),
                     "recipient": rand_mobile(random.randint(90000000, 99999999)),
                     "status": status,
@@ -590,8 +619,8 @@ def insert_communication_logs(cur, cases):
                 },
             )
     print(f"Inserted {count} rows into col_db.communication_logs.")
- 
- 
+
+
 def insert_execution_log(cur, cases, case_type):
     sql = """
         INSERT INTO col_db.strategy_execution_log
@@ -600,13 +629,10 @@ def insert_execution_log(cur, cases, case_type):
                 %(assigned_at)s, %(completed_at)s);
     """
     count = 0
+    TERMINAL_STATUSES = ("COMPLETED", "FAILED", "CLOSED_RESOLVED", "PAYMENT_RECEIVED")
     for case_id, strategy_id, _, case_created_at in cases:
         status = random.choice(EXECUTION_STATUSES)
-        assigned_at = rand_dt_between(case_created_at)  # case create hone ke baad hi assign hua
-        # completed_at sirf tab set hota hai jab execution actually khatam
-        # ho chuka ho (terminal states) -- status field se logically
-        # connected. RUNNING/QUEUED/PAUSED ke liye NULL rehta hai.
-        TERMINAL_STATUSES = ("COMPLETED", "FAILED", "CLOSED_RESOLVED", "PAYMENT_RECEIVED")
+        assigned_at = rand_dt_between(case_created_at)
         completed_at = (
             rand_dt_between(assigned_at) if status in TERMINAL_STATUSES else None
         )
@@ -623,8 +649,8 @@ def insert_execution_log(cur, cases, case_type):
         )
         count += 1
     print(f"Inserted {count} rows into col_db.strategy_execution_log ({case_type}).")
- 
- 
+
+
 # ---------------------------------------------------------------------
 # 4. MAIN
 # ---------------------------------------------------------------------
@@ -636,18 +662,20 @@ def main():
                 insert_branches(cur)
                 agent_ids = insert_users(cur)
                 link_branch_audit(cur, agent_ids)
+                insert_bucket_master(cur)
+                insert_channel_master(cur)
                 strategy_ids = insert_strategies(cur, agent_ids)
- 
+
                 dpd_cases = insert_cases(cur, "dpd_cases", 30, strategy_ids)
                 bounce_cases = insert_cases(cur, "bounce_cases", 20, strategy_ids)
                 all_cases = dpd_cases + bounce_cases  # 50 total case rows
- 
+
                 insert_ptps(cur, strategy_ids, agent_ids, count=25)
                 insert_payments(cur, strategy_ids, count=40)
                 insert_communication_logs(cur, all_cases)
                 insert_execution_log(cur, dpd_cases, "DPD")
                 insert_execution_log(cur, bounce_cases, "BOUNCE")
- 
+
         print("\nAll data inserted & committed successfully.")
     except Exception as e:
         conn.rollback()
@@ -655,8 +683,7 @@ def main():
         raise
     finally:
         conn.close()
- 
- 
+
+
 if __name__ == "__main__":
     main()
- 

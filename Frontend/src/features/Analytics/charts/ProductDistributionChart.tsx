@@ -53,6 +53,7 @@ export const ProductDistributionChart: React.FC<ProductDistributionChartProps> =
 
   return (
     <ChartCard
+    className="h-full"
       title={title}
       subtitle={subtitle}
       data={data}

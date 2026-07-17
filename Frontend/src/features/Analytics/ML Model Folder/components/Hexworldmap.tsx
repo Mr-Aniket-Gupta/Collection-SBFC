@@ -138,14 +138,16 @@ const FALLBACK_COLORS = ['#4fa4e0', '#4fbf8b', '#cf7fdb', '#ee7c68', '#f2a458', 
 // Stylised landmasses (not real borders) — just enough silhouette for a
 // world-map read. Coordinates live directly in the 1200x650 viewBox.
 const CONTINENTS: { name: string; points: [number, number][] }[] = [
-  { name: 'India', points: [
-    [412,78], [456,48], [504,66], [548,52], [602,74], [654,108], [716,136], [772,178],
-    [822,184], [854,214], [844,250], [810,260], [800,284], [774,292], [754,324],
-    [720,342], [692,378], [674,422], [648,466], [628,518], [610,574], [584,612],
-    [560,574], [520,522], [488,482], [470,440], [410,394], [426,354], [428,316],
-    [402,290], [376,276], [348,258], [360,228], [382,206], [374,178], [396,152],
-    [382,126], [404,102],
-  ] },
+  {
+    name: 'India', points: [
+      [412, 78], [456, 48], [504, 66], [548, 52], [602, 74], [654, 108], [716, 136], [772, 178],
+      [822, 184], [854, 214], [844, 250], [810, 260], [800, 284], [774, 292], [754, 324],
+      [720, 342], [692, 378], [674, 422], [648, 466], [628, 518], [610, 574], [584, 612],
+      [560, 574], [520, 522], [488, 482], [470, 440], [410, 394], [426, 354], [428, 316],
+      [402, 290], [376, 276], [348, 258], [360, 228], [382, 206], [374, 178], [396, 152],
+      [382, 126], [404, 102],
+    ]
+  },
 ];
 
 const INDIA_BOUNDS = { minLat: 6, maxLat: 38, minLon: 67, maxLon: 99 } as const;
@@ -523,69 +525,154 @@ export default function HexWorldMap({
             const Icon = ICONS[p.icon] || Building2;
             const isSelected = selectedId === p.id;
             const isExpanded = hoveredId === p.id || isSelected;
+
             const cardW = 168;
             const cardH = 52;
             const dotSize = 36;
+
             const fx = p.cardSide === 'left' ? p.x - cardW - 8 : p.x + 8;
             const fy = p.y - cardH / 2;
             const dotLeft = p.cardSide === 'left' ? cardW - dotSize : 0;
 
             return (
-              <foreignObject key={p.id} x={fx} y={fy} width={cardW} height={cardH} overflow="visible" style={{ overflow: 'visible' }}>
-                <div
-                  className="relative"
-                  style={{ width: cardW, height: cardH }}
-                  onMouseEnter={() => setHoveredId(p.id)}
-                  onMouseLeave={() => setHoveredId(null)}
+              <g key={p.id}>
+                {/* Floating card */}
+                <foreignObject
+                  x={fx}
+                  y={fy}
+                  width={cardW}
+                  height={cardH}
+                  overflow="visible"
+                  style={{ overflow: 'visible' }}
                 >
-                  {!isExpanded && (
-                    <span
-                      className="absolute rounded-full animate-ping"
-                      style={{
-                        left: dotLeft,
-                        top: (cardH - dotSize) / 2,
-                        width: dotSize,
-                        height: dotSize,
-                        background: p.color,
-                        opacity: 0.35,
+                  <div
+                    className="relative"
+                    style={{ width: cardW, height: cardH }}
+                    onMouseEnter={() => setHoveredId(p.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                  >
+                    {!isExpanded && (
+                      <span
+                        className="absolute rounded-full animate-ping"
+                        style={{
+                          left: dotLeft,
+                          top: (cardH - dotSize) / 2,
+                          width: dotSize,
+                          height: dotSize,
+                          background: p.color,
+                          opacity: 0.35,
+                        }}
+                      />
+                    )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        setSelectedId(isSelected ? null : p.id);
+                        setSelectedHex(null);
+
+                        // Auto zoom to selected location
+                        if (
+                          !isSelected &&
+                          svgRef.current &&
+                          zoomBehaviorRef.current
+                        ) {
+                          const scale = 3;
+
+                          d3.select(svgRef.current)
+                            .transition()
+                            .duration(750)
+                            .call(
+                              zoomBehaviorRef.current.transform,
+                              d3.zoomIdentity
+                                .translate(
+                                  MAP_WIDTH / 2 - p.x * scale,
+                                  MAP_HEIGHT / 2 - p.y * scale
+                                )
+                                .scale(scale)
+                            );
+                        }
                       }}
-                    />
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedId(isSelected ? null : p.id);
-                      setSelectedHex(null);
-                    }}
-                    className="absolute flex items-center gap-2 rounded-2xl bg-white/95 shadow-[0_6px_18px_rgba(60,60,120,0.2)] transition-all duration-200 ease-out overflow-hidden"
+                      className="absolute flex items-center gap-2 rounded-2xl bg-white/95 shadow-[0_6px_18px_rgba(60,60,120,0.2)] transition-all duration-200 ease-out overflow-hidden"
+                      style={{
+                        left: isExpanded ? 0 : dotLeft,
+                        top: isExpanded ? 0 : (cardH - dotSize) / 2,
+                        width: isExpanded ? cardW : dotSize,
+                        height: isExpanded ? cardH : dotSize,
+                        padding: isExpanded ? '6px 12px 6px 8px' : 0,
+                        justifyContent: isExpanded ? 'flex-start' : 'center',
+                        outline: isSelected ? `2px solid ${p.color}` : 'none',
+                        outlineOffset: 2,
+                      }}
+                    >
+                      <span
+                        className="flex items-center justify-center w-8 h-8 rounded-xl shrink-0"
+                        style={{ background: p.color }}
+                      >
+                        <Icon size={16} color="#fff" strokeWidth={2.2} />
+                      </span>
+
+                      <span
+                        className="text-left leading-tight overflow-hidden whitespace-nowrap transition-opacity duration-150"
+                        style={{
+                          opacity: isExpanded ? 1 : 0,
+                        }}
+                      >
+                        <span
+                          className="block text-[11px] font-medium"
+                          style={{ color: PALETTE.subtext }}
+                        >
+                          {p.name}
+                        </span>
+
+                        <span
+                          className="block text-[13px] font-bold whitespace-nowrap"
+                          style={{ color: PALETTE.text }}
+                        >
+                          {formatNumber(p.value)}
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </foreignObject>
+
+                {/* Map label */}
+                {transform.k > 1.5 && (
+                  <text
+                    x={p.x}
+                    y={p.y + 45}
+                    textAnchor="middle"
+                    fontSize={Math.max(10, 12 / transform.k)}
+                    fontWeight={600}
+                    fill={PALETTE.text}
                     style={{
-                      left: isExpanded ? 0 : dotLeft,
-                      top: isExpanded ? 0 : (cardH - dotSize) / 2,
-                      width: isExpanded ? cardW : dotSize,
-                      height: isExpanded ? cardH : dotSize,
-                      padding: isExpanded ? '6px 12px 6px 8px' : 0,
-                      justifyContent: isExpanded ? 'flex-start' : 'center',
-                      outline: isSelected ? `2px solid ${p.color}` : 'none',
-                      outlineOffset: 2,
+                      pointerEvents: 'none',
+                      userSelect: 'none',
                     }}
                   >
-                    <span className="flex items-center justify-center w-8 h-8 rounded-xl shrink-0" style={{ background: p.color }}>
-                      <Icon size={16} color="#fff" strokeWidth={2.2} />
-                    </span>
-                    <span
-                      className="text-left leading-tight overflow-hidden whitespace-nowrap transition-opacity duration-150"
-                      style={{ opacity: isExpanded ? 1 : 0 }}
-                    >
-                      <span className="block text-[11px] font-medium" style={{ color: PALETTE.subtext }}>
-                        {p.name}
-                      </span>
-                      <span className="block text-[13px] font-bold whitespace-nowrap" style={{ color: PALETTE.text }}>
-                        {formatNumber(p.value)}
-                      </span>
-                    </span>
-                  </button>
-                </div>
-              </foreignObject>
+                    {p.name}
+                  </text>
+                )}
+
+                {/* Value label on higher zoom */}
+                {transform.k > 3 && (
+                  <text
+                    x={p.x}
+                    y={p.y + 60}
+                    textAnchor="middle"
+                    fontSize={Math.max(8, 10 / transform.k)}
+                    fontWeight={500}
+                    fill={PALETTE.subtext}
+                    style={{
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                    }}
+                  >
+                    {formatNumber(p.value)}
+                  </text>
+                )}
+              </g>
             );
           })}
         </g>

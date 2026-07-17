@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Activity, BrainCircuit, Sparkles } from "lucide-react";
 import { KPIGrid } from "@/features/Analytics/ML Model Folder/components/Kpicard";
 import { ActualVsPredictedChart } from "@/features/Analytics/ML Model Folder/components/Actualvspredictedchart";
@@ -14,6 +14,11 @@ import {
 } from "@/features/Analytics/ML Model Folder/types";
 
 import HexWorldMap from '@/features/Analytics/ML Model Folder/components/Hexworldmap';
+
+// JoyTour
+import { mlAnalyticsTourSteps } from "@/Components/tour/mlAnalyticsTourSteps";
+import AppTour from "@/Components/tour/AppTour";
+
 
 
 // ---------------------------------------------------------------------
@@ -79,51 +84,119 @@ export default function MLAnalyticsPage() {
   const [confusionMatrix] = useState<ConfusionMatrixData>(mockConfusionMatrix);
   const [featureImportance] = useState<FeatureImportanceRow[]>(mockFeatureImportance);
 
+
+
+  // JoyTure 
+  const [runTour, setRunTour] = useState(false);
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem(
+      "ml-analytics-tour-completed"
+    );
+
+    if (!hasSeenTour) {
+      const timer = setTimeout(() => {
+        setRunTour(true);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleTourFinish = () => {
+    localStorage.setItem(
+      "ml-analytics-tour-completed",
+      "true"
+    );
+
+    setRunTour(false);
+  };
+
+
   return (
-    <main className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[28px] border border-[rgba(5,0,88,0.1)] bg-[#f8fbff] p-4 text-[var(--color-navy)] shadow-[0_20px_50px_rgba(5,0,88,0.08)] sm:p-6 lg:p-8">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(5,0,88,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(5,0,88,0.025)_1px,transparent_1px)] bg-[size:32px_32px]" />
+    <>
+      <AppTour
+        run={runTour}
+        steps={mlAnalyticsTourSteps}
+        onFinish={handleTourFinish}
+      />
 
 
+      <main className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[28px] border border-[rgba(5,0,88,0.1)] bg-[#f8fbff] p-4 text-[var(--color-navy)] shadow-[0_20px_50px_rgba(5,0,88,0.08)] sm:p-6 lg:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(5,0,88,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(5,0,88,0.025)_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="relative space-y-5">
 
-      <div className="relative space-y-5">
-        <header className="relative overflow-hidden rounded-2xl border border-[rgba(5,0,88,0.1)] bg-[radial-gradient(circle_at_84%_15%,rgba(206,155,1,0.13),transparent_24%),radial-gradient(circle_at_68%_95%,rgba(217,234,245,0.9),transparent_34%),linear-gradient(120deg,#ffffff,#f4f9fd_58%,#edf6fb)] px-5 py-6 shadow-[0_12px_32px_rgba(5,0,88,0.06)] sm:px-7 sm:py-7">
-          <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-[var(--color-gold)] to-transparent" />
-          <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full border border-[rgba(0,1,130,0.1)]" />
-          <div className="absolute right-12 top-8 h-20 w-20 rounded-full border border-[rgba(206,155,1,0.2)]" />
-          <div className="relative flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="grid h-12 w-12 place-items-center rounded-xl border border-[rgba(0,1,130,0.15)] bg-[var(--color-ice)] text-[var(--color-blue)] shadow-[0_10px_24px_rgba(5,0,88,0.1)]">
-                <BrainCircuit size={25} strokeWidth={1.8} />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
-                  <Sparkles size={13} /> Model intelligence
+          <div id="tour-hero-section">
+            <header className="relative overflow-hidden rounded-2xl border border-[rgba(5,0,88,0.1)] bg-[radial-gradient(circle_at_84%_15%,rgba(206,155,1,0.13),transparent_24%),radial-gradient(circle_at_68%_95%,rgba(217,234,245,0.9),transparent_34%),linear-gradient(120deg,#ffffff,#f4f9fd_58%,#edf6fb)] px-5 py-6 shadow-[0_12px_32px_rgba(5,0,88,0.06)] sm:px-7 sm:py-7">
+
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-[var(--color-gold)] to-transparent" />
+
+              <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full border border-[rgba(0,1,130,0.1)]" />
+              <div className="absolute right-12 top-8 h-20 w-20 rounded-full border border-[rgba(206,155,1,0.2)]" />
+
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+
+                  {/* icon */}
+                  <div className="grid h-12 w-12 place-items-center rounded-xl border border-[rgba(0,1,130,0.15)] bg-[var(--color-ice)] text-[var(--color-blue)] shadow-[0_10px_24px_rgba(5,0,88,0.1)]">
+                    <BrainCircuit size={25} strokeWidth={1.8} />
+                  </div>
+
+                  {/* title */}
+                  <div>
+                    <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-gold)]">
+                      <Sparkles size={13} /> Model intelligence
+                    </div>
+                    <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-navy)] sm:text-3xl">Recovery ML analytics</h1>
+                    <p className="mt-1 text-sm text-[var(--color-ink-muted)]">Actual vs predicted performance</p>
+                  </div>
                 </div>
-                <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-navy)] sm:text-3xl">Recovery ML analytics</h1>
-                <p className="mt-1 text-sm text-[var(--color-ink-muted)]">Actual vs predicted performance</p>
+
+                {/* buttons */}
+                <div className="flex items-center gap-4">
+                  <div className="hidden items-center gap-2 rounded-full border border-[rgba(5,0,88,0.1)] bg-white/80 px-3 py-1.5 text-xs font-medium text-[var(--color-blue)] sm:flex">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-gold)] shadow-[0_0_10px_rgba(206,155,1,0.7)]" />
+                    <Activity size={14} /> Model active
+                  </div>
+                  {/* <button
+                    onClick={() => {
+                      localStorage.removeItem(
+                        "ml-analytics-tour-completed"
+                      );
+
+                      setRunTour(false);
+
+                      setTimeout(() => {
+                        setRunTour(true);
+                      }, 100);
+                    }}
+                    className="rounded-lg bg-[var(--color-blue)] px-4 py-2 text-white">
+                    Restart Tour
+                  </button> */}
+                </div>
               </div>
-            </div>
-            <div className="hidden items-center gap-2 rounded-full border border-[rgba(5,0,88,0.1)] bg-white/80 px-3 py-1.5 text-xs font-medium text-[var(--color-blue)] sm:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-gold)] shadow-[0_0_10px_rgba(206,155,1,0.7)]" />
-              <Activity size={14} /> Model active
-            </div>
+
+
+            </header>
           </div>
-        </header>
 
-        <div className="p-6">
-          <h1 className="text-xl font-bold mb-4">User distribution</h1>
-          <HexWorldMap />
+          <div className="p-6" >
+            <h1 className="text-xl font-bold mb-4" id="tour-world-map">User distribution</h1>
+            <HexWorldMap />
+          </div>
+
+          <div id="tour-kpi-grid">
+            <KPIGrid items={kpis} />
+          </div>
+
+          <section className="grid grid-cols-1 gap-5 2xl:grid-cols-12">
+            <div className="2xl:col-span-7" id="tour-actual-vs-predicted"><ActualVsPredictedChart data={classComparison} /></div>
+            <div className="2xl:col-span-5" id="tour-recovery-trend"><RecoveryTrendChart data={trend} /></div>
+            <div className="2xl:col-span-7" id="tour-confusion-matrix"><ConfusionMatrixHeatmap data={confusionMatrix} /></div>
+            <div className="2xl:col-span-5" id="tour-feature-importance"><FeatureImportanceChart data={featureImportance} /></div>
+          </section>
         </div>
-
-        <KPIGrid items={kpis} />
-
-        <section className="grid grid-cols-1 gap-5 2xl:grid-cols-12">
-          <div className="2xl:col-span-7"><ActualVsPredictedChart data={classComparison} /></div>
-          <div className="2xl:col-span-5"><RecoveryTrendChart data={trend} /></div>
-          <div className="2xl:col-span-7"><ConfusionMatrixHeatmap data={confusionMatrix} /></div>
-          <div className="2xl:col-span-5"><FeatureImportanceChart data={featureImportance} /></div>
-        </section>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

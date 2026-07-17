@@ -38,6 +38,7 @@ interface PerformanceRadarProps {
 export const PerformanceRadar: React.FC<PerformanceRadarProps> = ({ data }) => {
   return (
     <ChartCard
+      className="h-full"
       title="Performance Radar"
       subtitle="Collection team performance across key metrics"
       data={data}

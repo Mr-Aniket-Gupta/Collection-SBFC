@@ -8,7 +8,7 @@ import {
   isCommunicationLogsRow,
   isPaymentRow,
 } from './rowDetectors'
-import { safeToString, getBranchName } from './tableUtils'
+import { safeToString } from './tableUtils'
 
 const norm = (value: unknown): string => safeToString(value).toString().trim().replace(/\s+/g, ' ').toUpperCase()
 const id = (value: unknown): string => safeToString(value).trim()
