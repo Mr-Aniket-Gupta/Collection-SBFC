@@ -1,6 +1,6 @@
 // Renders progress bars to show the effectiveness of various strategies.
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChartCard } from "@/Components";
 import { ProgressBar } from "../Components/ProgressBar";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -17,6 +17,13 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const totalPages = Math.ceil(data.length / itemsPerPage);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
   const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
   const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
 
@@ -32,8 +39,11 @@ export const StrategyEffectiveness: React.FC<StrategyEffectivenessProps> = ({
       data={data}
     >
       <div className="flex flex-col gap-6 mt-2 min-h-[320px]">
-        {paginatedData.map((strategy) => (
-          <div key={strategy.name} className="flex flex-col gap-1.5">
+        {paginatedData.map((strategy, index) => (
+          <div
+            key={`${currentPage}-${strategy.name}-${index}`}
+            className="flex flex-col gap-1.5"
+          >
             <ProgressBar
               label={strategy.name}
               percentage={strategy.percentage}
