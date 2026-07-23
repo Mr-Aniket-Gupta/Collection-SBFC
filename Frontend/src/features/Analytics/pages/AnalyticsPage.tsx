@@ -138,56 +138,56 @@ export const AnalyticsPage: React.FC = () => {
     },
   ];
 
-  useEffect(() => {
-    loadAnalyticsTourStatus();
-  }, []);
+  // useEffect(() => {
+  //   loadAnalyticsTourStatus();
+  // }, []);
 
-  const loadAnalyticsTourStatus = async () => {
-    const response = await fetch(
-      `/api/user-tour/analytics-page?agentId=${AGENT_ID}`,
-    );
-    const data = await response.json();
-    if (!data.completed) setRunAnalyticsTour(true);
-  };
+  // const loadAnalyticsTourStatus = async () => {
+  //   const response = await fetch(
+  //     `/api/user-tour/analytics-page?agentId=${AGENT_ID}`,
+  //   );
+  //   const data = await response.json();
+  //   if (!data.completed) setRunAnalyticsTour(true);
+  // };
 
-  const handleAnalyticsFinish = async () => {
-    try {
-      await fetch("/api/user-tour/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agentId: AGENT_ID,
-          tourCode: "analytics-page",
-        }),
-      });
-    } finally {
-      setRunAnalyticsTour(false);
-      setActiveDashboard("ml");
-    }
-  };
+  // const handleAnalyticsFinish = async () => {
+  //   try {
+  //     await fetch("/api/user-tour/complete", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         agentId: AGENT_ID,
+  //         tourCode: "analytics-page",
+  //       }),
+  //     });
+  //   } finally {
+  //     setRunAnalyticsTour(false);
+  //     setActiveDashboard("ml");
+  //   }
+  // };
 
-  const handleRestartTour = async () => {
-    const tourCode =
-      activeDashboard === "dashboard" ? "analytics-page" : "ml-analytics-page";
+  // const handleRestartTour = async () => {
+  //   const tourCode =
+  //     activeDashboard === "dashboard" ? "analytics-page" : "ml-analytics-page";
 
-    try {
-      await fetch("/api/user-tour/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId: AGENT_ID, tourCode }),
-      });
-    } catch (err) {
-      console.error("Failed to reset tour status", err);
-    }
+  //   try {
+  //     await fetch("/api/user-tour/reset", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ agentId: AGENT_ID, tourCode }),
+  //     });
+  //   } catch (err) {
+  //     console.error("Failed to reset tour status", err);
+  //   }
 
-    if (activeDashboard === "dashboard") {
-      setRunAnalyticsTour(false);
-      setTimeout(() => setRunAnalyticsTour(true), 50);
-    } else {
-      setRunMlTour(false);
-      setTimeout(() => setRunMlTour(true), 50);
-    }
-  };
+  //   if (activeDashboard === "dashboard") {
+  //     setRunAnalyticsTour(false);
+  //     setTimeout(() => setRunAnalyticsTour(true), 50);
+  //   } else {
+  //     setRunMlTour(false);
+  //     setTimeout(() => setRunMlTour(true), 50);
+  //   }
+  // };
 
   return (
     <>

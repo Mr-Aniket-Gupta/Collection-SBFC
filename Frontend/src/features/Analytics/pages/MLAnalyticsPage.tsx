@@ -92,11 +92,11 @@ interface MLAnalyticsPageProps {
   setRunTour: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const AGENT_ID = 1;
+// const AGENT_ID = 1;
 
 export default function MLAnalyticsPage({
-  runTour,
-  setRunTour,
+  // runTour,
+  // setRunTour,
 }: MLAnalyticsPageProps) {
   // In production, swap these useState blocks for your real
   // data-fetching hook (React Query / SWR / plain fetch in useEffect).
@@ -108,46 +108,46 @@ export default function MLAnalyticsPage({
     mockFeatureImportance,
   );
 
-  useEffect(() => {
-    loadMlTourStatus();
-  }, []);
+  // useEffect(() => {
+  //   loadMlTourStatus();
+  // }, []);
 
-  const loadMlTourStatus = async () => {
-    try {
-      const response = await fetch(
-        `/api/user-tour/ml-analytics-page?agentId=${AGENT_ID}`,
-      );
-      const data = await response.json();
-      if (!data.completed) {
-        setRunTour(true);
-      }
-    } catch (err) {
-      console.error("Failed to load ML tour status", err);
-    }
-  };
+  // const loadMlTourStatus = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `/api/user-tour/ml-analytics-page?agentId=${AGENT_ID}`,
+  //     );
+  //     const data = await response.json();
+  //     if (!data.completed) {
+  //       setRunTour(true);
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to load ML tour status", err);
+  //   }
+  // };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setRunTour(true);
-    }, 300);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     setRunTour(true);
+  //   }, 300);
+  //   return () => clearTimeout(timer);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
-  const handleMlFinish = async () => {
-    try {
-      await fetch("/api/user-tour/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agentId: AGENT_ID,
-          tourCode: "ml-analytics-page",
-        }),
-      });
-    } finally {
-      setRunTour(false);
-    }
-  };
+  // const handleMlFinish = async () => {
+  //   try {
+  //     await fetch("/api/user-tour/complete", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         agentId: AGENT_ID,
+  //         tourCode: "ml-analytics-page",
+  //       }),
+  //     });
+  //   } finally {
+  //     setRunTour(false);
+  //   }
+  // };
 
   return (
     <>
