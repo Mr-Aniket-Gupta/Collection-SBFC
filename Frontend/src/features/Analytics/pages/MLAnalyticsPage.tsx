@@ -16,8 +16,8 @@ import {
 import HexWorldMap from "@/features/Analytics/ML Model Folder/components/Hexworldmap";
 
 // JoyTour
-import { mlAnalyticsTourSteps } from "@/Components/tour/mlAnalyticsTourSteps";
-import AppTour from "@/Components/tour/AppTour";
+// import { mlAnalyticsTourSteps } from "@/Components/tour/mlAnalyticsTourSteps";
+// import AppTour from "@/Components/tour/AppTour";
 
 // ---------------------------------------------------------------------
 // MOCK DATA - replace each of these with a real API call, e.g.:
@@ -151,11 +151,11 @@ export default function MLAnalyticsPage({
 
   return (
     <>
-      <AppTour
+      {/* <AppTour
         run={runTour}
         steps={mlAnalyticsTourSteps}
         onFinish={handleMlFinish}
-      />
+      /> */}
 
       <main className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[28px] border border-[rgba(5,0,88,0.1)] bg-[#f8fbff] p-4 text-[var(--color-navy)] shadow-[0_20px_50px_rgba(5,0,88,0.08)] sm:p-6 lg:p-8">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(5,0,88,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(5,0,88,0.025)_1px,transparent_1px)] bg-[size:32px_32px]" />

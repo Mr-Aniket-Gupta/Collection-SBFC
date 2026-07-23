@@ -4,7 +4,7 @@ using backend.Modules.Reports.Config;
 using System.Text.Json;
 using Prometheus;
 // using backend.Extensions;
-using backend.Modules.UserTour.Config;
+// using backend.Modules.UserTour.Config;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +37,7 @@ builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 builder.Services.AddReportsModule();
 builder.Services.AddAnalyticsModule();
 
-builder.Services.AddUserTourModule();
+// builder.Services.AddUserTourModule();
 
 var app = builder.Build();
 

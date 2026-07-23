@@ -23,8 +23,8 @@ import { useAnalytics } from "../hooks/useAnalytics";
 import MLAnalyticsPage from "./MLAnalyticsPage";
 
 // JoyTour
-import { analyticsPageTourSteps } from "@/Components/tour/analyticsPageTourSteps";
-import AppTour from "@/Components/tour/AppTour";
+// import { analyticsPageTourSteps } from "@/Components/tour/analyticsPageTourSteps";
+// import AppTour from "@/Components/tour/AppTour";
 
 const AGENT_ID = 1;
 
@@ -192,11 +192,11 @@ export const AnalyticsPage: React.FC = () => {
   return (
     <>
       {/* Tour Code */}
-      <AppTour
+      {/* <AppTour
         run={runAnalyticsTour}
         steps={analyticsPageTourSteps}
         onFinish={handleAnalyticsFinish}
-      />
+      /> */}
 
       <div className="animate-[fadeIn_0.35s_ease-out_forwards] space-y-6">
         {/* Page Header */}
@@ -236,12 +236,12 @@ export const AnalyticsPage: React.FC = () => {
           </button>
 
           {/* Global Restart Tour Button */}
-          <button
+          {/* <button
             onClick={handleRestartTour}
             className="inline-flex items-center gap-2 rounded-xl border border-[rgba(5,0,88,0.1)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-navy)] shadow-sm hover:bg-[var(--color-ice)] transition-colors"
           >
             Take Tour
-          </button>
+          </button> */}
         </div>
 
         {activeDashboard === "dashboard" && (
